@@ -52,7 +52,7 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-    [ div [class "header"] [text "What's going today on HRMC Digital?"]
+    [ div [class "header"] [text "What's going today on HMRC Digital?"]
     , div [class "error"] [viewError model.error]
     , div [class "event-list"] (List.map viewEvent model.events)
     ]
