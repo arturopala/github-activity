@@ -4,53 +4,66 @@ body {
   margin: 0;
   text-align: center;
   color: #293c4b;
-  width: 100%;
 }
 
 img {
   max-width: 50px;
 }
 
+.app {
+  display: flex;
+  flex-flow: column;
+  align-content: start;
+  align-items: center;
+}
+
 .header {
-    padding: 1em 0;
-    font-size: 3em;
+    margin: 0.5em;
+    font-size: 2em;
+    align-self: center;
 }
 
 .event-list {
-    padding: 0 10em;
     font-size: 1em;
     text-align: left;
 }
 
 .event-item {
-    max-height: 50px;
-    vertical-align: middle;
+  display: flex;
+  flex-flow: row;
+  align-content: start;
+  align-items: center;
 }
 
 .event-avatar {
-    vertical-align: middle;
+    min-width: 50px;
+    flex: initial;
 }
 
 .event-actor {
-    display: inline-block;
-    width: 200px;
-    padding: 0 1em;
+  flex: none;
+  padding: 0 0.5em 0 0.5em;
 }
 
 .event-repo {
-    display: inline-block;
-    width: 300px;
-    padding: 0 1em;
+  flex: 6 1 100%;
+  padding: 0 0.5em 0 0.5em;
+}
+
+.event-datetime {
+  flex: none;
+  text-align: center;
+  padding: 0 0.5em 0 0.5em;
 }
 
 .event-date {
-    display: inline-block;
-    width: 200px;
+  flex: none;
+  padding-left: 0.3em;  
 }
 
 .event-type {
-    display: inline-block;
-    width: 100px;
+  flex: none;
+  padding: 0 0.5em 0 0.5em;
 }
 
 .event-ReleaseEvent {
@@ -67,4 +80,20 @@ img {
 
 .event-PushEvent {
     background-color: lightYellow;
+}
+
+@media all and (max-width: 800px) {
+
+  body {
+    font-size: 12px;
+  }
+
+  .event-actor {
+    display: none;
+  }
+
+  .event-date {
+    display: none;
+  } 
+
 }
