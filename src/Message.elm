@@ -3,6 +3,7 @@ module Message exposing (..)
 import Http
 import Model exposing (GithubEvent)
 
+
 type Msg
-    = NoOp 
+    = NoOp
     | NewEvents (Result Http.Error (List GithubEvent))
