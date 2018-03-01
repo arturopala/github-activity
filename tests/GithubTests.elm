@@ -10,7 +10,7 @@ import Model
 
 all : Test
 all =
-    describe "A Github"
+    describe "A Github api decoders"
         [ describe ".decodeRepo should"
             [ test "decode valid repo json" <|
                 \() ->

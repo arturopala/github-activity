@@ -32,7 +32,7 @@ main =
 init : ( Model, Cmd Msg )
 init =
     ( Model [] Nothing
-    , getEvents
+    , getEvents "/users/hmrc/events"
     )
 
 

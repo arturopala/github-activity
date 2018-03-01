@@ -15,7 +15,7 @@ type alias GithubEvent =
     , eventType : String
     , actor : GithubActor
     , repo : GithubRepo
-    , payload : GithubPayload
+    , payload : GithubEventPayload
     , created_at : DateTime.DateTime
     }
 
@@ -32,6 +32,29 @@ type alias GithubRepo =
     }
 
 
-type alias GithubPayload =
-    { size : Int
+type GithubEventPayload
+    = GithubPullRequestEvent GithubPullRequestEventPayload
+    | GithubReleaseEvent GithubReleaseEventPayload
+    | GithubOtherEventPayload
+
+
+type alias GithubPullRequestEventPayload =
+    { action : String
+    , pull_request : GithubPullRequest
+    }
+
+
+type alias GithubPullRequest =
+    { url : String
+    , id : Int
+    }
+
+type alias GithubReleaseEventPayload =
+    { action : String
+    , release : GithubRelease
+    }
+
+type alias GithubRelease =
+    { url : String
+    , tag_name : String
     }

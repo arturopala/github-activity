@@ -18,3 +18,7 @@ node_modules
 /package.json
 
 /tests/index.html
+
+/yarn-error.log
+
+/yarn.lock
