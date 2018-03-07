@@ -5,10 +5,12 @@ import Time.DateTime as DateTime
 
 
 type alias Model =
-    { events : List GithubEvent
+    { path : String
+    , events : List GithubEvent
     , error : Maybe Http.Error
+    , interval: Int
+    , etag : String
     }
-
 
 type alias GithubEvent =
     { id : String

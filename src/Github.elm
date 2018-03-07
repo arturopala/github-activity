@@ -1,4 +1,4 @@
-module Github exposing (..)
+module Github exposing (readGithubEvents)
 
 import Http
 import Json.Decode exposing (int, string, float, Decoder, decodeString, list, nullable, map, fail, andThen, field)
@@ -6,15 +6,52 @@ import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded)
 import Model exposing (..)
 import Message exposing (..)
 import Time.DateTime as DateTime
+import Dict exposing (Dict)
 
-getEvents : String -> Cmd Msg
-getEvents path =
-    Http.send NewEvents (getEventsRequest path)
+readGithubEvents : String  -> String -> Cmd Msg
+readGithubEvents path etag =
+    Http.send GotEvents (getEventsWithIntervalRequest path etag)
 
 
-getEventsRequest : String -> Http.Request (List GithubEvent)
-getEventsRequest path =
-    Http.get ("https://api.github.com" ++ path) decodeEvents
+getEventsWithIntervalRequest : String -> String -> Http.Request EventsResponse
+getEventsWithIntervalRequest path etag =
+    Http.request
+        { method = "GET"
+        , headers = [
+            Http.header "If-None-Match" etag
+        ]
+        , url = ("https://api.github.com" ++ path)
+        , body = Http.emptyBody
+        , expect = Http.expectStringResponse getEventsResponse
+        , timeout = Nothing
+        , withCredentials = False
+        }  
+
+
+getEventsResponse : Http.Response String -> Result String EventsResponse
+getEventsResponse response =
+    decodeString decodeEvents response.body
+    |> Result.map (\events -> EventsResponse events 
+        (getPollInterval response.headers) (getETag response.headers)
+    )
+
+
+getPollInterval : Dict String String -> Int
+getPollInterval headers = 
+    let
+       _  = Debug.log "headers" headers      
+    in
+        headers
+        |> Dict.get "x-poll-interval"
+        |> Maybe.andThen (String.toInt >> Result.toMaybe)
+        |> Maybe.withDefault 120
+
+
+getETag : Dict String String -> String
+getETag headers = 
+    headers
+    |> Dict.get "etag"
+    |> Maybe.withDefault ""
 
 
 decodeEvents : Decoder (List GithubEvent)

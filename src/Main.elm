@@ -2,7 +2,7 @@ module Main exposing (..)
 
 import Html exposing (Html, text, div, img, span, section)
 import Html.Attributes exposing (..)
-import Github exposing (getEvents)
+import Github exposing (readGithubEvents)
 import Message exposing (..)
 import Model exposing (..)
 import Http
@@ -31,26 +31,54 @@ main =
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model [] Nothing
-    , getEvents "/users/hmrc/events"
-    )
-
+    { path = "/users/hmrc/events"
+    , events = []
+    , error = Nothing
+    , interval = 0
+    , etag = ""
+    }
+    ! [ Time.now |> Task.perform (\_ -> ReadEvents) ]
 
 
 ---- UPDATE ----
 
 
+delaySeconds: Int -> m -> Cmd m
+delaySeconds interval msg =  
+    Process.sleep ((toFloat interval) * Time.second)
+    |> Task.perform (\_ -> msg)
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        NewEvents (Ok events) ->
-            ( Model events Nothing, Cmd.none )
+        ReadEvents ->
+            model
+            ! [ readGithubEvents model.path model.etag ]
 
-        NewEvents (Err error) ->
-            ( Model [] (Just error), Cmd.none )
+        GotEvents (Ok response) ->
+            { model | events = response.events, 
+                      etag = response.etag,
+                      interval = response.interval,
+                      error =  Nothing
+            } 
+            ! [delaySeconds response.interval ReadEvents]
+
+        GotEvents (Err (Http.BadStatus httpResponse)) ->
+            let 
+                nextModel = 
+                    if httpResponse.status.code == 304 
+                    then model 
+                    else { model | events = [], error = Just (Http.BadStatus httpResponse) }
+            in
+                nextModel ! [delaySeconds model.interval ReadEvents] 
+
+        GotEvents (Err error) ->
+            { model | events = [], error = Just error } 
+            ! [delaySeconds model.interval ReadEvents]
 
         NoOp ->
-            ( model, Cmd.none )
+            model ! [Cmd.none]
 
 
 
