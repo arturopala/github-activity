@@ -1,5 +1,7 @@
 module Main exposing (..)
 
+import Navigation exposing (Location, modifyUrl)
+import Routing
 import Html exposing (Html, text, div, img, span, section)
 import Html.Attributes exposing (..)
 import Github exposing (readGithubEvents)
@@ -17,68 +19,132 @@ import Time.DateTime as DateTime
 
 main : Program Never Model Msg
 main =
-    Html.program
+    Navigation.program OnLocationChange
         { view = view
         , init = init
         , update = update
-        , subscriptions = always Sub.none
+        , subscriptions = subscriptions
         }
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.none
 
 
 
 ---- MODEL ----
 
 
-init : ( Model, Cmd Msg )
-init =
-    { path = "/users/hmrc/events"
-    , events = []
-    , error = Nothing
-    , interval = 0
-    , etag = ""
-    }
-    ! [ Time.now |> Task.perform (\_ -> ReadEvents) ]
+defaultUser : String
+defaultUser =
+    "hmrc"
+
+
+init : Location -> ( Model, Cmd Msg )
+init location =
+    let
+        route =
+            Routing.parseLocation location
+
+        source =
+            case route of
+                EventsRoute source ->
+                    source
+
+                _ ->
+                    GithubUser defaultUser
+    in
+        { route = route
+        , eventStream =
+            { source = source
+            , events = []
+            , interval = 60
+            , etag = ""
+            , error = Nothing
+            }
+        }
+            ! [ modifyUrl (Routing.eventsSourceUrl source) ]
+
 
 
 ---- UPDATE ----
 
 
-delaySeconds: Int -> m -> Cmd m
-delaySeconds interval msg =  
-    Process.sleep ((toFloat interval) * Time.second)
-    |> Task.perform (\_ -> msg)
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        OnLocationChange location ->
+            handleLocationChange (Routing.parseLocation location) model
+
         ReadEvents ->
-            model
-            ! [ readGithubEvents model.path model.etag ]
+            model ! [ readGithubEvents model.eventStream ]
 
         GotEvents (Ok response) ->
-            { model | events = response.events, 
-                      etag = response.etag,
-                      interval = response.interval,
-                      error =  Nothing
-            } 
-            ! [delaySeconds response.interval ReadEvents]
-
-        GotEvents (Err (Http.BadStatus httpResponse)) ->
-            let 
-                nextModel = 
-                    if httpResponse.status.code == 304 
-                    then model 
-                    else { model | events = [], error = Just (Http.BadStatus httpResponse) }
+            let
+                es =
+                    model.eventStream
             in
-                nextModel ! [delaySeconds model.interval ReadEvents] 
+                { model | eventStream = { es | events = response.events, interval = response.interval, etag = response.etag, error = Nothing } }
+                    ! [ delaySeconds response.interval ReadEvents ]
 
         GotEvents (Err error) ->
-            { model | events = [], error = Just error } 
-            ! [delaySeconds model.interval ReadEvents]
+            handleHttpError error model
 
         NoOp ->
-            model ! [Cmd.none]
+            model ! [ Cmd.none ]
+
+
+handleLocationChange : Route -> Model -> ( Model, Cmd Msg )
+handleLocationChange route model =
+    let
+        es =
+            model.eventStream
+    in
+        case route of
+            EventsRoute source ->
+                { model
+                    | route = route
+                    , eventStream =
+                        { source = source
+                        , events = []
+                        , interval = es.interval
+                        , etag = ""
+                        , error = Nothing
+                        }
+                }
+                    ! [ delaySeconds 0 ReadEvents ]
+
+            NotFoundRoute ->
+                model ! [ modifyUrl (Routing.eventsSourceUrl (GithubUser defaultUser)) ]
+
+
+handleHttpError : Http.Error -> Model -> ( Model, Cmd Msg )
+handleHttpError error model =
+    let
+        es =
+            model.eventStream
+    in
+        case error of
+            Http.BadStatus httpResponse ->
+                case httpResponse.status.code of
+                    304 ->
+                        model ! [ delaySeconds model.eventStream.interval ReadEvents ]
+
+                    404 ->
+                        { model | eventStream = { es | error = Just error } } ! [ Cmd.none ]
+
+                    _ ->
+                        { model | eventStream = { es | error = Just error } } ! [ Cmd.none ]
+
+            _ ->
+                { model | eventStream = { es | error = Just error } } ! [ Cmd.none ]
+
+
+delaySeconds : Int -> m -> Cmd m
+delaySeconds interval msg =
+    Process.sleep ((toFloat interval) * Time.second)
+        |> Task.perform (\_ -> msg)
 
 
 
@@ -88,9 +154,9 @@ update msg model =
 view : Model -> Html Msg
 view model =
     section [ class "app" ]
-        [ section [ class "header" ] [ text "What's going on HMRC Digital?" ]
-        , section [ class "error" ] [ viewError model.error ]
-        , section [ class "event-list" ] (List.map viewEvent model.events)
+        [ section [ class "header" ] [ text ("What's going on " ++ sourceTitle (model.eventStream.source)) ]
+        , section [ class "error" ] [ viewError model.eventStream.error ]
+        , section [ class "event-list" ] (List.map viewEvent model.eventStream.events)
         ]
 
 
@@ -158,3 +224,10 @@ viewError error =
 
         Just (Http.BadPayload debug response) ->
             text ("Bad payload " ++ debug)
+
+
+sourceTitle : GithubEventSource -> String
+sourceTitle source =
+    case source of
+        GithubUser user ->
+            "user " ++ user

@@ -1,4 +1,4 @@
-module Github exposing (readGithubEvents)
+module Github exposing (..)
 
 import Http
 import Json.Decode exposing (int, string, float, Decoder, decodeString, list, nullable, map, fail, andThen, field)
@@ -8,50 +8,53 @@ import Message exposing (..)
 import Time.DateTime as DateTime
 import Dict exposing (Dict)
 
-readGithubEvents : String  -> String -> Cmd Msg
-readGithubEvents path etag =
-    Http.send GotEvents (getEventsWithIntervalRequest path etag)
+
+readGithubEvents : GithubEventStream -> Cmd Msg
+readGithubEvents stream =
+    case stream.source of
+        GithubUser user ->
+            Http.send GotEvents (getEventsWithIntervalRequest ("users/" ++ user) stream.etag)
 
 
-getEventsWithIntervalRequest : String -> String -> Http.Request EventsResponse
+getEventsWithIntervalRequest : String -> String -> Http.Request GithubEventsResponse
 getEventsWithIntervalRequest path etag =
     Http.request
         { method = "GET"
-        , headers = [
-            Http.header "If-None-Match" etag
-        ]
-        , url = ("https://api.github.com" ++ path)
+        , headers =
+            [ Http.header "If-None-Match" etag
+            ]
+        , url = ("https://api.github.com/" ++ path ++ "/events")
         , body = Http.emptyBody
         , expect = Http.expectStringResponse getEventsResponse
         , timeout = Nothing
         , withCredentials = False
-        }  
+        }
 
 
-getEventsResponse : Http.Response String -> Result String EventsResponse
+getEventsResponse : Http.Response String -> Result String GithubEventsResponse
 getEventsResponse response =
     decodeString decodeEvents response.body
-    |> Result.map (\events -> EventsResponse events 
-        (getPollInterval response.headers) (getETag response.headers)
-    )
+        |> Result.map
+            (\events ->
+                GithubEventsResponse events
+                    (getPollInterval response.headers)
+                    (getETag response.headers)
+            )
 
 
 getPollInterval : Dict String String -> Int
-getPollInterval headers = 
-    let
-       _  = Debug.log "headers" headers      
-    in
-        headers
+getPollInterval headers =
+    headers
         |> Dict.get "x-poll-interval"
         |> Maybe.andThen (String.toInt >> Result.toMaybe)
         |> Maybe.withDefault 120
 
 
 getETag : Dict String String -> String
-getETag headers = 
+getETag headers =
     headers
-    |> Dict.get "etag"
-    |> Maybe.withDefault ""
+        |> Dict.get "etag"
+        |> Maybe.withDefault ""
 
 
 decodeEvents : Decoder (List GithubEvent)
@@ -62,7 +65,7 @@ decodeEvents =
 decodeEvent : Decoder GithubEvent
 decodeEvent =
     field "type" string
-    |> andThen decodeEventByType
+        |> andThen decodeEventByType
 
 
 decodeEventByType : String -> Decoder GithubEvent
@@ -72,7 +75,7 @@ decodeEventByType t =
         |> required "type" string
         |> required "actor" decodeActor
         |> required "repo" decodeRepo
-        |> required "payload" (decodePayload t) 
+        |> required "payload" (decodePayload t)
         |> required "created_at" decodeDateTime
 
 

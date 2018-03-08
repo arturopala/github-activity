@@ -1,15 +1,12 @@
 module Message exposing (..)
 
 import Http
-import Model exposing (GithubEvent)
+import Model exposing (GithubEventsResponse)
+import Navigation exposing (Location)
 
-type alias EventsResponse = 
-    { events: List GithubEvent
-    , interval: Int
-    , etag: String
-    }
 
 type Msg
     = NoOp
     | ReadEvents
-    | GotEvents (Result Http.Error EventsResponse)
+    | GotEvents (Result Http.Error GithubEventsResponse)
+    | OnLocationChange Location

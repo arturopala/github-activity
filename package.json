@@ -8,6 +8,9 @@
      "scripts": {
           "elm-app": "elm-app",
           "deploy": "elm-app build && gh-pages -d build",
-          "start": "elm-app start"
+          "start": "elm-app start",
+          "build": "elm-app build",
+          "test": "elm-app test",
+          "format": "elm-format src/ --yes"
      }
 }
