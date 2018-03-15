@@ -1,99 +1,56 @@
-body {
-  font-family: 'Source Sans Pro', 'Trebuchet MS', 'Lucida Grande', 'Bitstream Vera Sans', 'Helvetica Neue', sans-serif;
-  font-size: 15px;
-  margin: 0;
-  text-align: center;
-  color: #293c4b;
-}
-
-img {
-  max-width: 50px;
-}
-
-.app {
+.timeline {
   display: flex;
-  flex-flow: column;
-  align-content: start;
-  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;  
+  margin: 10px;
 }
-
-.header {
-    margin: 0.5em;
-    font-size: 2em;
-    align-self: center;
+.card-event.mdl-card {
+  flex: 1 1 auto;
+  height: 10rem;
+  width: 12rem;
+  background: white;
+  margin: 10px;
 }
-
-.event-list {
-    font-size: 1em;
-    text-align: left;
-}
-
-.event-item {
+.card-event > .mdl-card__supporting-text {
   display: flex;
-  flex-flow: row;
-  align-content: start;
-  align-items: center;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  padding: 10px 10px 0 10px;
+  background-size: 3rem;
+  background-repeat: no-repeat;
+  background-clip: padding-box;
+  background-position: right 0.7rem bottom 1.6rem;
 }
-
-.event-avatar {
-    min-width: 50px;
-    flex: initial;
+.card-event > .mdl-card__actions {
+  display: flex;
+  justify-content: center;
+  background-color: white;
+  color: black;
+  border-top: solid 1px rgb(63,81,181);
 }
-
-.event-actor {
-  flex: none;
-  padding: 0 0.5em 0 0.5em;
+.card-event-datetime {
+  color: gray;          
 }
-
-.event-repo {
-  flex: 6 1 100%;
-  padding: 0 0.5em 0 0.5em;
+.card-event-repo {
+  color: black;
+  font-weight: bold;
+  font-size: 1.1rem;
+  padding-top: 0.5rem;
+  flex: 2 1 3rem;
 }
-
-.event-datetime {
-  flex: none;
-  text-align: center;
-  padding: 0 0.5em 0 0.5em;
+.card-event-actor {
+  font-size: 0.8rem;
+  color: gray;
+  padding-bottom: 2px;
+  align-self: flex-end;
 }
-
-.event-date {
-  flex: none;
-  padding-left: 0.3em;  
+.card-event-type {
+  font-size: 1rem;
+  font-weight: bold;
+  color: rgb(63,81,181);
 }
-
-.event-type {
-  flex: none;
-  padding: 0 0.5em 0 0.5em;
-}
-
-.event-ReleaseEvent {
-    background-color: lightGreen;
-}
-
-.event-PullRequestEvent {
-    background-color: orange;
-}
-
-.event-CreateEvent {
-    background-color: lightGray;
-}
-
-.event-PushEvent {
-    background-color: lightYellow;
-}
-
-@media all and (max-width: 800px) {
-
-  body {
-    font-size: 12px;
-  }
-
-  .event-actor {
-    display: none;
-  }
-
-  .event-date {
-    display: none;
-  } 
-
+.card-event-time {
+  padding-right: 0.4rem;
 }

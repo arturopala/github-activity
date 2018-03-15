@@ -1,7 +1,8 @@
 module Routing exposing (..)
 
 import Navigation exposing (Location)
-import Model exposing (GithubEventSource(..), Route(..))
+import Main.Model exposing (Route(..))
+import Github.Model exposing (GithubEventSource(..))
 import UrlParser exposing (..)
 
 

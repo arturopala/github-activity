@@ -1,27 +1,6 @@
-module Model exposing (..)
+module Github.Model exposing (..)
 
-import Http
 import Time.DateTime as DateTime
-
-
-type alias Model =
-    { route : Route
-    , eventStream : GithubEventStream
-    }
-
-
-type Route
-    = EventsRoute GithubEventSource
-    | NotFoundRoute
-
-
-type alias GithubEventStream =
-    { source : GithubEventSource
-    , events : List GithubEvent
-    , interval : Int
-    , etag : String
-    , error : Maybe Http.Error
-    }
 
 
 type alias GithubEventsResponse =

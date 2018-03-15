@@ -1,60 +1,9 @@
-module Github exposing (..)
+module Github.Decode exposing (..)
 
-import Http
 import Json.Decode exposing (int, string, float, Decoder, decodeString, list, nullable, map, fail, andThen, field)
 import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded)
-import Model exposing (..)
-import Message exposing (..)
+import Github.Model exposing (..)
 import Time.DateTime as DateTime
-import Dict exposing (Dict)
-
-
-readGithubEvents : GithubEventStream -> Cmd Msg
-readGithubEvents stream =
-    case stream.source of
-        GithubUser user ->
-            Http.send GotEvents (getEventsWithIntervalRequest ("users/" ++ user) stream.etag)
-
-
-getEventsWithIntervalRequest : String -> String -> Http.Request GithubEventsResponse
-getEventsWithIntervalRequest path etag =
-    Http.request
-        { method = "GET"
-        , headers =
-            [ Http.header "If-None-Match" etag
-            ]
-        , url = ("https://api.github.com/" ++ path ++ "/events")
-        , body = Http.emptyBody
-        , expect = Http.expectStringResponse getEventsResponse
-        , timeout = Nothing
-        , withCredentials = False
-        }
-
-
-getEventsResponse : Http.Response String -> Result String GithubEventsResponse
-getEventsResponse response =
-    decodeString decodeEvents response.body
-        |> Result.map
-            (\events ->
-                GithubEventsResponse events
-                    (getPollInterval response.headers)
-                    (getETag response.headers)
-            )
-
-
-getPollInterval : Dict String String -> Int
-getPollInterval headers =
-    headers
-        |> Dict.get "x-poll-interval"
-        |> Maybe.andThen (String.toInt >> Result.toMaybe)
-        |> Maybe.withDefault 120
-
-
-getETag : Dict String String -> String
-getETag headers =
-    headers
-        |> Dict.get "etag"
-        |> Maybe.withDefault ""
 
 
 decodeEvents : Decoder (List GithubEvent)
