@@ -1,4 +1,4 @@
-module Github.APIv3 exposing (readGithubEvents)
+module Github.APIv3 exposing (readGithubEvents, readGithubEventsNextPage)
 
 import Http
 import Dict exposing (Dict)
@@ -8,21 +8,31 @@ import Github.Decode exposing (decodeEvents)
 import Github.Model exposing (..)
 
 
+githubApiUrl : String
+githubApiUrl =
+    "https://api.github.com"
+
+
 readGithubEvents : GithubEventSource -> String -> Cmd Msg
 readGithubEvents source etag =
     case source of
         GithubUser user ->
-            Http.send GotEvents (getEventsWithIntervalRequest ("users/" ++ user) etag)
+            Http.send GotEvents (getEventsWithIntervalRequest (githubApiUrl ++ "/users/" ++ user ++ "/events") etag)
+
+
+readGithubEventsNextPage : String -> Cmd Msg
+readGithubEventsNextPage url =
+    Http.send GotEvents (getEventsWithIntervalRequest url "")
 
 
 getEventsWithIntervalRequest : String -> String -> Http.Request GithubEventsResponse
-getEventsWithIntervalRequest path etag =
+getEventsWithIntervalRequest url etag =
     Http.request
         { method = "GET"
         , headers =
             [ Http.header "If-None-Match" etag
             ]
-        , url = ("https://api.github.com/" ++ path ++ "/events")
+        , url = url
         , body = Http.emptyBody
         , expect = Http.expectStringResponse getEventsResponse
         , timeout = Nothing
@@ -38,6 +48,7 @@ getEventsResponse response =
                 GithubEventsResponse events
                     (getPollInterval response.headers)
                     (getETag response.headers)
+                    (getLinks response.headers)
             )
 
 
@@ -54,3 +65,20 @@ getETag headers =
     headers
         |> Dict.get "etag"
         |> Maybe.withDefault ""
+
+
+getLinks : Dict String String -> Dict String String
+getLinks headers =
+    headers
+        |> Dict.get "link"
+        |> Maybe.withDefault ""
+        |> String.split ","
+        |> List.map (String.split ";")
+        |> List.map
+            (\s ->
+                ( s |> List.head |> Maybe.withDefault "<>" |> String.trim |> String.slice 1 -1
+                , s |> List.tail |> Maybe.andThen List.head |> Maybe.withDefault "rel=\"link\""  |> String.trim |> String.slice 5 -1
+                )
+            )
+        |> List.map (\t -> ( Tuple.second t, Tuple.first t ))
+        |> Dict.fromList

@@ -1,5 +1,5 @@
 {
-     "homepage": "https://arturopala.github.io/",
+     "homepage": "https://arturopala.github.io/ddcw-hackathon",
      "devDependencies": {
           "create-elm-app": "^1.10.3",
           "gh-pages": "^1.1.0",

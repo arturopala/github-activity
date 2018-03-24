@@ -1,12 +1,14 @@
 module Github.Model exposing (..)
 
 import Time.DateTime as DateTime
+import Dict exposing (Dict)
 
 
 type alias GithubEventsResponse =
     { events : List GithubEvent
     , interval : Int
     , etag : String
+    , links : Dict String String
     }
 
 

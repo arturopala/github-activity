@@ -1,15 +1,19 @@
 module Routing exposing (..)
 
 import Navigation exposing (Location)
-import Main.Model exposing (Route(..))
-import Github.Model exposing (GithubEventSource(..))
 import UrlParser exposing (..)
+import Github.Model exposing (GithubEventSource(..))
+import EventStream.Model exposing (defaultEventSource)
+
+type Route
+    = EventsRoute GithubEventSource
+    | NotFoundRoute
 
 
 matchers : Parser (Route -> a) a
 matchers =
     oneOf
-        [ top |> map (GithubUser "hmrc") |> map EventsRoute
+        [ top |> map defaultEventSource |> map EventsRoute
         , s "events" </> s "users" </> string |> map GithubUser |> map EventsRoute
         ]
 

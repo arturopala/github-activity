@@ -4,22 +4,22 @@ import Http
 import Time.DateTime as DateTime
 import Html exposing (Html, text, div, img, span, section, main_, header)
 import Html.Attributes exposing (..)
-import Main.Message exposing (..)
-import Main.Model exposing (EventStream)
+import EventStream.Message exposing (..)
+import Model exposing (Model)
 import Github.Model exposing (..)
 
 
-view : EventStream -> Html Msg
-view eventStream =
+view : Model -> Html Msg
+view model =
     section [ class "mdl-layout mdl-js-layout" ]
         [ header [ class "mdl-layout__header" ]
             [ div [ class "mdl-layout__header-row" ]
                 [ span [ class "mdl-layout__title" ]
-                    [ text ("What's going on " ++ sourceTitle (eventStream.source)) ]
+                    [ text ("What's going on " ++ sourceTitle (model.eventStream.source)) ]
                 ]
             ]
-        , section [ class "timeline-error" ] [ viewError eventStream.error ]
-        , main_ [ class "timeline mdl-layout__content" ] (List.map viewEvent eventStream.events)
+        , section [ class "timeline-error" ] [ viewError model.eventStream.error ]
+        , main_ [ class "timeline mdl-layout__content" ] (List.map viewEvent model.eventStream.events)
         ]
 
 

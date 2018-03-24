@@ -1,23 +1,29 @@
 module Main exposing (main)
 
 import Navigation exposing (Location, modifyUrl)
-import Routing
-import Time
-import Task
-import Process
-import Main.Message exposing (..)
-import Main.Model exposing (..)
-import Main.View
-import Main.Update
-import Github.Model exposing (GithubEventSource(..))
+import Routing exposing (Route(..))
+import Util exposing (wrapCmdIn, wrapModelIn, wrapMsgIn)
+import Html exposing (Html)
+import Model exposing (..)
+import EventStream.Message
+import EventStream.Model as EventStream exposing (defaultEventSource)
+import EventStream.Update
+import Timeline.View
+import Monocle.Lens exposing (Lens, tuple3)
+
+
+type Msg
+    = NoOp
+    | OnLocationChange Location
+    | Timeline EventStream.Message.Msg
 
 
 main : Program Never Model Msg
 main =
     Navigation.program OnLocationChange
-        { view = Main.View.view
+        { view = view
         , init = init
-        , update = Main.Update.update
+        , update = update
         , subscriptions = subscriptions
         }
 
@@ -33,21 +39,44 @@ init location =
         route =
             Routing.parseLocation location
 
-        source =
-            case route of
-                EventsRoute source ->
-                    source
+        (eventStream,cmd) =
+            EventStream.Update.init route
+            |> wrapCmdIn Timeline
 
-                _ ->
-                    GithubUser defaultUser
     in
-        { route = route
-        , eventStream =
-            { source = source
-            , events = []
-            , interval = 60
-            , etag = ""
-            , error = Nothing
-            }
-        }
-            ! [ modifyUrl (Routing.eventsSourceUrl source) ]
+       Model route eventStream ! [cmd]
+
+
+route : Route -> Model -> ( Model, Cmd Msg )
+route route model =
+    case route of
+        EventsRoute _ ->
+            EventStream.Update.route route model.eventStream
+                |> wrapModelIn eventStreamLens model
+                |> wrapCmdIn Timeline
+
+        NotFoundRoute ->
+            model ! [ modifyUrl (Routing.eventsSourceUrl defaultEventSource) ]
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        OnLocationChange location ->
+            route (Routing.parseLocation location) model
+
+        Timeline msg ->
+            EventStream.Update.update msg model.eventStream
+                |> wrapModelIn eventStreamLens model
+                |> wrapCmdIn Timeline
+
+        _ ->
+            ( model, Cmd.none )
+
+
+
+view : Model -> Html Msg
+view model =
+    Timeline.View.view model
+        |> wrapMsgIn Timeline
+
