@@ -77,7 +77,7 @@ getLinks headers =
         |> List.map
             (\s ->
                 ( s |> List.head |> Maybe.withDefault "<>" |> String.trim |> String.slice 1 -1
-                , s |> List.tail |> Maybe.andThen List.head |> Maybe.withDefault "rel=\"link\""  |> String.trim |> String.slice 5 -1
+                , s |> List.tail |> Maybe.andThen List.head |> Maybe.withDefault "rel=\"link\"" |> String.trim |> String.slice 5 -1
                 )
             )
         |> List.map (\t -> ( Tuple.second t, Tuple.first t ))

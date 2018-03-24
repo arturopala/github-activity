@@ -39,12 +39,11 @@ init location =
         route =
             Routing.parseLocation location
 
-        (eventStream,cmd) =
+        ( eventStream, cmd ) =
             EventStream.Update.init route
-            |> wrapCmdIn Timeline
-
+                |> wrapCmdIn Timeline
     in
-       Model route eventStream ! [cmd]
+        Model route eventStream ! [ cmd ]
 
 
 route : Route -> Model -> ( Model, Cmd Msg )
@@ -74,9 +73,7 @@ update msg model =
             ( model, Cmd.none )
 
 
-
 view : Model -> Html Msg
 view model =
     Timeline.View.view model
         |> wrapMsgIn Timeline
-

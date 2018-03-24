@@ -12,7 +12,7 @@ import Github.Model exposing (GithubEventSource(..), GithubEventsResponse)
 import Github.Message
 
 
-init : Route -> ( Model, Cmd Msg)
+init : Route -> ( Model, Cmd Msg )
 init route =
     let
         source =
@@ -24,12 +24,12 @@ init route =
                     defaultEventSource
     in
         { source = source
-          , events = []
-          , interval = 60
-          , etag = ""
-          , error = Nothing
+        , events = []
+        , interval = 60
+        , etag = ""
+        , error = Nothing
         }
-        ! [ modifyUrl (Routing.eventsSourceUrl source) ]
+            ! [ modifyUrl (Routing.eventsSourceUrl source) ]
 
 
 route : Route -> Model -> ( Model, Cmd Msg )
@@ -38,10 +38,10 @@ route route eventStream =
         EventsRoute source ->
             { eventStream
                 | source = source
-                  , events = []
-                  , interval = eventStream.interval
-                  , etag = ""
-                  , error = Nothing
+                , events = []
+                , interval = eventStream.interval
+                , etag = ""
+                , error = Nothing
             }
                 ! [ delaySeconds 0 ReadEvents ]
 
@@ -75,7 +75,8 @@ update msg eventStream =
 
         GithubResponseEventsNextPage (Github.Message.GotEvents (Ok response)) ->
             (eventStream
-                |> eventsLens.set (eventStream.events ++ response.events))
+                |> eventsLens.set (eventStream.events ++ response.events)
+            )
                 ! [ readEventsNextPage response ]
 
         GithubResponseEventsNextPage (Github.Message.GotEvents (Err error)) ->
@@ -87,20 +88,20 @@ update msg eventStream =
 
 handleHttpError : Http.Error -> Model -> ( Model, Cmd Msg )
 handleHttpError error eventStream =
-        case error of
-            Http.BadStatus httpResponse ->
-                case httpResponse.status.code of
-                    304 ->
-                        eventStream ! [ delaySeconds eventStream.interval ReadEvents ]
+    case error of
+        Http.BadStatus httpResponse ->
+            case httpResponse.status.code of
+                304 ->
+                    eventStream ! [ delaySeconds eventStream.interval ReadEvents ]
 
-                    404 ->
-                        errorLens.set (Just error) eventStream ! [ Cmd.none ]
+                404 ->
+                    errorLens.set (Just error) eventStream ! [ Cmd.none ]
 
-                    _ ->
-                        errorLens.set (Just error) eventStream ! [ Cmd.none ]
+                _ ->
+                    errorLens.set (Just error) eventStream ! [ Cmd.none ]
 
-            _ ->
-                errorLens.set (Just error) eventStream ! [ Cmd.none ]
+        _ ->
+            errorLens.set (Just error) eventStream ! [ Cmd.none ]
 
 
 setResponse : GithubEventsResponse -> Model -> Model

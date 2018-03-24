@@ -19,8 +19,8 @@ wrapCmdIn f ( m, cmd ) =
 
 
 wrapModelIn : Lens a b -> a -> ( b, c ) -> ( a, c )
-wrapModelIn lens a (b, c ) =
-    ( lens.set b a, c)
+wrapModelIn lens a ( b, c ) =
+    ( lens.set b a, c )
 
 
 wrapMsgIn : (a -> b) -> Html a -> Html b

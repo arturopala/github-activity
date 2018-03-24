@@ -5,6 +5,7 @@ import UrlParser exposing (..)
 import Github.Model exposing (GithubEventSource(..))
 import EventStream.Model exposing (defaultEventSource)
 
+
 type Route
     = EventsRoute GithubEventSource
     | NotFoundRoute
