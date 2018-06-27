@@ -1,6 +1,7 @@
 {
     "version": "1.0.0",
     "summary": "Github activity dashboard",
+    "homepage": "https://arturopala.github.io/ddcw-hackathon",
     "repository": "https://github.com/arturopala/ddcw-hackaton.git",
     "license": "BSD3",
     "source-directories": [
