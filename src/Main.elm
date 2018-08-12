@@ -5,13 +5,12 @@ import Routing exposing (Route(..))
 import Util exposing (wrapCmdIn, wrapModelIn, wrapMsgIn)
 import Html exposing (Html)
 import Model exposing (..)
-import EventStream.Message
-import EventStream.Model as EventStream exposing (defaultEventSource)
+import EventStream.Model as EventStream exposing (defaultEventSource, initialEventStream)
 import EventStream.Update
 import Timeline.View
-import Monocle.Lens exposing (Lens, tuple3)
 import View
 import Message exposing (Msg(..))
+import Debug exposing(log)
 
 
 main : Program Never Model Msg
@@ -32,26 +31,33 @@ subscriptions model =
 init : Location -> ( Model, Cmd Msg )
 init location =
     let
-        route =
+        initialRoute =
             Routing.parseLocation location
 
-        ( eventStream, cmd ) =
-            EventStream.Update.init route
-                |> wrapCmdIn Timeline
+        initialModel = Model initialRoute initialEventStream Unauthenticated
+
+        (model, cmd) = route initialRoute initialModel
     in
-        Model route eventStream Unauthenticated ! [ cmd ]
+        model ! [ cmd ]
 
 
 route : Route -> Model -> ( Model, Cmd Msg )
 route route model =
     case route of
-        EventsRoute _ ->
-            EventStream.Update.route route model.eventStream
+        StartRoute maybeCode ->
+            case maybeCode of
+                Nothing ->
+                    model ! [ Cmd.none ]
+                Just code ->
+                    model ! [ modifyUrl Routing.rootUrl ]
+
+        EventsRoute source ->
+            EventStream.Update.readFrom source model.eventStream
                 |> wrapModelIn eventStreamLens model
                 |> wrapCmdIn Timeline
 
         NotFoundRoute ->
-            model ! [ modifyUrl (Routing.eventsSourceUrl defaultEventSource) ]
+            model ! [ modifyUrl Routing.rootUrl ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -75,5 +81,5 @@ view model =
         Unauthenticated ->
             View.view model
         Token token ->
-            Timeline.View.view model
+            Timeline.View.view model.eventStream
             |> wrapMsgIn Timeline

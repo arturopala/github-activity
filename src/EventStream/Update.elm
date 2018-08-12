@@ -1,4 +1,4 @@
-module EventStream.Update exposing (init, update, route)
+module EventStream.Update exposing (update, readFrom)
 
 import Http
 import Dict
@@ -12,30 +12,8 @@ import Github.Model exposing (GithubEventSource(..), GithubEventsResponse)
 import Github.Message
 
 
-init : Route -> ( Model, Cmd Msg )
-init route =
-    let
-        source =
-            case route of
-                EventsRoute source ->
-                    source
-
-                _ ->
-                    defaultEventSource
-    in
-        { source = source
-        , events = []
-        , interval = 60
-        , etag = ""
-        , error = Nothing
-        }
-            ! [ modifyUrl (Routing.eventsSourceUrl source) ]
-
-
-route : Route -> Model -> ( Model, Cmd Msg )
-route route eventStream =
-    case route of
-        EventsRoute source ->
+readFrom : GithubEventSource -> Model -> ( Model, Cmd Msg )
+readFrom source eventStream =
             { eventStream
                 | source = source
                 , events = []
@@ -44,9 +22,6 @@ route route eventStream =
                 , error = Nothing
             }
                 ! [ delaySeconds 0 ReadEvents ]
-
-        _ ->
-            ( eventStream, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )

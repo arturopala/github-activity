@@ -8,13 +8,14 @@ import EventStream.Model exposing (defaultEventSource)
 
 type Route
     = EventsRoute GithubEventSource
+    | StartRoute (Maybe String)
     | NotFoundRoute
 
 
 matchers : Parser (Route -> a) a
 matchers =
     oneOf
-        [ top |> map defaultEventSource |> map EventsRoute
+        [ top <?> stringParam "code" |> map StartRoute
         , s "events" </> s "users" </> string |> map GithubUser |> map EventsRoute
         ]
 
@@ -29,8 +30,14 @@ parseLocation location =
             NotFoundRoute
 
 
+
+rootUrl : String
+rootUrl = "/"
+
 eventsSourceUrl : GithubEventSource -> String
 eventsSourceUrl source =
     case source of
+        None ->
+            rootUrl
         GithubUser user ->
             "#events/users/" ++ user

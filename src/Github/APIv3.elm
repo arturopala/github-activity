@@ -16,6 +16,8 @@ githubApiUrl =
 readGithubEvents : GithubEventSource -> String -> Cmd Msg
 readGithubEvents source etag =
     case source of
+        None ->
+            Cmd.none
         GithubUser user ->
             Http.send GotEvents (getEventsWithIntervalRequest (githubApiUrl ++ "/users/" ++ user ++ "/events") etag)
 

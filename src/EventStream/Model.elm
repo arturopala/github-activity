@@ -14,6 +14,14 @@ type alias Model =
     }
 
 
+initialEventStream : Model
+initialEventStream = { source = None
+                     , events = []
+                     , interval = 60
+                     , etag = ""
+                     , error = Nothing
+                     }
+
 defaultEventSource : GithubEventSource
 defaultEventSource =
     GithubUser "hmrc"

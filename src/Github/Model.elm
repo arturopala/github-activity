@@ -13,7 +13,8 @@ type alias GithubEventsResponse =
 
 
 type GithubEventSource
-    = GithubUser String
+    = None
+    | GithubUser String
 
 
 type alias GithubEvent =
