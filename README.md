@@ -1,6 +1,6 @@
 # Github Activity Dashboard
 
-This is the dashboard visualizing stream of the events happening live in your chosen GitHub user repositories.
+The Activity dashboard visualizes stream of the events as they happen live at your chosen GitHub repository or organisation.
 
-<https://arturopala.github.io/ddcw-hackathon/>
+<https://arturopala.github.io/github-activity/>
 

@@ -10,12 +10,8 @@ import EventStream.Model as EventStream exposing (defaultEventSource)
 import EventStream.Update
 import Timeline.View
 import Monocle.Lens exposing (Lens, tuple3)
-
-
-type Msg
-    = NoOp
-    | OnLocationChange Location
-    | Timeline EventStream.Message.Msg
+import View
+import Message exposing (Msg(..))
 
 
 main : Program Never Model Msg
@@ -43,7 +39,7 @@ init location =
             EventStream.Update.init route
                 |> wrapCmdIn Timeline
     in
-        Model route eventStream ! [ cmd ]
+        Model route eventStream Unauthenticated ! [ cmd ]
 
 
 route : Route -> Model -> ( Model, Cmd Msg )
@@ -75,5 +71,9 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    Timeline.View.view model
-        |> wrapMsgIn Timeline
+    case model.authentication of
+        Unauthenticated ->
+            View.view model
+        Token token ->
+            Timeline.View.view model
+            |> wrapMsgIn Timeline
