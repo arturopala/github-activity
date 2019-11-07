@@ -1,21 +1,20 @@
-module GithubReleaseEventPayloadTests exposing (..)
+module GithubReleaseEventPayloadTests exposing (all)
 
-import Test exposing (..)
 import Expect
-import String
-import Github
+import Github.Decode
+import Github.Model
 import Json.Decode exposing (decodeString)
-import Model
+import Test exposing (..)
 
 
 all : Test
 all =
     describe "decodeReleaseEventPayload should"
-            [ test "decode valid ReleaseEvent json" <|
-                \() ->
-                    Expect.equal
-                        (decodeString Github.decodeReleaseEventPayload
-                            """{
+        [ test "decode valid ReleaseEvent json" <|
+            \() ->
+                Expect.equal
+                    (decodeString Github.Decode.decodeReleaseEventPayload
+                        """{
   "action": "published",
   "release": {
     "url": "https://api.github.com/repos/baxterthehacker/public-repo/releases/1261438",
@@ -163,10 +162,10 @@ all =
     "site_admin": false
   }
 }"""
+                    )
+                    (Ok
+                        (Github.Model.GithubReleaseEventPayload "published"
+                            (Github.Model.GithubRelease "https://api.github.com/repos/baxterthehacker/public-repo/releases/1261438" "0.0.1")
                         )
-                        (Ok
-                            (Model.GithubReleaseEventPayload "published"
-                                (Model.GithubRelease "https://api.github.com/repos/baxterthehacker/public-repo/releases/1261438" "0.0.1")
-                            )
-                        )
-            ]
+                    )
+        ]

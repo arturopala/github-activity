@@ -1,4 +1,12 @@
 import './main.css';
-import { Main } from './Main.elm';
+import { Elm } from './Main.elm';
+import * as serviceWorker from './serviceWorker';
 
-Main.embed(document.getElementById('root'));
+Elm.Main.init({
+  node: document.getElementById('root')
+});
+
+// If you want your app to work offline and load faster, you can change
+// unregister() to register() below. Note this comes with some pitfalls.
+// Learn more about service workers: https://bit.ly/CRA-PWA
+serviceWorker.unregister();

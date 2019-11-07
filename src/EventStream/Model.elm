@@ -1,26 +1,29 @@
-module EventStream.Model exposing (..)
+module EventStream.Model exposing (Model, contextEtagLens, contextTokenOpt, defaultEventSource, errorLens, etagLens, eventsLens, initialEventStream, intervalLens, sourceLens, tokenOpt)
 
-import Http exposing (Error)
 import Github.Model exposing (..)
-import Monocle.Lens exposing (Lens, tuple3)
+import Http exposing (Error)
+import Monocle.Lens as Lens exposing (..)
+import Monocle.Optional as Optional exposing (..)
 
 
 type alias Model =
     { source : GithubEventSource
     , events : List GithubEvent
     , interval : Int
-    , etag : String
+    , context : GithubContext
     , error : Maybe Http.Error
     }
 
 
 initialEventStream : Model
-initialEventStream = { source = None
-                     , events = []
-                     , interval = 60
-                     , etag = ""
-                     , error = Nothing
-                     }
+initialEventStream =
+    { source = None
+    , events = []
+    , interval = 60
+    , context = GithubContext "" Nothing
+    , error = Nothing
+    }
+
 
 defaultEventSource : GithubEventSource
 defaultEventSource =
@@ -42,9 +45,29 @@ intervalLens =
     Lens .interval (\b a -> { a | interval = b })
 
 
-etagLens : Lens Model String
+contextLens : Lens Model GithubContext
+contextLens =
+    Lens .context (\b a -> { a | context = b })
+
+
+etagLens : Lens GithubContext String
 etagLens =
     Lens .etag (\b a -> { a | etag = b })
+
+
+tokenOpt : Optional GithubContext String
+tokenOpt =
+    Optional .token (\b a -> { a | token = Just b })
+
+
+contextEtagLens : Lens Model String
+contextEtagLens =
+    Lens.compose contextLens etagLens
+
+
+contextTokenOpt : Optional Model String
+contextTokenOpt =
+    Optional.compose (fromLens contextLens) tokenOpt
 
 
 errorLens : Lens Model (Maybe Http.Error)

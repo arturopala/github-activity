@@ -1,82 +1,87 @@
-module EventStream.Update exposing (update, readFrom)
+module EventStream.Update exposing (readFrom, update)
 
-import Http
 import Dict
-import Util exposing (..)
-import Navigation exposing (modifyUrl)
-import Routing exposing (Route(..))
 import EventStream.Message exposing (..)
 import EventStream.Model exposing (..)
 import Github.APIv3 exposing (readGithubEvents, readGithubEventsNextPage)
-import Github.Model exposing (GithubEventSource(..), GithubEventsResponse)
 import Github.Message
+import Github.Model exposing (GithubContext, GithubEventSource(..), GithubEventsResponse)
+import Http
+import Util exposing (..)
 
 
 readFrom : GithubEventSource -> Model -> ( Model, Cmd Msg )
 readFrom source eventStream =
-            { eventStream
-                | source = source
-                , events = []
-                , interval = eventStream.interval
-                , etag = ""
-                , error = Nothing
-            }
-                ! [ delaySeconds 0 ReadEvents ]
+    ( { eventStream
+        | source = source
+        , events = []
+        , interval = eventStream.interval
+        , context = GithubContext "" Nothing
+        , error = Nothing
+      }
+    , Cmd.batch [ delaySeconds 0 ReadEvents ]
+    )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg eventStream =
     case msg of
         ReadEvents ->
-            eventStream
-                ! [ readGithubEvents eventStream.source eventStream.etag
-                        |> Cmd.map GithubResponseEvents
-                  ]
+            ( eventStream
+            , Cmd.batch
+                [ readGithubEvents eventStream.source eventStream.context
+                    |> Cmd.map GithubResponseEvents
+                ]
+            )
 
         GithubResponseEvents (Github.Message.GotEvents (Ok response)) ->
-            setResponse response eventStream
-                ! [ delaySeconds response.interval ReadEvents
-                  , readEventsNextPage response
-                  ]
+            ( setResponse response eventStream
+            , Cmd.batch
+                [ delaySeconds response.interval ReadEvents
+                , readEventsNextPage response
+                ]
+            )
 
         GithubResponseEvents (Github.Message.GotEvents (Err error)) ->
             handleHttpError error eventStream
 
         ReadEventsNextPage url ->
-            eventStream
-                ! [ readGithubEventsNextPage url
-                        |> Cmd.map GithubResponseEventsNextPage
-                  ]
+            ( eventStream
+            , Cmd.batch
+                [ readGithubEventsNextPage url eventStream.context
+                    |> Cmd.map GithubResponseEventsNextPage
+                ]
+            )
 
         GithubResponseEventsNextPage (Github.Message.GotEvents (Ok response)) ->
-            (eventStream
+            ( eventStream
                 |> eventsLens.set (eventStream.events ++ response.events)
+            , Cmd.batch [ readEventsNextPage response ]
             )
-                ! [ readEventsNextPage response ]
 
         GithubResponseEventsNextPage (Github.Message.GotEvents (Err error)) ->
-            errorLens.set (Just error) eventStream ! [ Cmd.none ]
+            ( errorLens.set (Just error) eventStream, Cmd.none )
 
         NoOp ->
-            eventStream ! [ Cmd.none ]
+            ( eventStream, Cmd.none )
 
 
 handleHttpError : Http.Error -> Model -> ( Model, Cmd Msg )
 handleHttpError error eventStream =
     case error of
-        Http.BadStatus httpResponse ->
-            case httpResponse.status.code of
+        Http.BadStatus status ->
+            case status of
                 304 ->
-                    eventStream ! [ delaySeconds eventStream.interval ReadEvents ]
+                    ( eventStream, Cmd.batch [ delaySeconds eventStream.interval ReadEvents ] )
 
                 404 ->
-                    errorLens.set (Just error) eventStream ! [ Cmd.none ]
+                    ( errorLens.set (Just error) eventStream, Cmd.none )
 
                 _ ->
-                    errorLens.set (Just error) eventStream ! [ Cmd.none ]
+                    ( errorLens.set (Just error) eventStream, Cmd.none )
 
         _ ->
-            errorLens.set (Just error) eventStream ! [ Cmd.none ]
+            ( errorLens.set (Just error) eventStream, Cmd.none )
 
 
 setResponse : GithubEventsResponse -> Model -> Model
@@ -84,7 +89,7 @@ setResponse response eventStream =
     eventStream
         |> eventsLens.set (eventStream.events ++ response.events)
         |> intervalLens.set response.interval
-        |> etagLens.set response.etag
+        |> contextEtagLens.set response.etag
         |> errorLens.set Nothing
 
 

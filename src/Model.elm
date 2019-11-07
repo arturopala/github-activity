@@ -1,18 +1,29 @@
-module Model exposing (..)
+module Model exposing (Authorization(..), Mode(..), Model, eventStreamLens, eventStreamSourceLens, modeLens, routeLens)
 
-import Monocle.Lens exposing (Lens, tuple3)
+import Browser.Navigation exposing (Key)
+import EventStream.Model as EventStream exposing (Model, sourceLens)
+import Github.Model
+import Monocle.Lens exposing (Lens, compose)
 import Routing exposing (Route(..))
-import EventStream.Model as EventStream exposing (Model)
-import EventStream.Model exposing (defaultEventSource)
+
 
 type alias Model =
-    { route : Route
+    { title : String
+    , key : Key
+    , mode : Mode
+    , route : Route
     , eventStream : EventStream.Model
-    , authentication: Authentication
+    , authorization : Authorization
     }
 
 
-type Authentication = Unauthenticated
+type Mode
+    = Welcome
+    | Timeline
+
+
+type Authorization
+    = Unauthorized
     | Token String
 
 
@@ -21,6 +32,16 @@ eventStreamLens =
     Lens .eventStream (\b a -> { a | eventStream = b })
 
 
+modeLens : Lens Model Mode
+modeLens =
+    Lens .mode (\b a -> { a | mode = b })
+
+
 routeLens : Lens Model Route
 routeLens =
     Lens .route (\b a -> { a | route = b })
+
+
+eventStreamSourceLens : Lens Model Github.Model.GithubEventSource
+eventStreamSourceLens =
+    compose eventStreamLens sourceLens

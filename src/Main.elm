@@ -1,25 +1,29 @@
 module Main exposing (main)
 
-import Navigation exposing (Location, modifyUrl)
-import Routing exposing (Route(..))
-import Util exposing (wrapCmdIn, wrapModelIn, wrapMsgIn)
-import Html exposing (Html)
-import Model exposing (..)
-import EventStream.Model as EventStream exposing (defaultEventSource, initialEventStream)
+import Browser exposing (..)
+import Browser.Navigation as Nav
+import EventStream.Message
+import EventStream.Model exposing (contextTokenOpt, initialEventStream)
 import EventStream.Update
-import Timeline.View
-import View
+import Github.OAuthProxy exposing (requestAccessToken)
 import Message exposing (Msg(..))
-import Debug exposing(log)
+import Model exposing (..)
+import Routing exposing (Route(..))
+import Timeline.View
+import Url exposing (Url)
+import Util exposing (modifyModel, withCmd, wrapCmd, wrapModel, wrapMsg)
+import View
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Navigation.program OnLocationChange
+    Browser.application
         { view = view
         , init = init
         , update = update
         , subscriptions = subscriptions
+        , onUrlRequest = OnUrlRequest
+        , onUrlChange = OnUrlChange
         }
 
 
@@ -28,58 +32,117 @@ subscriptions model =
     Sub.none
 
 
-init : Location -> ( Model, Cmd Msg )
-init location =
+title : String
+title =
+    "GitHub Activity Dashboard"
+
+
+init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
+init flags url key =
     let
         initialRoute =
-            Routing.parseLocation location
+            Routing.parseLocation url
 
-        initialModel = Model initialRoute initialEventStream Unauthenticated
+        initialModel =
+            Model title key Welcome initialRoute initialEventStream Unauthorized
 
-        (model, cmd) = route initialRoute initialModel
+        ( model, cmd ) =
+            route initialRoute initialModel
     in
-        model ! [ cmd ]
+    ( model, cmd )
 
 
 route : Route -> Model -> ( Model, Cmd Msg )
-route route model =
-    case route of
-        StartRoute maybeCode ->
-            case maybeCode of
-                Nothing ->
-                    model ! [ Cmd.none ]
-                Just code ->
-                    model ! [ modifyUrl Routing.rootUrl ]
+route r model =
+    case r of
+        StartRoute ->
+            let
+                mode =
+                    case model.authorization of
+                        Token _ ->
+                            Timeline
+
+                        _ ->
+                            Welcome
+            in
+            ( { model | mode = mode }, Cmd.none )
+
+        OAuthCode code ->
+            ( model, requestAccessToken code |> Cmd.map Authorized )
 
         EventsRoute source ->
-            EventStream.Update.readFrom source model.eventStream
-                |> wrapModelIn eventStreamLens model
-                |> wrapCmdIn Timeline
+            ( eventStreamSourceLens.set source model, withCmd (ShowTimeline EventStream.Message.ReadEvents) )
 
-        NotFoundRoute ->
-            model ! [ modifyUrl Routing.rootUrl ]
+        RouteNotFound ->
+            ( model, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case msg of
-        OnLocationChange location ->
+update m model =
+    case m of
+        OnUrlChange location ->
             route (Routing.parseLocation location) model
 
-        Timeline msg ->
-            EventStream.Update.update msg model.eventStream
-                |> wrapModelIn eventStreamLens model
-                |> wrapCmdIn Timeline
+        OnUrlRequest urlRequest ->
+            case urlRequest of
+                Internal url ->
+                    ( model
+                    , Nav.pushUrl model.key (Url.toString url)
+                    )
+
+                External url ->
+                    ( model
+                    , Nav.load url
+                    )
+
+        Authorized event ->
+            case event of
+                Github.OAuthProxy.OAuthToken token scope ->
+                    let
+                        mode =
+                            if model.mode == Welcome then
+                                Timeline
+
+                            else
+                                model.mode
+                    in
+                    ( { model | authorization = Token token, title = title ++ " - " ++ token, mode = mode }
+                    , Nav.pushUrl model.key "/#events/users/arturopala"
+                    )
+
+                Github.OAuthProxy.OAuthError error ->
+                    ( { model | authorization = Unauthorized, mode = Welcome }, Cmd.none )
+
+        ShowTimeline msg ->
+            case model.authorization of
+                Token token ->
+                    EventStream.Update.update msg (contextTokenOpt.set token model.eventStream)
+                        |> wrapModel eventStreamLens model
+                        |> modifyModel modeLens Timeline
+                        |> wrapCmd ShowTimeline
+
+                _ ->
+                    EventStream.Update.update msg model.eventStream
+                        |> wrapModel eventStreamLens model
+                        |> modifyModel modeLens Timeline
+                        |> wrapCmd ShowTimeline
 
         _ ->
             ( model, Cmd.none )
 
 
-view : Model -> Html Msg
+view : Model -> Browser.Document Msg
 view model =
-    case model.authentication of
-        Unauthenticated ->
-            View.view model
-        Token token ->
-            Timeline.View.view model.eventStream
-            |> wrapMsgIn Timeline
+    case model.mode of
+        Timeline ->
+            { title = model.title
+            , body =
+                [ Timeline.View.view model.eventStream
+                    |> wrapMsg ShowTimeline
+                ]
+            }
+
+        _ ->
+            { title = model.title
+            , body = [ View.view model ]
+            }

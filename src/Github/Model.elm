@@ -1,7 +1,13 @@
-module Github.Model exposing (..)
+module Github.Model exposing (GithubActor, GithubContext, GithubEvent, GithubEventPayload(..), GithubEventSource(..), GithubEventsResponse, GithubPullRequest, GithubPullRequestEventPayload, GithubRelease, GithubReleaseEventPayload, GithubRepo)
 
-import Time.DateTime as DateTime
 import Dict exposing (Dict)
+import Time exposing (Posix)
+
+
+type alias GithubContext =
+    { etag : String
+    , token : Maybe String
+    }
 
 
 type alias GithubEventsResponse =
@@ -23,7 +29,7 @@ type alias GithubEvent =
     , actor : GithubActor
     , repo : GithubRepo
     , payload : GithubEventPayload
-    , created_at : DateTime.DateTime
+    , created_at : Posix
     }
 
 

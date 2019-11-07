@@ -1,21 +1,20 @@
-module GithubPullRequestEventPayloadTests exposing (..)
+module GithubPullRequestEventPayloadTests exposing (all)
 
-import Test exposing (..)
 import Expect
-import String
-import Github
+import Github.Decode
+import Github.Model
 import Json.Decode exposing (decodeString)
-import Model
+import Test exposing (..)
 
 
 all : Test
 all =
     describe "decodePullRequestEventPayload should"
-            [ test "decode valid PullRequestEvent json" <|
-                \() ->
-                    Expect.equal
-                        (decodeString Github.decodePullRequestEventPayload
-                            """{
+        [ test "decode valid PullRequestEvent json" <|
+            \() ->
+                Expect.equal
+                    (decodeString Github.Decode.decodePullRequestEventPayload
+                        """{
  "action": "opened",
  "number": 1,
  "pull_request": {
@@ -430,11 +429,10 @@ all =
    "id": 234
  }
                                }"""
+                    )
+                    (Ok
+                        (Github.Model.GithubPullRequestEventPayload "opened"
+                            (Github.Model.GithubPullRequest "https://api.github.com/repos/baxterthehacker/public-repo/pulls/1" 34778301)
                         )
-                        (Ok
-                            (Model.GithubPullRequestEventPayload "opened"
-                                (Model.GithubPullRequest "https://api.github.com/repos/baxterthehacker/public-repo/pulls/1" 34778301)
-                            )
-                        )
-            ]
-        
+                    )
+        ]

@@ -1,11 +1,10 @@
-module GithubTests exposing (..)
+module GithubTests exposing (all)
 
-import Test exposing (..)
 import Expect
-import String
-import Github
+import Github.Decode
+import Github.Model
 import Json.Decode exposing (decodeString)
-import Model
+import Test exposing (..)
 
 
 all : Test
@@ -15,18 +14,18 @@ all =
             [ test "decode valid repo json" <|
                 \() ->
                     Expect.equal
-                        (decodeString Github.decodeRepo
+                        (decodeString Github.Decode.decodeRepo
                             """{
                                 "name":"Artur",
                                 "url":"http://foo.org",
                                 "foo":"bar"
                             }"""
                         )
-                        (Ok (Model.GithubRepo "Artur" "http://foo.org"))
+                        (Ok (Github.Model.GithubRepo "Artur" "http://foo.org"))
             , test "not decode invalid repo json" <|
                 \() ->
                     Expect.err
-                        (decodeString Github.decodeRepo
+                        (decodeString Github.Decode.decodeRepo
                             """{
                                 "neme":"Artur",
                                 "Url":"http://foo.org",
@@ -38,18 +37,18 @@ all =
             [ test "decode valid actor json" <|
                 \() ->
                     Expect.equal
-                        (decodeString Github.decodeActor
+                        (decodeString Github.Decode.decodeActor
                             """{
                                 "display_login":"foobar",
                                 "avatar_url":"http://foo.org",
                                 "foo":"bar"
                             }"""
                         )
-                        (Ok (Model.GithubActor "foobar" "http://foo.org"))
+                        (Ok (Github.Model.GithubActor "foobar" "http://foo.org"))
             , test "not decode invalid actor json" <|
                 \() ->
                     Expect.err
-                        (decodeString Github.decodeActor
+                        (decodeString Github.Decode.decodeActor
                             """{
                                 "login":"foo",
                                 "avatar":"http://foo.org",

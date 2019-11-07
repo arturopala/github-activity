@@ -1,9 +1,10 @@
-module Github.Decode exposing (..)
+module Github.Decode exposing (decodeActor, decodeDateTime, decodeEvent, decodeEventByType, decodeEvents, decodePayload, decodePullRequest, decodePullRequestEventPayload, decodeRelease, decodeReleaseEventPayload, decodeRepo)
 
-import Json.Decode exposing (int, string, float, Decoder, decodeString, list, nullable, map, fail, andThen, field)
-import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded)
 import Github.Model exposing (..)
-import Time.DateTime as DateTime
+import Iso8601 exposing (toTime)
+import Json.Decode as Decode exposing (Decoder, andThen, field, int, list, map, string)
+import Json.Decode.Pipeline exposing (required)
+import Time exposing (Posix)
 
 
 decodeEvents : Decoder (List GithubEvent)
@@ -19,7 +20,7 @@ decodeEvent =
 
 decodeEventByType : String -> Decoder GithubEvent
 decodeEventByType t =
-    decode GithubEvent
+    Decode.succeed GithubEvent
         |> required "id" string
         |> required "type" string
         |> required "actor" decodeActor
@@ -30,14 +31,14 @@ decodeEventByType t =
 
 decodeActor : Decoder GithubActor
 decodeActor =
-    decode GithubActor
+    Decode.succeed GithubActor
         |> required "display_login" string
         |> required "avatar_url" string
 
 
 decodeRepo : Decoder GithubRepo
 decodeRepo =
-    decode GithubRepo
+    Decode.succeed GithubRepo
         |> required "name" string
         |> required "url" string
 
@@ -52,37 +53,37 @@ decodePayload tag =
             map GithubReleaseEvent decodeReleaseEventPayload
 
         _ ->
-            decode GithubOtherEventPayload
+            Decode.succeed GithubOtherEventPayload
 
 
-decodeDateTime : Decoder DateTime.DateTime
+decodeDateTime : Decoder Posix
 decodeDateTime =
-    map (DateTime.fromISO8601 >> Result.withDefault DateTime.epoch) string
+    map (toTime >> Result.withDefault (Time.millisToPosix 0)) string
 
 
 decodePullRequestEventPayload : Decoder GithubPullRequestEventPayload
 decodePullRequestEventPayload =
-    decode GithubPullRequestEventPayload
+    Decode.succeed GithubPullRequestEventPayload
         |> required "action" string
         |> required "pull_request" decodePullRequest
 
 
 decodePullRequest : Decoder GithubPullRequest
 decodePullRequest =
-    decode GithubPullRequest
+    Decode.succeed GithubPullRequest
         |> required "url" string
         |> required "id" int
 
 
 decodeReleaseEventPayload : Decoder GithubReleaseEventPayload
 decodeReleaseEventPayload =
-    decode GithubReleaseEventPayload
+    Decode.succeed GithubReleaseEventPayload
         |> required "action" string
         |> required "release" decodeRelease
 
 
 decodeRelease : Decoder GithubRelease
 decodeRelease =
-    decode GithubRelease
+    Decode.succeed GithubRelease
         |> required "url" string
         |> required "tag_name" string
