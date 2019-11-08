@@ -6,34 +6,43 @@ import GitHub.Message exposing (Msg(..))
 import GitHub.Model exposing (..)
 import Http
 import Json.Decode exposing (decodeString, errorToString)
+import Url exposing (Url)
 
 
-githubApiUrl : String
+type alias ResultToMsg a =
+    Result Http.Error a -> Msg
+
+
+type alias DecodeHttpResponse a =
+    Http.Response String -> Result Http.Error a
+
+
+githubApiUrl : Url
 githubApiUrl =
-    "https://api.github.com"
+    Url Url.Https "api.github.com" Nothing "" Nothing Nothing
 
 
-readGitHubEvents : GitHubEventSource -> GitHubContext -> Cmd Msg
-readGitHubEvents source context =
+readGitHubEvents : GitHubEventSource -> String -> Maybe String -> Cmd Msg
+readGitHubEvents source etag tokenOpt =
     case source of
         None ->
             Cmd.none
 
         GitHubUser user ->
-            getEventsWithIntervalRequest (githubApiUrl ++ "/users/" ++ user ++ "/events") context
+            httpGet { githubApiUrl | path = "/users/" ++ user ++ "/events" } etag tokenOpt GotEventsChunk decodeEventsResponse
 
 
-readGitHubEventsNextPage : String -> GitHubContext -> Cmd Msg
-readGitHubEventsNextPage url context =
-    getEventsWithIntervalRequest url context
+readGitHubEventsNextPage : Url -> String -> Maybe String -> Cmd Msg
+readGitHubEventsNextPage url etag tokenOpt =
+    httpGet url etag tokenOpt GotEventsChunk decodeEventsResponse
 
 
-getEventsWithIntervalRequest : String -> GitHubContext -> Cmd Msg
-getEventsWithIntervalRequest url context =
+httpGet : Url -> String -> Maybe String -> ResultToMsg a -> DecodeHttpResponse a -> Cmd Msg
+httpGet url etag tokenOpt resultToMsg decodeHttpResponse =
     let
         headers =
-            [ Http.header "If-None-Match" context.etag ]
-                ++ (context.token
+            [ Http.header "If-None-Match" etag ]
+                ++ (tokenOpt
                         |> Maybe.map (\t -> [ Http.header "Authorization" ("token " ++ t) ])
                         |> Maybe.withDefault []
                    )
@@ -41,22 +50,22 @@ getEventsWithIntervalRequest url context =
     Http.request
         { method = "GET"
         , headers = headers
-        , url = url
+        , url = Url.toString url
         , body = Http.emptyBody
-        , expect = Http.expectStringResponse GotEvents getEventsResponse
+        , expect = Http.expectStringResponse resultToMsg decodeHttpResponse
         , timeout = Nothing
         , tracker = Nothing
         }
 
 
-getEventsResponse : Http.Response String -> Result Http.Error GitHubEventsResponse
-getEventsResponse response =
+decodeEventsResponse : Http.Response String -> Result Http.Error GitHubEventsChunk
+decodeEventsResponse response =
     case response of
         Http.GoodStatus_ metadata body ->
             decodeString decodeEvents body
                 |> Result.map
                     (\events ->
-                        GitHubEventsResponse events
+                        GitHubEventsChunk events
                             (getPollInterval metadata.headers)
                             (getETag metadata.headers)
                             (getLinks metadata.headers)

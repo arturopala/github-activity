@@ -1,8 +1,9 @@
 module GitHub.Message exposing (Msg(..))
 
-import GitHub.Model exposing (GitHubEventsResponse)
+import GitHub.Model exposing (GitHubEventsChunk, GitHubUserInfo)
 import Http
 
 
 type Msg
-    = GotEvents (Result Http.Error GitHubEventsResponse)
+    = GotEventsChunk (Result Http.Error GitHubEventsChunk)
+    | GotUserInfo (Result Http.Error GitHubUserInfo)

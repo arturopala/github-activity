@@ -3,7 +3,7 @@ module Main exposing (main)
 import Browser exposing (..)
 import Browser.Navigation as Nav
 import EventStream.Message
-import EventStream.Model exposing (contextTokenOpt, initialEventStream)
+import EventStream.Model exposing (initialEventStream)
 import EventStream.Update
 import GitHub.OAuthProxy exposing (requestAccessToken)
 import Message exposing (Msg(..))
@@ -116,13 +116,13 @@ update m model =
         ShowTimeline msg ->
             case model.authorization of
                 Token token ->
-                    EventStream.Update.update msg (contextTokenOpt.set token model.eventStream)
+                    EventStream.Update.update msg (Just token) model.eventStream
                         |> wrapModel eventStreamLens model
                         |> modifyModel modeLens Timeline
                         |> wrapCmd ShowTimeline
 
                 _ ->
-                    EventStream.Update.update msg model.eventStream
+                    EventStream.Update.update msg Nothing model.eventStream
                         |> wrapModel eventStreamLens model
                         |> modifyModel modeLens Timeline
                         |> wrapCmd ShowTimeline

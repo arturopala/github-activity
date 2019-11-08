@@ -1,16 +1,11 @@
-module GitHub.Model exposing (GitHubContext, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsResponse, GitHubPullRequestEventPayload, GitHubPullRequestLink, GitHubReleaseEventPayload, GitHubReleaseLink, GitHubRepoLink)
+module GitHub.Model exposing (GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubPullRequestEventPayload, GitHubPullRequestLink, GitHubReleaseEventPayload, GitHubReleaseLink, GitHubRepoLink, GitHubUserInfo)
 
 import Dict exposing (Dict)
 import Time exposing (Posix)
+import Url exposing (Url)
 
 
-type alias GitHubContext =
-    { etag : String
-    , token : Maybe String
-    }
-
-
-type alias GitHubEventsResponse =
+type alias GitHubEventsChunk =
     { events : List GitHubEvent
     , interval : Int
     , etag : String
@@ -72,4 +67,25 @@ type alias GitHubReleaseEventPayload =
 type alias GitHubReleaseLink =
     { url : String
     , tag_name : String
+    }
+
+
+type alias GitHubUserInfo =
+    { login : String
+    , avatar_url : Url
+    , url : Url
+    , html_url : Url
+    , organizations_url : Url
+    , repos_url : Url
+    , events_url : Url
+    , received_events_url : Url
+    , type_ : String
+    , name : String
+    , company : String
+    , location : String
+    , email : String
+    , public_repos : Int
+    , public_gists : Int
+    , followers : Int
+    , following : Int
     }

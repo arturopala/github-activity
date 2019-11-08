@@ -1,10 +1,12 @@
-module GitHub.Decode exposing (decodeActor, decodeDateTime, decodeEvent, decodeEventByType, decodeEvents, decodePayload, decodePullRequest, decodePullRequestEventPayload, decodeRelease, decodeReleaseEventPayload, decodeRepo)
+module GitHub.Decode exposing (decodeActor, decodeDateTime, decodeEvent, decodeEventByType, decodeEvents, decodeGitHubUserInfo, decodePayload, decodePullRequest, decodePullRequestEventPayload, decodeRelease, decodeReleaseEventPayload, decodeRepo)
 
 import GitHub.Model exposing (..)
 import Iso8601 exposing (toTime)
 import Json.Decode as Decode exposing (Decoder, andThen, field, int, list, map, string)
 import Json.Decode.Pipeline exposing (required)
+import Regex exposing (Regex)
 import Time exposing (Posix)
+import Url
 
 
 decodeEvents : Decoder (List GitHubEvent)
@@ -87,3 +89,45 @@ decodeRelease =
     Decode.succeed GitHubReleaseLink
         |> required "url" string
         |> required "tag_name" string
+
+
+decodeGitHubUserInfo : Decoder GitHubUserInfo
+decodeGitHubUserInfo =
+    Decode.succeed GitHubUserInfo
+        |> required "login" string
+        |> required "avatar_url" decodeUrl
+        |> required "url" decodeUrl
+        |> required "html_url" decodeUrl
+        |> required "organizations_url" decodeUrl
+        |> required "repos_url" decodeUrl
+        |> required "events_url" decodeUrl
+        |> required "received_events_url" decodeUrl
+        |> required "type" string
+        |> required "name" string
+        |> required "company" string
+        |> required "location" string
+        |> required "email" string
+        |> required "public_repos" int
+        |> required "public_gists" int
+        |> required "followers" int
+        |> required "following" int
+
+
+dummyUrl : Url.Url
+dummyUrl =
+    Url.Url Url.Http "dummy" Nothing "" Nothing Nothing
+
+
+decodeUrl : Decoder Url.Url
+decodeUrl =
+    string |> Decode.map removeUrlPathTemplates |> Decode.map Url.fromString |> Decode.map (Maybe.withDefault dummyUrl)
+
+
+urlPathTemplateRegex : Regex
+urlPathTemplateRegex =
+    Regex.fromString "\\{/\\w+?\\}" |> Maybe.withDefault Regex.never
+
+
+removeUrlPathTemplates : String -> String
+removeUrlPathTemplates url =
+    Regex.replace urlPathTemplateRegex (\_ -> "") url
