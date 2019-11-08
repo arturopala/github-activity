@@ -432,7 +432,7 @@ all =
                     )
                     (Ok
                         (GitHub.Model.GitHubPullRequestEventPayload "opened"
-                            (GitHub.Model.GitHubPullRequest "https://api.github.com/repos/baxterthehacker/public-repo/pulls/1" 34778301)
+                            (GitHub.Model.GitHubPullRequestLink "https://api.github.com/repos/baxterthehacker/public-repo/pulls/1" 34778301)
                         )
                     )
         ]

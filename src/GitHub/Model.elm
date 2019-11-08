@@ -1,4 +1,4 @@
-module GitHub.Model exposing (GitHubActor, GitHubContext, GitHubEvent, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsResponse, GitHubPullRequest, GitHubPullRequestEventPayload, GitHubRelease, GitHubReleaseEventPayload, GitHubRepo)
+module GitHub.Model exposing (GitHubContext, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsResponse, GitHubPullRequestEventPayload, GitHubPullRequestLink, GitHubReleaseEventPayload, GitHubReleaseLink, GitHubRepoLink)
 
 import Dict exposing (Dict)
 import Time exposing (Posix)
@@ -26,20 +26,20 @@ type GitHubEventSource
 type alias GitHubEvent =
     { id : String
     , eventType : String
-    , actor : GitHubActor
-    , repo : GitHubRepo
+    , actor : GitHubEventActor
+    , repo : GitHubRepoLink
     , payload : GitHubEventPayload
     , created_at : Posix
     }
 
 
-type alias GitHubActor =
+type alias GitHubEventActor =
     { display_login : String
     , avatar_url : String
     }
 
 
-type alias GitHubRepo =
+type alias GitHubRepoLink =
     { name : String
     , url : String
     }
@@ -53,11 +53,11 @@ type GitHubEventPayload
 
 type alias GitHubPullRequestEventPayload =
     { action : String
-    , pull_request : GitHubPullRequest
+    , pull_request : GitHubPullRequestLink
     }
 
 
-type alias GitHubPullRequest =
+type alias GitHubPullRequestLink =
     { url : String
     , id : Int
     }
@@ -65,11 +65,11 @@ type alias GitHubPullRequest =
 
 type alias GitHubReleaseEventPayload =
     { action : String
-    , release : GitHubRelease
+    , release : GitHubReleaseLink
     }
 
 
-type alias GitHubRelease =
+type alias GitHubReleaseLink =
     { url : String
     , tag_name : String
     }

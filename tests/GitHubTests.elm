@@ -21,7 +21,7 @@ all =
                                 "foo":"bar"
                             }"""
                         )
-                        (Ok (GitHub.Model.GitHubRepo "Artur" "http://foo.org"))
+                        (Ok (GitHub.Model.GitHubRepoLink "Artur" "http://foo.org"))
             , test "not decode invalid repo json" <|
                 \() ->
                     Expect.err
@@ -44,7 +44,7 @@ all =
                                 "foo":"bar"
                             }"""
                         )
-                        (Ok (GitHub.Model.GitHubActor "foobar" "http://foo.org"))
+                        (Ok (GitHub.Model.GitHubEventActor "foobar" "http://foo.org"))
             , test "not decode invalid actor json" <|
                 \() ->
                     Expect.err

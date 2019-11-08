@@ -29,16 +29,16 @@ decodeEventByType t =
         |> required "created_at" decodeDateTime
 
 
-decodeActor : Decoder GitHubActor
+decodeActor : Decoder GitHubEventActor
 decodeActor =
-    Decode.succeed GitHubActor
+    Decode.succeed GitHubEventActor
         |> required "display_login" string
         |> required "avatar_url" string
 
 
-decodeRepo : Decoder GitHubRepo
+decodeRepo : Decoder GitHubRepoLink
 decodeRepo =
-    Decode.succeed GitHubRepo
+    Decode.succeed GitHubRepoLink
         |> required "name" string
         |> required "url" string
 
@@ -68,9 +68,9 @@ decodePullRequestEventPayload =
         |> required "pull_request" decodePullRequest
 
 
-decodePullRequest : Decoder GitHubPullRequest
+decodePullRequest : Decoder GitHubPullRequestLink
 decodePullRequest =
-    Decode.succeed GitHubPullRequest
+    Decode.succeed GitHubPullRequestLink
         |> required "url" string
         |> required "id" int
 
@@ -82,8 +82,8 @@ decodeReleaseEventPayload =
         |> required "release" decodeRelease
 
 
-decodeRelease : Decoder GitHubRelease
+decodeRelease : Decoder GitHubReleaseLink
 decodeRelease =
-    Decode.succeed GitHubRelease
+    Decode.succeed GitHubReleaseLink
         |> required "url" string
         |> required "tag_name" string
