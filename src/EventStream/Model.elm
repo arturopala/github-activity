@@ -26,7 +26,7 @@ initialEventStream =
 
 defaultEventSource : GitHubEventSource
 defaultEventSource =
-    GitHubUser "hmrc"
+    GitHubEventSourceUser "hmrc"
 
 
 sourceLens : Lens Model GitHubEventSource

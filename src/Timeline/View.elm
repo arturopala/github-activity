@@ -143,5 +143,5 @@ sourceTitle source =
         None ->
             ""
 
-        GitHubUser user ->
+        GitHubEventSourceUser user ->
             " GitHub.com repos of " ++ user ++ "?"

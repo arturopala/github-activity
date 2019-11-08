@@ -1,21 +1,25 @@
-module GitHub.Model exposing (GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubPullRequestEventPayload, GitHubPullRequestLink, GitHubReleaseEventPayload, GitHubReleaseLink, GitHubRepoLink, GitHubUserInfo)
+module GitHub.Model exposing (GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubPullRequestEventPayload, GitHubPullRequestLink, GitHubReleaseEventPayload, GitHubReleaseLink, GitHubRepoLink, GitHubResponse, GitHubUserInfo)
 
 import Dict exposing (Dict)
 import Time exposing (Posix)
 import Url exposing (Url)
 
 
-type alias GitHubEventsChunk =
-    { events : List GitHubEvent
+type alias GitHubResponse a =
+    { content : a
     , interval : Int
     , etag : String
     , links : Dict String String
     }
 
 
+type alias GitHubEventsChunk =
+    GitHubResponse (List GitHubEvent)
+
+
 type GitHubEventSource
     = None
-    | GitHubUser String
+    | GitHubEventSourceUser String
 
 
 type alias GitHubEvent =

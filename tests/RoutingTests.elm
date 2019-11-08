@@ -34,6 +34,6 @@ all =
                             |> Maybe.map Routing.parseLocation
                             |> Maybe.withDefault Routing.RouteNotFound
                         )
-                        (Routing.EventsRoute (GitHub.Model.GitHubUser "foo"))
+                        (Routing.EventsRoute (GitHub.Model.GitHubEventSourceUser "foo"))
             ]
         ]

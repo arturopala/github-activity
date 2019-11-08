@@ -33,7 +33,7 @@ matchers : Parser (Route -> a) a
 matchers =
     oneOf
         [ top <?> Query.string "code" |> map (\c -> c |> Maybe.map OAuthCode |> Maybe.withDefault StartRoute)
-        , s "events" </> s "users" </> string |> map GitHubUser |> map EventsRoute
+        , s "events" </> s "users" </> string |> map GitHubEventSourceUser |> map EventsRoute
         ]
 
 
@@ -54,5 +54,5 @@ eventsSourceUrl source =
         None ->
             rootUrl
 
-        GitHubUser user ->
+        GitHubEventSourceUser user ->
             "#events/users/" ++ user

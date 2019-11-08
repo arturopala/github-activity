@@ -5,7 +5,7 @@ import EventStream.Message exposing (..)
 import EventStream.Model exposing (..)
 import GitHub.APIv3 exposing (readGitHubEvents, readGitHubEventsNextPage)
 import GitHub.Message
-import GitHub.Model exposing (GitHubEventSource(..), GitHubEventsChunk)
+import GitHub.Model exposing (GitHubEvent, GitHubEventSource(..), GitHubEventsChunk, GitHubResponse)
 import Http
 import Url
 import Util exposing (..)
@@ -43,7 +43,7 @@ update msg tokenOpt eventStream =
 
         GitHubResponseEventsNextPage (GitHub.Message.GotEventsChunk (Ok response)) ->
             ( eventStream
-                |> eventsLens.set (eventStream.events ++ response.events)
+                |> eventsLens.set (eventStream.events ++ response.content)
             , Cmd.batch [ readEventsNextPage response ]
             )
 
@@ -75,7 +75,7 @@ handleHttpError error eventStream =
 setResponse : GitHubEventsChunk -> Model -> Model
 setResponse response eventStream =
     eventStream
-        |> eventsLens.set (eventStream.events ++ response.events)
+        |> eventsLens.set (eventStream.events ++ response.content)
         |> intervalLens.set response.interval
         |> etagLens.set response.etag
         |> errorLens.set Nothing

@@ -1,16 +1,16 @@
 module GitHub.APIv3 exposing (readGitHubEvents, readGitHubEventsNextPage)
 
 import Dict exposing (Dict)
-import GitHub.Decode exposing (decodeEvents)
+import GitHub.Decode exposing (decodeEvents, decodeGitHubUserInfo)
 import GitHub.Message exposing (Msg(..))
 import GitHub.Model exposing (..)
 import Http
-import Json.Decode exposing (decodeString, errorToString)
+import Json.Decode exposing (Decoder, decodeString, errorToString)
 import Url exposing (Url)
 
 
 type alias ResultToMsg a =
-    Result Http.Error a -> Msg
+    Result Http.Error (GitHubResponse a) -> Msg
 
 
 type alias DecodeHttpResponse a =
@@ -28,17 +28,22 @@ readGitHubEvents source etag tokenOpt =
         None ->
             Cmd.none
 
-        GitHubUser user ->
-            httpGet { githubApiUrl | path = "/users/" ++ user ++ "/events" } etag tokenOpt GotEventsChunk decodeEventsResponse
+        GitHubEventSourceUser user ->
+            httpGet { githubApiUrl | path = "/users/" ++ user ++ "/events" } etag tokenOpt GotEventsChunk decodeEvents
 
 
 readGitHubEventsNextPage : Url -> String -> Maybe String -> Cmd Msg
 readGitHubEventsNextPage url etag tokenOpt =
-    httpGet url etag tokenOpt GotEventsChunk decodeEventsResponse
+    httpGet url etag tokenOpt GotEventsChunk decodeEvents
 
 
-httpGet : Url -> String -> Maybe String -> ResultToMsg a -> DecodeHttpResponse a -> Cmd Msg
-httpGet url etag tokenOpt resultToMsg decodeHttpResponse =
+readCurrentUserInfo : String -> Cmd Msg
+readCurrentUserInfo token =
+    httpGet { githubApiUrl | path = "/user" } "" (Just token) GotUserInfo decodeGitHubUserInfo
+
+
+httpGet : Url -> String -> Maybe String -> ResultToMsg a -> Decoder a -> Cmd Msg
+httpGet url etag tokenOpt resultToMsg decoder =
     let
         headers =
             [ Http.header "If-None-Match" etag ]
@@ -52,20 +57,20 @@ httpGet url etag tokenOpt resultToMsg decodeHttpResponse =
         , headers = headers
         , url = Url.toString url
         , body = Http.emptyBody
-        , expect = Http.expectStringResponse resultToMsg decodeHttpResponse
+        , expect = Http.expectStringResponse resultToMsg (decodeGitHubResponse decoder)
         , timeout = Nothing
         , tracker = Nothing
         }
 
 
-decodeEventsResponse : Http.Response String -> Result Http.Error GitHubEventsChunk
-decodeEventsResponse response =
+decodeGitHubResponse : Decoder a -> Http.Response String -> Result Http.Error (GitHubResponse a)
+decodeGitHubResponse decoder response =
     case response of
         Http.GoodStatus_ metadata body ->
-            decodeString decodeEvents body
+            decodeString decoder body
                 |> Result.map
-                    (\events ->
-                        GitHubEventsChunk events
+                    (\content ->
+                        GitHubResponse content
                             (getPollInterval metadata.headers)
                             (getETag metadata.headers)
                             (getLinks metadata.headers)
