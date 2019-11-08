@@ -15,7 +15,7 @@ view eventStream =
         [ header [ class "mdl-layout__header" ]
             [ div [ class "mdl-layout__header-row" ]
                 [ span [ class "mdl-layout__title" ]
-                    [ text ("What's going on " ++ sourceTitle eventStream.source) ]
+                    [ text ("GitHub Activity stream of " ++ sourceTitle eventStream.source) ]
                 ]
             ]
         , section [ class "timeline-error" ] [ viewError eventStream.error ]
@@ -140,8 +140,8 @@ viewError error =
 sourceTitle : GitHubEventSource -> String
 sourceTitle source =
     case source of
-        None ->
-            ""
+        GitHubEventSourceDefault ->
+            "all users"
 
         GitHubEventSourceUser user ->
-            " GitHub.com repos of " ++ user ++ "?"
+            "user: " ++ user

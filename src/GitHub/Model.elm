@@ -1,4 +1,4 @@
-module GitHub.Model exposing (GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubPullRequestEventPayload, GitHubPullRequestLink, GitHubReleaseEventPayload, GitHubReleaseLink, GitHubRepoLink, GitHubResponse, GitHubUserInfo)
+module GitHub.Model exposing (GitHubError, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubPullRequestEventPayload, GitHubPullRequestLink, GitHubReleaseEventPayload, GitHubReleaseLink, GitHubRepoLink, GitHubResponse, GitHubUserInfo)
 
 import Dict exposing (Dict)
 import Time exposing (Posix)
@@ -13,12 +13,17 @@ type alias GitHubResponse a =
     }
 
 
+type alias GitHubError =
+    { status : Int
+    }
+
+
 type alias GitHubEventsChunk =
     GitHubResponse (List GitHubEvent)
 
 
 type GitHubEventSource
-    = None
+    = GitHubEventSourceDefault
     | GitHubEventSourceUser String
 
 

@@ -1,4 +1,4 @@
-module EventStream.Model exposing (Model, defaultEventSource, errorLens, etagLens, eventsLens, initialEventStream, intervalLens, sourceLens)
+module EventStream.Model exposing (Model, errorLens, etagLens, eventsLens, initialEventStream, intervalLens, sourceLens)
 
 import GitHub.Model exposing (..)
 import Http exposing (Error)
@@ -16,17 +16,12 @@ type alias Model =
 
 initialEventStream : Model
 initialEventStream =
-    { source = None
+    { source = GitHubEventSourceDefault
     , events = []
     , interval = 60
     , etag = ""
     , error = Nothing
     }
-
-
-defaultEventSource : GitHubEventSource
-defaultEventSource =
-    GitHubEventSourceUser "hmrc"
 
 
 sourceLens : Lens Model GitHubEventSource

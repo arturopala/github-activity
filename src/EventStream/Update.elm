@@ -7,11 +7,12 @@ import GitHub.APIv3 exposing (readGitHubEvents, readGitHubEventsNextPage)
 import GitHub.Message
 import GitHub.Model exposing (GitHubEvent, GitHubEventSource(..), GitHubEventsChunk, GitHubResponse)
 import Http
+import Model exposing (Authorization)
 import Url
 import Util exposing (..)
 
 
-update : Msg -> Maybe String -> Model -> ( Model, Cmd Msg )
+update : Msg -> Authorization -> Model -> ( Model, Cmd Msg )
 update msg tokenOpt eventStream =
     case msg of
         ReadEvents ->
@@ -22,17 +23,6 @@ update msg tokenOpt eventStream =
                 ]
             )
 
-        GitHubResponseEvents (GitHub.Message.GotEventsChunk (Ok response)) ->
-            ( setResponse response eventStream
-            , Cmd.batch
-                [ delaySeconds response.interval ReadEvents
-                , readEventsNextPage response
-                ]
-            )
-
-        GitHubResponseEvents (GitHub.Message.GotEventsChunk (Err error)) ->
-            handleHttpError error eventStream
-
         ReadEventsNextPage url ->
             ( eventStream
             , Cmd.batch
@@ -41,13 +31,24 @@ update msg tokenOpt eventStream =
                 ]
             )
 
-        GitHubResponseEventsNextPage (GitHub.Message.GotEventsChunk (Ok response)) ->
+        GitHubResponseEvents (GitHub.Message.GitHubEventsMsg (Ok response)) ->
+            ( setResponse response eventStream
+            , Cmd.batch
+                [ delaySeconds response.interval ReadEvents
+                , readEventsNextPage response
+                ]
+            )
+
+        GitHubResponseEvents (GitHub.Message.GitHubEventsMsg (Err error)) ->
+            handleHttpError error eventStream
+
+        GitHubResponseEventsNextPage (GitHub.Message.GitHubEventsMsg (Ok response)) ->
             ( eventStream
                 |> eventsLens.set (eventStream.events ++ response.content)
             , Cmd.batch [ readEventsNextPage response ]
             )
 
-        GitHubResponseEventsNextPage (GitHub.Message.GotEventsChunk (Err error)) ->
+        GitHubResponseEventsNextPage (GitHub.Message.GitHubEventsMsg (Err error)) ->
             ( errorLens.set (Just error) eventStream, Cmd.none )
 
         _ ->

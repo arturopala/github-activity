@@ -3,15 +3,17 @@ module Main exposing (main)
 import Browser exposing (..)
 import Browser.Navigation as Nav
 import EventStream.Message
-import EventStream.Model exposing (initialEventStream)
 import EventStream.Update
+import GitHub.APIv3 exposing (readCurrentUserInfo)
+import GitHub.Message
+import GitHub.Model
 import GitHub.OAuthProxy exposing (requestAccessToken)
 import Message exposing (Msg(..))
 import Model exposing (..)
-import Routing exposing (Route(..))
+import Routing exposing (Route(..), modifyUrlGivenSource)
 import Timeline.View
 import Url exposing (Url)
-import Util exposing (modifyModel, withCmd, wrapCmd, wrapModel, wrapMsg)
+import Util exposing (modifyModel, push, wrapCmd, wrapModel, wrapMsg)
 import View
 
 
@@ -22,8 +24,8 @@ main =
         , init = init
         , update = update
         , subscriptions = subscriptions
-        , onUrlRequest = OnUrlRequest
-        , onUrlChange = OnUrlChange
+        , onUrlRequest = OnUrlRequestMsg
+        , onUrlChange = OnUrlChangeMsg
         }
 
 
@@ -32,62 +34,46 @@ subscriptions model =
     Sub.none
 
 
-title : String
-title =
-    "GitHub Activity Dashboard"
-
-
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
     let
         initialRoute =
             Routing.parseLocation url
 
-        initialModel =
-            Model title key Welcome initialRoute initialEventStream Unauthorized
-
         ( model, cmd ) =
-            route initialRoute initialModel
+            route initialRoute (initialModel key url)
     in
-    ( model, cmd )
+    ( model, Cmd.batch [ cmd ] )
 
 
 route : Route -> Model -> ( Model, Cmd Msg )
 route r model =
     case r of
         StartRoute ->
-            let
-                mode =
-                    case model.authorization of
-                        Token _ ->
-                            Timeline
-
-                        _ ->
-                            Welcome
-            in
-            ( { model | mode = mode }, Cmd.none )
+            ( { model | mode = Homepage }, Cmd.none )
 
         OAuthCode code ->
-            ( model, requestAccessToken code |> Cmd.map Authorized )
+            ( model, requestAccessToken code |> Cmd.map LoginMsg )
 
         EventsRoute source ->
-            ( eventStreamSourceLens.set source model, withCmd (ShowTimeline EventStream.Message.ReadEvents) )
+            ( eventStreamSourceLens.set source model, push (TimelineMsg EventStream.Message.ReadEvents) )
 
         RouteNotFound ->
-            ( model, Cmd.none )
+            ( { model | mode = Homepage }, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update m model =
     case m of
-        OnUrlChange location ->
-            route (Routing.parseLocation location) model
+        OnUrlChangeMsg url ->
+            route (Routing.parseLocation url) model
+                |> modifyModel urlLens url
 
-        OnUrlRequest urlRequest ->
+        OnUrlRequestMsg urlRequest ->
             case urlRequest of
                 Internal url ->
                     ( model
-                    , Nav.pushUrl model.key (Url.toString url)
+                    , pushUrl model url
                     )
 
                 External url ->
@@ -95,37 +81,21 @@ update m model =
                     , Nav.load url
                     )
 
-        Authorized event ->
-            case event of
-                GitHub.OAuthProxy.OAuthToken token scope ->
-                    let
-                        mode =
-                            if model.mode == Welcome then
-                                Timeline
+        LoginMsg (GitHub.OAuthProxy.OAuthToken token scope) ->
+            ( { model | authorization = Token token scope }
+            , readCurrentUserInfo (Token token scope) |> Cmd.map UserMsg
+            )
 
-                            else
-                                model.mode
-                    in
-                    ( { model | authorization = Token token, title = title ++ " - " ++ token, mode = mode }
-                    , Nav.pushUrl model.key "/#events/users/arturopala"
-                    )
+        UserMsg (GitHub.Message.GitHubUserMsg (Ok response)) ->
+            ( { model | user = Just response.content }
+            , pushUrl model (modifyUrlGivenSource model.url (GitHub.Model.GitHubEventSourceUser response.content.login))
+            )
 
-                GitHub.OAuthProxy.OAuthError error ->
-                    ( { model | authorization = Unauthorized, mode = Welcome }, Cmd.none )
-
-        ShowTimeline msg ->
-            case model.authorization of
-                Token token ->
-                    EventStream.Update.update msg (Just token) model.eventStream
-                        |> wrapModel eventStreamLens model
-                        |> modifyModel modeLens Timeline
-                        |> wrapCmd ShowTimeline
-
-                _ ->
-                    EventStream.Update.update msg Nothing model.eventStream
-                        |> wrapModel eventStreamLens model
-                        |> modifyModel modeLens Timeline
-                        |> wrapCmd ShowTimeline
+        TimelineMsg msg ->
+            EventStream.Update.update msg model.authorization model.eventStream
+                |> wrapModel eventStreamLens model
+                |> modifyModel modeLens Timeline
+                |> wrapCmd TimelineMsg
 
         _ ->
             ( model, Cmd.none )
@@ -138,11 +108,16 @@ view model =
             { title = model.title
             , body =
                 [ Timeline.View.view model.eventStream
-                    |> wrapMsg ShowTimeline
+                    |> wrapMsg TimelineMsg
                 ]
             }
 
-        _ ->
+        Homepage ->
             { title = model.title
             , body = [ View.view model ]
             }
+
+
+pushUrl : Model -> Url -> Cmd Msg
+pushUrl model nextUrl =
+    Nav.pushUrl model.key (Url.toString nextUrl)

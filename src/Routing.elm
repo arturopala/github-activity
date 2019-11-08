@@ -1,4 +1,4 @@
-module Routing exposing (Route(..), eventsSourceUrl, matchers, parseLocation, rootUrl)
+module Routing exposing (Route(..), matchers, modifyUrlGivenSource, parseLocation)
 
 import GitHub.Model exposing (GitHubEventSource(..))
 import Url exposing (Url)
@@ -17,7 +17,14 @@ normalize : Url -> Url
 normalize url =
     let
         path2 =
-            url.fragment |> Maybe.map (\f -> url.path ++ f) |> Maybe.withDefault url.path
+            url.fragment |> Maybe.withDefault ""
+
+        fragment2 =
+            if url.path == "" then
+                Nothing
+
+            else
+                Just url.path
     in
     { url
         | protocol = url.protocol
@@ -25,7 +32,7 @@ normalize url =
         , port_ = url.port_
         , path = path2
         , query = url.query
-        , fragment = Nothing
+        , fragment = fragment2
     }
 
 
@@ -34,6 +41,7 @@ matchers =
     oneOf
         [ top <?> Query.string "code" |> map (\c -> c |> Maybe.map OAuthCode |> Maybe.withDefault StartRoute)
         , s "events" </> s "users" </> string |> map GitHubEventSourceUser |> map EventsRoute
+        , s "events" |> map GitHubEventSourceDefault |> map EventsRoute
         ]
 
 
@@ -43,16 +51,11 @@ parseLocation location =
         |> Maybe.withDefault RouteNotFound
 
 
-rootUrl : String
-rootUrl =
-    "/"
-
-
-eventsSourceUrl : GitHubEventSource -> String
-eventsSourceUrl source =
+modifyUrlGivenSource : Url -> GitHubEventSource -> Url
+modifyUrlGivenSource url source =
     case source of
-        None ->
-            rootUrl
+        GitHubEventSourceDefault ->
+            { url | fragment = Just "events", query = Nothing }
 
         GitHubEventSourceUser user ->
-            "#events/users/" ++ user
+            { url | fragment = Just ("events/users/" ++ user), query = Nothing }

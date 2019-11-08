@@ -1,4 +1,4 @@
-module GitHub.APIv3 exposing (readGitHubEvents, readGitHubEventsNextPage)
+module GitHub.APIv3 exposing (readCurrentUserInfo, readGitHubEvents, readGitHubEventsNextPage)
 
 import Dict exposing (Dict)
 import GitHub.Decode exposing (decodeEvents, decodeGitHubUserInfo)
@@ -6,6 +6,7 @@ import GitHub.Message exposing (Msg(..))
 import GitHub.Model exposing (..)
 import Http
 import Json.Decode exposing (Decoder, decodeString, errorToString)
+import Model exposing (Authorization(..))
 import Url exposing (Url)
 
 
@@ -13,43 +14,42 @@ type alias ResultToMsg a =
     Result Http.Error (GitHubResponse a) -> Msg
 
 
-type alias DecodeHttpResponse a =
-    Http.Response String -> Result Http.Error a
-
-
 githubApiUrl : Url
 githubApiUrl =
     Url Url.Https "api.github.com" Nothing "" Nothing Nothing
 
 
-readGitHubEvents : GitHubEventSource -> String -> Maybe String -> Cmd Msg
-readGitHubEvents source etag tokenOpt =
+readGitHubEvents : GitHubEventSource -> String -> Authorization -> Cmd Msg
+readGitHubEvents source etag auth =
     case source of
-        None ->
-            Cmd.none
+        GitHubEventSourceDefault ->
+            httpGet { githubApiUrl | path = "/events" } etag auth GitHubEventsMsg decodeEvents
 
         GitHubEventSourceUser user ->
-            httpGet { githubApiUrl | path = "/users/" ++ user ++ "/events" } etag tokenOpt GotEventsChunk decodeEvents
+            httpGet { githubApiUrl | path = "/users/" ++ user ++ "/events" } etag auth GitHubEventsMsg decodeEvents
 
 
-readGitHubEventsNextPage : Url -> String -> Maybe String -> Cmd Msg
-readGitHubEventsNextPage url etag tokenOpt =
-    httpGet url etag tokenOpt GotEventsChunk decodeEvents
+readGitHubEventsNextPage : Url -> String -> Authorization -> Cmd Msg
+readGitHubEventsNextPage url etag auth =
+    httpGet url etag auth GitHubEventsMsg decodeEvents
 
 
-readCurrentUserInfo : String -> Cmd Msg
-readCurrentUserInfo token =
-    httpGet { githubApiUrl | path = "/user" } "" (Just token) GotUserInfo decodeGitHubUserInfo
+readCurrentUserInfo : Authorization -> Cmd Msg
+readCurrentUserInfo auth =
+    httpGet { githubApiUrl | path = "/user" } "" auth GitHubUserMsg decodeGitHubUserInfo
 
 
-httpGet : Url -> String -> Maybe String -> ResultToMsg a -> Decoder a -> Cmd Msg
-httpGet url etag tokenOpt resultToMsg decoder =
+httpGet : Url -> String -> Authorization -> ResultToMsg a -> Decoder a -> Cmd Msg
+httpGet url etag auth resultToMsg decoder =
     let
         headers =
             [ Http.header "If-None-Match" etag ]
-                ++ (tokenOpt
-                        |> Maybe.map (\t -> [ Http.header "Authorization" ("token " ++ t) ])
-                        |> Maybe.withDefault []
+                ++ (case auth of
+                        Token token scope ->
+                            [ Http.header "Authorization" ("token " ++ token) ]
+
+                        Unauthorized ->
+                            []
                    )
     in
     Http.request

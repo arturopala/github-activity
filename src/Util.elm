@@ -1,4 +1,4 @@
-module Util exposing (delaySeconds, modifyModel, withCmd, wrapCmd, wrapModel, wrapMsg)
+module Util exposing (delaySeconds, modifyModel, push, wrapCmd, wrapModel, wrapMsg)
 
 import Html exposing (Html)
 import Monocle.Lens exposing (Lens)
@@ -32,6 +32,6 @@ wrapMsg f html =
     html |> Html.map f
 
 
-withCmd : a -> Cmd a
-withCmd msg =
+push : a -> Cmd a
+push msg =
     Task.perform identity (Task.succeed msg)

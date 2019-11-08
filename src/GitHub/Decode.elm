@@ -3,7 +3,7 @@ module GitHub.Decode exposing (decodeActor, decodeDateTime, decodeEvent, decodeE
 import GitHub.Model exposing (..)
 import Iso8601 exposing (toTime)
 import Json.Decode as Decode exposing (Decoder, andThen, field, int, list, map, string)
-import Json.Decode.Pipeline exposing (required)
+import Json.Decode.Pipeline exposing (optional, required)
 import Regex exposing (Regex)
 import Time exposing (Posix)
 import Url
@@ -104,9 +104,9 @@ decodeGitHubUserInfo =
         |> required "received_events_url" decodeUrl
         |> required "type" string
         |> required "name" string
-        |> required "company" string
-        |> required "location" string
-        |> required "email" string
+        |> optional "company" string ""
+        |> optional "location" string ""
+        |> optional "email" string ""
         |> required "public_repos" int
         |> required "public_gists" int
         |> required "followers" int
