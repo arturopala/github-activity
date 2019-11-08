@@ -1,13 +1,13 @@
 module Routing exposing (Route(..), eventsSourceUrl, matchers, parseLocation, rootUrl)
 
-import Github.Model exposing (GithubEventSource(..))
+import GitHub.Model exposing (GitHubEventSource(..))
 import Url exposing (Url)
 import Url.Parser exposing (..)
 import Url.Parser.Query as Query
 
 
 type Route
-    = EventsRoute GithubEventSource
+    = EventsRoute GitHubEventSource
     | StartRoute
     | OAuthCode String
     | RouteNotFound
@@ -33,7 +33,7 @@ matchers : Parser (Route -> a) a
 matchers =
     oneOf
         [ top <?> Query.string "code" |> map (\c -> c |> Maybe.map OAuthCode |> Maybe.withDefault StartRoute)
-        , s "events" </> s "users" </> string |> map GithubUser |> map EventsRoute
+        , s "events" </> s "users" </> string |> map GitHubUser |> map EventsRoute
         ]
 
 
@@ -48,11 +48,11 @@ rootUrl =
     "/"
 
 
-eventsSourceUrl : GithubEventSource -> String
+eventsSourceUrl : GitHubEventSource -> String
 eventsSourceUrl source =
     case source of
         None ->
             rootUrl
 
-        GithubUser user ->
+        GitHubUser user ->
             "#events/users/" ++ user

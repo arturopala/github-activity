@@ -2,7 +2,7 @@ module EventStreamModelTests exposing (all)
 
 import EventStream.Model exposing (..)
 import Expect
-import Github.Model exposing (GithubContext)
+import GitHub.Model exposing (GitHubContext)
 import Test exposing (..)
 
 
@@ -19,6 +19,6 @@ all =
                 \() ->
                     Expect.equal
                         (contextTokenOpt.set "foo" eventStream)
-                        { eventStream | context = GithubContext "" (Just "foo") }
+                        { eventStream | context = GitHubContext "" (Just "foo") }
             ]
         ]

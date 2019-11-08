@@ -5441,33 +5441,45 @@ var $elm$core$Task$perform = F2(
 				A2($elm$core$Task$map, toMessage, task)));
 	});
 var $elm$browser$Browser$application = _Browser_application;
-var $author$project$Model$Model = F5(
-	function (title, key, route, eventStream, authorization) {
-		return {authorization: authorization, eventStream: eventStream, key: key, route: route, title: title};
+var $author$project$Model$Model = F6(
+	function (title, key, mode, route, eventStream, authorization) {
+		return {authorization: authorization, eventStream: eventStream, key: key, mode: mode, route: route, title: title};
 	});
 var $author$project$Model$Unauthorized = {$: 'Unauthorized'};
-var $author$project$Github$Model$GithubContext = F2(
+var $author$project$Model$Welcome = {$: 'Welcome'};
+var $author$project$GitHub$Model$GitHubContext = F2(
 	function (etag, token) {
 		return {etag: etag, token: token};
 	});
-var $author$project$Github$Model$None = {$: 'None'};
+var $author$project$GitHub$Model$None = {$: 'None'};
 var $author$project$EventStream$Model$initialEventStream = {
-	context: A2($author$project$Github$Model$GithubContext, '', $elm$core$Maybe$Nothing),
+	context: A2($author$project$GitHub$Model$GitHubContext, '', $elm$core$Maybe$Nothing),
 	error: $elm$core$Maybe$Nothing,
 	events: _List_Nil,
 	interval: 60,
-	source: $author$project$Github$Model$None
+	source: $author$project$GitHub$Model$None
 };
 var $author$project$Routing$RouteNotFound = {$: 'RouteNotFound'};
 var $author$project$Routing$EventsRoute = function (a) {
 	return {$: 'EventsRoute', a: a};
 };
-var $author$project$Github$Model$GithubUser = function (a) {
-	return {$: 'GithubUser', a: a};
+var $author$project$GitHub$Model$GitHubUser = function (a) {
+	return {$: 'GitHubUser', a: a};
 };
-var $author$project$Routing$StartRoute = function (a) {
-	return {$: 'StartRoute', a: a};
+var $author$project$Routing$OAuthCode = function (a) {
+	return {$: 'OAuthCode', a: a};
 };
+var $author$project$Routing$StartRoute = {$: 'StartRoute'};
+var $elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return $elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
 var $elm$url$Url$Parser$Parser = function (a) {
 	return {$: 'Parser', a: a};
 };
@@ -5714,25 +5726,44 @@ var $author$project$Routing$matchers = $elm$url$Url$Parser$oneOf(
 		[
 			A2(
 			$elm$url$Url$Parser$map,
+			function (c) {
+				return A2(
+					$elm$core$Maybe$withDefault,
+					$author$project$Routing$StartRoute,
+					A2($elm$core$Maybe$map, $author$project$Routing$OAuthCode, c));
+			},
+			A2(
+				$elm$url$Url$Parser$questionMark,
+				$elm$url$Url$Parser$top,
+				$elm$url$Url$Parser$Query$string('code'))),
+			A2(
+			$elm$url$Url$Parser$map,
 			$author$project$Routing$EventsRoute,
 			A2(
 				$elm$url$Url$Parser$map,
-				$author$project$Github$Model$GithubUser,
+				$author$project$GitHub$Model$GitHubUser,
 				A2(
 					$elm$url$Url$Parser$slash,
 					$elm$url$Url$Parser$s('events'),
 					A2(
 						$elm$url$Url$Parser$slash,
 						$elm$url$Url$Parser$s('users'),
-						$elm$url$Url$Parser$string)))),
-			A2(
-			$elm$url$Url$Parser$map,
-			$author$project$Routing$StartRoute,
-			A2(
-				$elm$url$Url$Parser$questionMark,
-				$elm$url$Url$Parser$top,
-				$elm$url$Url$Parser$Query$string('code')))
+						$elm$url$Url$Parser$string))))
 		]));
+var $author$project$Routing$normalize = function (url) {
+	var path2 = A2(
+		$elm$core$Maybe$withDefault,
+		url.path,
+		A2(
+			$elm$core$Maybe$map,
+			function (f) {
+				return _Utils_ap(url.path, f);
+			},
+			url.fragment));
+	return _Utils_update(
+		url,
+		{fragment: $elm$core$Maybe$Nothing, host: url.host, path: path2, port_: url.port_, protocol: url.protocol, query: url.query});
+};
 var $elm$url$Url$Parser$getFirstMatch = function (states) {
 	getFirstMatch:
 	while (true) {
@@ -6331,62 +6362,48 @@ var $elm$url$Url$Parser$parse = F2(
 					url.fragment,
 					$elm$core$Basics$identity)));
 	});
-var $elm$core$Maybe$andThen = F2(
-	function (callback, maybeValue) {
-		if (maybeValue.$ === 'Just') {
-			var value = maybeValue.a;
-			return callback(value);
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
-	});
-var $elm$core$Maybe$map = F2(
-	function (f, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return $elm$core$Maybe$Just(
-				f(value));
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
-	});
-var $author$project$Routing$parseHash = F2(
-	function (parser, location) {
-		return A2(
-			$elm$core$Maybe$andThen,
-			$elm$url$Url$Parser$parse(parser),
-			A2(
-				$elm$core$Maybe$andThen,
-				$elm$url$Url$fromString,
-				A2(
-					$elm$core$Maybe$map,
-					$elm$core$String$dropLeft(1),
-					location.fragment)));
-	});
 var $author$project$Routing$parseLocation = function (location) {
-	var _v0 = A2($author$project$Routing$parseHash, $author$project$Routing$matchers, location);
-	if (_v0.$ === 'Just') {
-		var route = _v0.a;
-		return route;
-	} else {
-		return A2(
-			$elm$core$Maybe$withDefault,
-			$author$project$Routing$RouteNotFound,
-			A2($elm$url$Url$Parser$parse, $author$project$Routing$matchers, location));
-	}
+	return A2(
+		$elm$core$Maybe$withDefault,
+		$author$project$Routing$RouteNotFound,
+		A2(
+			$elm$url$Url$Parser$parse,
+			$author$project$Routing$matchers,
+			$author$project$Routing$normalize(location)));
 };
 var $author$project$Message$Authorized = function (a) {
 	return {$: 'Authorized', a: a};
 };
-var $author$project$Model$Code = function (a) {
-	return {$: 'Code', a: a};
-};
+var $author$project$EventStream$Message$ReadEvents = {$: 'ReadEvents'};
 var $author$project$Message$ShowTimeline = function (a) {
 	return {$: 'ShowTimeline', a: a};
 };
+var $author$project$Model$Timeline = {$: 'Timeline'};
 var $arturopala$elm_monocle$Monocle$Lens$Lens = F2(
 	function (get, set) {
 		return {get: get, set: set};
+	});
+var $elm$core$Basics$composeR = F3(
+	function (f, g, x) {
+		return g(
+			f(x));
+	});
+var $arturopala$elm_monocle$Monocle$Lens$compose = F2(
+	function (outer, inner) {
+		var set = F2(
+			function (c, a) {
+				return function (b) {
+					return A2(outer.set, b, a);
+				}(
+					A2(
+						inner.set,
+						c,
+						outer.get(a)));
+			});
+		return A2(
+			$arturopala$elm_monocle$Monocle$Lens$Lens,
+			A2($elm$core$Basics$composeR, outer.get, inner.get),
+			set);
 	});
 var $author$project$Model$eventStreamLens = A2(
 	$arturopala$elm_monocle$Monocle$Lens$Lens,
@@ -6399,39 +6416,21 @@ var $author$project$Model$eventStreamLens = A2(
 				a,
 				{eventStream: b});
 		}));
+var $author$project$EventStream$Model$sourceLens = A2(
+	$arturopala$elm_monocle$Monocle$Lens$Lens,
+	function ($) {
+		return $.source;
+	},
+	F2(
+		function (b, a) {
+			return _Utils_update(
+				a,
+				{source: b});
+		}));
+var $author$project$Model$eventStreamSourceLens = A2($arturopala$elm_monocle$Monocle$Lens$compose, $author$project$Model$eventStreamLens, $author$project$EventStream$Model$sourceLens);
 var $elm$core$Platform$Cmd$map = _Platform_map;
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
-var $author$project$EventStream$Message$ReadEvents = {$: 'ReadEvents'};
-var $elm$core$Process$sleep = _Process_sleep;
-var $author$project$Util$delaySeconds = F2(
-	function (interval, msg) {
-		return A2(
-			$elm$core$Task$perform,
-			function (_v0) {
-				return msg;
-			},
-			$elm$core$Process$sleep(interval * 1000));
-	});
-var $author$project$EventStream$Update$readFrom = F2(
-	function (source, eventStream) {
-		return _Utils_Tuple2(
-			_Utils_update(
-				eventStream,
-				{
-					context: A2($author$project$Github$Model$GithubContext, '', $elm$core$Maybe$Nothing),
-					error: $elm$core$Maybe$Nothing,
-					events: _List_Nil,
-					interval: eventStream.interval,
-					source: source
-				}),
-			$elm$core$Platform$Cmd$batch(
-				_List_fromArray(
-					[
-						A2($author$project$Util$delaySeconds, 0, $author$project$EventStream$Message$ReadEvents)
-					])));
-	});
 var $elm$http$Http$BadStatus_ = F2(
 	function (a, b) {
 		return {$: 'BadStatus_', a: a, b: b};
@@ -6459,11 +6458,6 @@ var $elm$core$Maybe$isJust = function (maybe) {
 	}
 };
 var $elm$core$Platform$sendToSelf = _Platform_sendToSelf;
-var $elm$core$Basics$composeR = F3(
-	function (f, g, x) {
-		return g(
-			f(x));
-	});
 var $elm$http$Http$expectStringResponse = F2(
 	function (toMsg, toResult) {
 		return A3(
@@ -6483,7 +6477,7 @@ var $elm$http$Http$jsonBody = function (value) {
 		'application/json',
 		A2($elm$json$Json$Encode$encode, 0, value));
 };
-var $author$project$Github$OAuthProxy$oAuthUrl = 'https://00gigun9fl.execute-api.eu-central-1.amazonaws.com/default/github-oauth-proxy';
+var $author$project$GitHub$OAuthProxy$oAuthUrl = 'https://00gigun9fl.execute-api.eu-central-1.amazonaws.com/default/github-oauth-proxy';
 var $elm$json$Json$Encode$object = function (pairs) {
 	return _Json_wrap(
 		A3(
@@ -6498,7 +6492,7 @@ var $elm$json$Json$Encode$object = function (pairs) {
 			pairs));
 };
 var $elm$json$Json$Encode$string = _Json_wrap;
-var $author$project$Github$OAuthProxy$preparePayload = function (code) {
+var $author$project$GitHub$OAuthProxy$preparePayload = function (code) {
 	return $elm$json$Json$Encode$object(
 		_List_fromArray(
 			[
@@ -6507,12 +6501,12 @@ var $author$project$Github$OAuthProxy$preparePayload = function (code) {
 				$elm$json$Json$Encode$string(code))
 			]));
 };
-var $author$project$Github$OAuthProxy$OAuthError = function (a) {
+var $author$project$GitHub$OAuthProxy$OAuthError = function (a) {
 	return {$: 'OAuthError', a: a};
 };
 var $elm$json$Json$Decode$andThen = _Json_andThen;
 var $elm$json$Json$Decode$bool = _Json_decodeBool;
-var $author$project$Github$OAuthProxy$OAuthToken = F2(
+var $author$project$GitHub$OAuthProxy$OAuthToken = F2(
 	function (a, b) {
 		return {$: 'OAuthToken', a: a, b: b};
 	});
@@ -6526,7 +6520,7 @@ var $NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required = F3(
 			decoder);
 	});
 var $elm$json$Json$Decode$string = _Json_decodeString;
-var $author$project$Github$OAuthProxy$decodeToken = A3(
+var $author$project$GitHub$OAuthProxy$decodeToken = A3(
 	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 	'scope',
 	$elm$json$Json$Decode$string,
@@ -6534,15 +6528,15 @@ var $author$project$Github$OAuthProxy$decodeToken = A3(
 		$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 		'token',
 		$elm$json$Json$Decode$string,
-		$elm$json$Json$Decode$succeed($author$project$Github$OAuthProxy$OAuthToken)));
-var $author$project$Github$OAuthProxy$decodeResponse = function () {
+		$elm$json$Json$Decode$succeed($author$project$GitHub$OAuthProxy$OAuthToken)));
+var $author$project$GitHub$OAuthProxy$decodeResponse = function () {
 	var decodeByCase = function (success) {
 		if (success) {
-			return $author$project$Github$OAuthProxy$decodeToken;
+			return $author$project$GitHub$OAuthProxy$decodeToken;
 		} else {
 			return A2(
 				$elm$json$Json$Decode$map,
-				$author$project$Github$OAuthProxy$OAuthError,
+				$author$project$GitHub$OAuthProxy$OAuthError,
 				A2($elm$json$Json$Decode$field, 'error', $elm$json$Json$Decode$string));
 		}
 	};
@@ -6563,7 +6557,7 @@ var $elm$core$Result$mapError = F2(
 				f(e));
 		}
 	});
-var $author$project$Github$OAuthProxy$processResponse = function (response) {
+var $author$project$GitHub$OAuthProxy$processResponse = function (response) {
 	switch (response.$) {
 		case 'GoodStatus_':
 			var metadata = response.a;
@@ -6571,7 +6565,7 @@ var $author$project$Github$OAuthProxy$processResponse = function (response) {
 			return A2(
 				$elm$core$Result$mapError,
 				$elm$json$Json$Decode$errorToString,
-				A2($elm$json$Json$Decode$decodeString, $author$project$Github$OAuthProxy$decodeResponse, body));
+				A2($elm$json$Json$Decode$decodeString, $author$project$GitHub$OAuthProxy$decodeResponse, body));
 		case 'BadUrl_':
 			var url = response.a;
 			return $elm$core$Result$Err('Bad URL ' + url);
@@ -6754,21 +6748,21 @@ var $elm$http$Http$request = function (r) {
 		$elm$http$Http$Request(
 			{allowCookiesFromOtherDomains: false, body: r.body, expect: r.expect, headers: r.headers, method: r.method, timeout: r.timeout, tracker: r.tracker, url: r.url}));
 };
-var $author$project$Github$OAuthProxy$toMsg = function (result) {
+var $author$project$GitHub$OAuthProxy$toMsg = function (result) {
 	if (result.$ === 'Ok') {
 		var msg = result.a;
 		return msg;
 	} else {
 		var error = result.a;
-		return $author$project$Github$OAuthProxy$OAuthError(error);
+		return $author$project$GitHub$OAuthProxy$OAuthError(error);
 	}
 };
-var $author$project$Github$OAuthProxy$requestAccessToken = function (code) {
+var $author$project$GitHub$OAuthProxy$requestAccessToken = function (code) {
 	return $elm$http$Http$request(
 		{
 			body: $elm$http$Http$jsonBody(
-				$author$project$Github$OAuthProxy$preparePayload(code)),
-			expect: A2($elm$http$Http$expectStringResponse, $author$project$Github$OAuthProxy$toMsg, $author$project$Github$OAuthProxy$processResponse),
+				$author$project$GitHub$OAuthProxy$preparePayload(code)),
+			expect: A2($elm$http$Http$expectStringResponse, $author$project$GitHub$OAuthProxy$toMsg, $author$project$GitHub$OAuthProxy$processResponse),
 			headers: _List_fromArray(
 				[
 					A2($elm$http$Http$header, 'Accept', 'application/json'),
@@ -6777,82 +6771,55 @@ var $author$project$Github$OAuthProxy$requestAccessToken = function (code) {
 			method: 'POST',
 			timeout: $elm$core$Maybe$Nothing,
 			tracker: $elm$core$Maybe$Nothing,
-			url: $author$project$Github$OAuthProxy$oAuthUrl
+			url: $author$project$GitHub$OAuthProxy$oAuthUrl
 		});
 };
-var $author$project$Routing$rootUrl = '/';
-var $author$project$Main$title = 'GitHub Activity Dashboard';
-var $author$project$Util$wrapCmdIn = F2(
-	function (f, _v0) {
-		var m = _v0.a;
-		var cmd = _v0.b;
-		return _Utils_Tuple2(
-			m,
-			A2($elm$core$Platform$Cmd$map, f, cmd));
-	});
-var $author$project$Util$wrapModelIn = F3(
-	function (lens, a, _v0) {
-		var b = _v0.a;
-		var c = _v0.b;
-		return _Utils_Tuple2(
-			A2(lens.set, b, a),
-			c);
-	});
+var $author$project$Util$withCmd = function (msg) {
+	return A2(
+		$elm$core$Task$perform,
+		$elm$core$Basics$identity,
+		$elm$core$Task$succeed(msg));
+};
 var $author$project$Main$route = F2(
 	function (r, model) {
 		switch (r.$) {
 			case 'StartRoute':
-				var maybeCode = r.a;
-				if (maybeCode.$ === 'Nothing') {
-					var _v2 = model.authorization;
-					if (_v2.$ === 'Code') {
-						var code = _v2.a;
-						return _Utils_Tuple2(
-							model,
-							A2(
-								$elm$core$Platform$Cmd$map,
-								$author$project$Message$Authorized,
-								$author$project$Github$OAuthProxy$requestAccessToken(code)));
+				var mode = function () {
+					var _v1 = model.authorization;
+					if (_v1.$ === 'Token') {
+						return $author$project$Model$Timeline;
 					} else {
-						return _Utils_Tuple2(
-							_Utils_update(
-								model,
-								{title: 'StartRoute'}),
-							$elm$core$Platform$Cmd$none);
+						return $author$project$Model$Welcome;
 					}
-				} else {
-					var code = maybeCode.a;
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{
-								authorization: $author$project$Model$Code(code),
-								title: $author$project$Main$title + (' - code ' + code)
-							}),
-						A2($elm$browser$Browser$Navigation$pushUrl, model.key, $author$project$Routing$rootUrl));
-				}
-			case 'EventsRoute':
-				var source = r.a;
-				return A2(
-					$author$project$Util$wrapCmdIn,
-					$author$project$Message$ShowTimeline,
-					A3(
-						$author$project$Util$wrapModelIn,
-						$author$project$Model$eventStreamLens,
-						model,
-						A2($author$project$EventStream$Update$readFrom, source, model.eventStream)));
-			default:
+				}();
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{title: 'Login'}),
+						{mode: mode}),
 					$elm$core$Platform$Cmd$none);
+			case 'OAuthCode':
+				var code = r.a;
+				return _Utils_Tuple2(
+					model,
+					A2(
+						$elm$core$Platform$Cmd$map,
+						$author$project$Message$Authorized,
+						$author$project$GitHub$OAuthProxy$requestAccessToken(code)));
+			case 'EventsRoute':
+				var source = r.a;
+				return _Utils_Tuple2(
+					A2($author$project$Model$eventStreamSourceLens.set, source, model),
+					$author$project$Util$withCmd(
+						$author$project$Message$ShowTimeline($author$project$EventStream$Message$ReadEvents)));
+			default:
+				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 		}
 	});
+var $author$project$Main$title = 'GitHub Activity Dashboard';
 var $author$project$Main$init = F3(
 	function (flags, url, key) {
 		var initialRoute = $author$project$Routing$parseLocation(url);
-		var initialModel = A5($author$project$Model$Model, $author$project$Main$title, key, initialRoute, $author$project$EventStream$Model$initialEventStream, $author$project$Model$Unauthorized);
+		var initialModel = A6($author$project$Model$Model, $author$project$Main$title, key, $author$project$Model$Welcome, initialRoute, $author$project$EventStream$Model$initialEventStream, $author$project$Model$Unauthorized);
 		var _v0 = A2($author$project$Main$route, initialRoute, initialModel);
 		var model = _v0.a;
 		var cmd = _v0.b;
@@ -6866,7 +6833,96 @@ var $author$project$Main$subscriptions = function (model) {
 var $author$project$Model$Token = function (a) {
 	return {$: 'Token', a: a};
 };
+var $arturopala$elm_monocle$Monocle$Optional$Optional = F2(
+	function (getOption, set) {
+		return {getOption: getOption, set: set};
+	});
+var $arturopala$elm_monocle$Monocle$Optional$flip = F3(
+	function (f, b, a) {
+		return A2(f, a, b);
+	});
+var $arturopala$elm_monocle$Monocle$Optional$compose = F2(
+	function (outer, inner) {
+		var set = F2(
+			function (c, a) {
+				return A2(
+					$elm$core$Maybe$withDefault,
+					a,
+					A2(
+						$elm$core$Maybe$map,
+						A2(
+							$elm$core$Basics$composeR,
+							inner.set(c),
+							A2($arturopala$elm_monocle$Monocle$Optional$flip, outer.set, a)),
+						outer.getOption(a)));
+			});
+		var getOption = function (a) {
+			var _v0 = outer.getOption(a);
+			if (_v0.$ === 'Just') {
+				var x = _v0.a;
+				return inner.getOption(x);
+			} else {
+				return $elm$core$Maybe$Nothing;
+			}
+		};
+		return A2($arturopala$elm_monocle$Monocle$Optional$Optional, getOption, set);
+	});
+var $author$project$EventStream$Model$contextLens = A2(
+	$arturopala$elm_monocle$Monocle$Lens$Lens,
+	function ($) {
+		return $.context;
+	},
+	F2(
+		function (b, a) {
+			return _Utils_update(
+				a,
+				{context: b});
+		}));
+var $arturopala$elm_monocle$Monocle$Optional$fromLens = function (lens) {
+	var getOption = function (a) {
+		return $elm$core$Maybe$Just(
+			lens.get(a));
+	};
+	return A2($arturopala$elm_monocle$Monocle$Optional$Optional, getOption, lens.set);
+};
+var $author$project$EventStream$Model$tokenOpt = A2(
+	$arturopala$elm_monocle$Monocle$Optional$Optional,
+	function ($) {
+		return $.token;
+	},
+	F2(
+		function (b, a) {
+			return _Utils_update(
+				a,
+				{
+					token: $elm$core$Maybe$Just(b)
+				});
+		}));
+var $author$project$EventStream$Model$contextTokenOpt = A2(
+	$arturopala$elm_monocle$Monocle$Optional$compose,
+	$arturopala$elm_monocle$Monocle$Optional$fromLens($author$project$EventStream$Model$contextLens),
+	$author$project$EventStream$Model$tokenOpt);
 var $elm$browser$Browser$Navigation$load = _Browser_load;
+var $author$project$Model$modeLens = A2(
+	$arturopala$elm_monocle$Monocle$Lens$Lens,
+	function ($) {
+		return $.mode;
+	},
+	F2(
+		function (b, a) {
+			return _Utils_update(
+				a,
+				{mode: b});
+		}));
+var $author$project$Util$modifyModel = F3(
+	function (lens, a, _v0) {
+		var b = _v0.a;
+		var c = _v0.b;
+		return _Utils_Tuple2(
+			A2(lens.set, a, b),
+			c);
+	});
+var $elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
 var $elm$url$Url$addPort = F2(
 	function (maybePort, starter) {
 		if (maybePort.$ === 'Nothing') {
@@ -6911,12 +6967,22 @@ var $elm$url$Url$toString = function (url) {
 					_Utils_ap(http, url.host)),
 				url.path)));
 };
-var $author$project$EventStream$Message$GithubResponseEvents = function (a) {
-	return {$: 'GithubResponseEvents', a: a};
+var $author$project$EventStream$Message$GitHubResponseEvents = function (a) {
+	return {$: 'GitHubResponseEvents', a: a};
 };
-var $author$project$EventStream$Message$GithubResponseEventsNextPage = function (a) {
-	return {$: 'GithubResponseEventsNextPage', a: a};
+var $author$project$EventStream$Message$GitHubResponseEventsNextPage = function (a) {
+	return {$: 'GitHubResponseEventsNextPage', a: a};
 };
+var $elm$core$Process$sleep = _Process_sleep;
+var $author$project$Util$delaySeconds = F2(
+	function (interval, msg) {
+		return A2(
+			$elm$core$Task$perform,
+			function (_v0) {
+				return msg;
+			},
+			$elm$core$Process$sleep(interval * 1000));
+	});
 var $author$project$EventStream$Model$errorLens = A2(
 	$arturopala$elm_monocle$Monocle$Lens$Lens,
 	function ($) {
@@ -6992,7 +7058,7 @@ var $author$project$EventStream$Update$readEventsNextPage = function (response) 
 				$author$project$EventStream$Message$ReadEventsNextPage,
 				A2($elm$core$Dict$get, 'next', response.links))));
 };
-var $author$project$Github$Message$GotEvents = function (a) {
+var $author$project$GitHub$Message$GotEvents = function (a) {
 	return {$: 'GotEvents', a: a};
 };
 var $elm$http$Http$emptyBody = _Http_emptyBody;
@@ -7005,21 +7071,21 @@ var $elm$http$Http$BadStatus = function (a) {
 var $elm$http$Http$BadUrl = function (a) {
 	return {$: 'BadUrl', a: a};
 };
-var $author$project$Github$Model$GithubEventsResponse = F4(
+var $author$project$GitHub$Model$GitHubEventsResponse = F4(
 	function (events, interval, etag, links) {
 		return {etag: etag, events: events, interval: interval, links: links};
 	});
 var $elm$http$Http$NetworkError = {$: 'NetworkError'};
 var $elm$http$Http$Timeout = {$: 'Timeout'};
-var $author$project$Github$Model$GithubEvent = F6(
+var $author$project$GitHub$Model$GitHubEvent = F6(
 	function (id, eventType, actor, repo, payload, created_at) {
 		return {actor: actor, created_at: created_at, eventType: eventType, id: id, payload: payload, repo: repo};
 	});
-var $author$project$Github$Model$GithubActor = F2(
+var $author$project$GitHub$Model$GitHubActor = F2(
 	function (display_login, avatar_url) {
 		return {avatar_url: avatar_url, display_login: display_login};
 	});
-var $author$project$Github$Decode$decodeActor = A3(
+var $author$project$GitHub$Decode$decodeActor = A3(
 	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 	'avatar_url',
 	$elm$json$Json$Decode$string,
@@ -7027,7 +7093,7 @@ var $author$project$Github$Decode$decodeActor = A3(
 		$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 		'display_login',
 		$elm$json$Json$Decode$string,
-		$elm$json$Json$Decode$succeed($author$project$Github$Model$GithubActor)));
+		$elm$json$Json$Decode$succeed($author$project$GitHub$Model$GitHubActor)));
 var $elm$time$Time$Posix = function (a) {
 	return {$: 'Posix', a: a};
 };
@@ -7804,7 +7870,7 @@ var $elm$core$Result$withDefault = F2(
 			return def;
 		}
 	});
-var $author$project$Github$Decode$decodeDateTime = A2(
+var $author$project$GitHub$Decode$decodeDateTime = A2(
 	$elm$json$Json$Decode$map,
 	A2(
 		$elm$core$Basics$composeR,
@@ -7812,23 +7878,23 @@ var $author$project$Github$Decode$decodeDateTime = A2(
 		$elm$core$Result$withDefault(
 			$elm$time$Time$millisToPosix(0))),
 	$elm$json$Json$Decode$string);
-var $author$project$Github$Model$GithubOtherEventPayload = {$: 'GithubOtherEventPayload'};
-var $author$project$Github$Model$GithubPullRequestEvent = function (a) {
-	return {$: 'GithubPullRequestEvent', a: a};
+var $author$project$GitHub$Model$GitHubOtherEventPayload = {$: 'GitHubOtherEventPayload'};
+var $author$project$GitHub$Model$GitHubPullRequestEvent = function (a) {
+	return {$: 'GitHubPullRequestEvent', a: a};
 };
-var $author$project$Github$Model$GithubReleaseEvent = function (a) {
-	return {$: 'GithubReleaseEvent', a: a};
+var $author$project$GitHub$Model$GitHubReleaseEvent = function (a) {
+	return {$: 'GitHubReleaseEvent', a: a};
 };
-var $author$project$Github$Model$GithubPullRequestEventPayload = F2(
+var $author$project$GitHub$Model$GitHubPullRequestEventPayload = F2(
 	function (action, pull_request) {
 		return {action: action, pull_request: pull_request};
 	});
-var $author$project$Github$Model$GithubPullRequest = F2(
+var $author$project$GitHub$Model$GitHubPullRequest = F2(
 	function (url, id) {
 		return {id: id, url: url};
 	});
 var $elm$json$Json$Decode$int = _Json_decodeInt;
-var $author$project$Github$Decode$decodePullRequest = A3(
+var $author$project$GitHub$Decode$decodePullRequest = A3(
 	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 	'id',
 	$elm$json$Json$Decode$int,
@@ -7836,25 +7902,25 @@ var $author$project$Github$Decode$decodePullRequest = A3(
 		$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 		'url',
 		$elm$json$Json$Decode$string,
-		$elm$json$Json$Decode$succeed($author$project$Github$Model$GithubPullRequest)));
-var $author$project$Github$Decode$decodePullRequestEventPayload = A3(
+		$elm$json$Json$Decode$succeed($author$project$GitHub$Model$GitHubPullRequest)));
+var $author$project$GitHub$Decode$decodePullRequestEventPayload = A3(
 	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 	'pull_request',
-	$author$project$Github$Decode$decodePullRequest,
+	$author$project$GitHub$Decode$decodePullRequest,
 	A3(
 		$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 		'action',
 		$elm$json$Json$Decode$string,
-		$elm$json$Json$Decode$succeed($author$project$Github$Model$GithubPullRequestEventPayload)));
-var $author$project$Github$Model$GithubReleaseEventPayload = F2(
+		$elm$json$Json$Decode$succeed($author$project$GitHub$Model$GitHubPullRequestEventPayload)));
+var $author$project$GitHub$Model$GitHubReleaseEventPayload = F2(
 	function (action, release) {
 		return {action: action, release: release};
 	});
-var $author$project$Github$Model$GithubRelease = F2(
+var $author$project$GitHub$Model$GitHubRelease = F2(
 	function (url, tag_name) {
 		return {tag_name: tag_name, url: url};
 	});
-var $author$project$Github$Decode$decodeRelease = A3(
+var $author$project$GitHub$Decode$decodeRelease = A3(
 	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 	'tag_name',
 	$elm$json$Json$Decode$string,
@@ -7862,31 +7928,31 @@ var $author$project$Github$Decode$decodeRelease = A3(
 		$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 		'url',
 		$elm$json$Json$Decode$string,
-		$elm$json$Json$Decode$succeed($author$project$Github$Model$GithubRelease)));
-var $author$project$Github$Decode$decodeReleaseEventPayload = A3(
+		$elm$json$Json$Decode$succeed($author$project$GitHub$Model$GitHubRelease)));
+var $author$project$GitHub$Decode$decodeReleaseEventPayload = A3(
 	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 	'release',
-	$author$project$Github$Decode$decodeRelease,
+	$author$project$GitHub$Decode$decodeRelease,
 	A3(
 		$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 		'action',
 		$elm$json$Json$Decode$string,
-		$elm$json$Json$Decode$succeed($author$project$Github$Model$GithubReleaseEventPayload)));
-var $author$project$Github$Decode$decodePayload = function (tag) {
+		$elm$json$Json$Decode$succeed($author$project$GitHub$Model$GitHubReleaseEventPayload)));
+var $author$project$GitHub$Decode$decodePayload = function (tag) {
 	switch (tag) {
 		case 'PullRequestEvent':
-			return A2($elm$json$Json$Decode$map, $author$project$Github$Model$GithubPullRequestEvent, $author$project$Github$Decode$decodePullRequestEventPayload);
+			return A2($elm$json$Json$Decode$map, $author$project$GitHub$Model$GitHubPullRequestEvent, $author$project$GitHub$Decode$decodePullRequestEventPayload);
 		case 'ReleaseEvent':
-			return A2($elm$json$Json$Decode$map, $author$project$Github$Model$GithubReleaseEvent, $author$project$Github$Decode$decodeReleaseEventPayload);
+			return A2($elm$json$Json$Decode$map, $author$project$GitHub$Model$GitHubReleaseEvent, $author$project$GitHub$Decode$decodeReleaseEventPayload);
 		default:
-			return $elm$json$Json$Decode$succeed($author$project$Github$Model$GithubOtherEventPayload);
+			return $elm$json$Json$Decode$succeed($author$project$GitHub$Model$GitHubOtherEventPayload);
 	}
 };
-var $author$project$Github$Model$GithubRepo = F2(
+var $author$project$GitHub$Model$GitHubRepo = F2(
 	function (name, url) {
 		return {name: name, url: url};
 	});
-var $author$project$Github$Decode$decodeRepo = A3(
+var $author$project$GitHub$Decode$decodeRepo = A3(
 	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 	'url',
 	$elm$json$Json$Decode$string,
@@ -7894,24 +7960,24 @@ var $author$project$Github$Decode$decodeRepo = A3(
 		$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 		'name',
 		$elm$json$Json$Decode$string,
-		$elm$json$Json$Decode$succeed($author$project$Github$Model$GithubRepo)));
-var $author$project$Github$Decode$decodeEventByType = function (t) {
+		$elm$json$Json$Decode$succeed($author$project$GitHub$Model$GitHubRepo)));
+var $author$project$GitHub$Decode$decodeEventByType = function (t) {
 	return A3(
 		$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 		'created_at',
-		$author$project$Github$Decode$decodeDateTime,
+		$author$project$GitHub$Decode$decodeDateTime,
 		A3(
 			$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 			'payload',
-			$author$project$Github$Decode$decodePayload(t),
+			$author$project$GitHub$Decode$decodePayload(t),
 			A3(
 				$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 				'repo',
-				$author$project$Github$Decode$decodeRepo,
+				$author$project$GitHub$Decode$decodeRepo,
 				A3(
 					$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 					'actor',
-					$author$project$Github$Decode$decodeActor,
+					$author$project$GitHub$Decode$decodeActor,
 					A3(
 						$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 						'type',
@@ -7920,20 +7986,29 @@ var $author$project$Github$Decode$decodeEventByType = function (t) {
 							$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 							'id',
 							$elm$json$Json$Decode$string,
-							$elm$json$Json$Decode$succeed($author$project$Github$Model$GithubEvent)))))));
+							$elm$json$Json$Decode$succeed($author$project$GitHub$Model$GitHubEvent)))))));
 };
-var $author$project$Github$Decode$decodeEvent = A2(
+var $author$project$GitHub$Decode$decodeEvent = A2(
 	$elm$json$Json$Decode$andThen,
-	$author$project$Github$Decode$decodeEventByType,
+	$author$project$GitHub$Decode$decodeEventByType,
 	A2($elm$json$Json$Decode$field, 'type', $elm$json$Json$Decode$string));
 var $elm$json$Json$Decode$list = _Json_decodeList;
-var $author$project$Github$Decode$decodeEvents = $elm$json$Json$Decode$list($author$project$Github$Decode$decodeEvent);
-var $author$project$Github$APIv3$getETag = function (headers) {
+var $author$project$GitHub$Decode$decodeEvents = $elm$json$Json$Decode$list($author$project$GitHub$Decode$decodeEvent);
+var $author$project$GitHub$APIv3$getETag = function (headers) {
 	return A2(
 		$elm$core$Maybe$withDefault,
 		'',
 		A2($elm$core$Dict$get, 'etag', headers));
 };
+var $elm$core$Maybe$andThen = F2(
+	function (callback, maybeValue) {
+		if (maybeValue.$ === 'Just') {
+			var value = maybeValue.a;
+			return callback(value);
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
 var $elm$core$Dict$fromList = function (assocs) {
 	return A3(
 		$elm$core$List$foldl,
@@ -7969,7 +8044,7 @@ var $elm$core$List$tail = function (list) {
 	}
 };
 var $elm$core$String$trim = _String_trim;
-var $author$project$Github$APIv3$getLinks = function (headers) {
+var $author$project$GitHub$APIv3$getLinks = function (headers) {
 	return $elm$core$Dict$fromList(
 		A2(
 			$elm$core$List$map,
@@ -8013,7 +8088,7 @@ var $author$project$Github$APIv3$getLinks = function (headers) {
 							'',
 							A2($elm$core$Dict$get, 'link', headers)))))));
 };
-var $author$project$Github$APIv3$getPollInterval = function (headers) {
+var $author$project$GitHub$APIv3$getPollInterval = function (headers) {
 	return A2(
 		$elm$core$Maybe$withDefault,
 		120,
@@ -8033,7 +8108,7 @@ var $elm$core$Result$map = F2(
 			return $elm$core$Result$Err(e);
 		}
 	});
-var $author$project$Github$APIv3$getEventsResponse = function (response) {
+var $author$project$GitHub$APIv3$getEventsResponse = function (response) {
 	switch (response.$) {
 		case 'GoodStatus_':
 			var metadata = response.a;
@@ -8048,13 +8123,13 @@ var $author$project$Github$APIv3$getEventsResponse = function (response) {
 					$elm$core$Result$map,
 					function (events) {
 						return A4(
-							$author$project$Github$Model$GithubEventsResponse,
+							$author$project$GitHub$Model$GitHubEventsResponse,
 							events,
-							$author$project$Github$APIv3$getPollInterval(metadata.headers),
-							$author$project$Github$APIv3$getETag(metadata.headers),
-							$author$project$Github$APIv3$getLinks(metadata.headers));
+							$author$project$GitHub$APIv3$getPollInterval(metadata.headers),
+							$author$project$GitHub$APIv3$getETag(metadata.headers),
+							$author$project$GitHub$APIv3$getLinks(metadata.headers));
 					},
-					A2($elm$json$Json$Decode$decodeString, $author$project$Github$Decode$decodeEvents, body)));
+					A2($elm$json$Json$Decode$decodeString, $author$project$GitHub$Decode$decodeEvents, body)));
 		case 'BadUrl_':
 			var url = response.a;
 			return $elm$core$Result$Err(
@@ -8070,73 +8145,50 @@ var $author$project$Github$APIv3$getEventsResponse = function (response) {
 				$elm$http$Http$BadStatus(metadata.statusCode));
 	}
 };
-var $author$project$Github$APIv3$getEventsWithIntervalRequest = F2(
+var $author$project$GitHub$APIv3$getEventsWithIntervalRequest = F2(
 	function (url, context) {
+		var headers = _Utils_ap(
+			_List_fromArray(
+				[
+					A2($elm$http$Http$header, 'If-None-Match', context.etag)
+				]),
+			A2(
+				$elm$core$Maybe$withDefault,
+				_List_Nil,
+				A2(
+					$elm$core$Maybe$map,
+					function (t) {
+						return _List_fromArray(
+							[
+								A2($elm$http$Http$header, 'Authorization', 'token ' + t)
+							]);
+					},
+					context.token)));
 		return $elm$http$Http$request(
 			{
 				body: $elm$http$Http$emptyBody,
-				expect: A2($elm$http$Http$expectStringResponse, $author$project$Github$Message$GotEvents, $author$project$Github$APIv3$getEventsResponse),
-				headers: _List_fromArray(
-					[
-						A2($elm$http$Http$header, 'If-None-Match', context.etag),
-						A2(
-						$elm$core$Maybe$withDefault,
-						A2($elm$http$Http$header, 'X-Dummy', ''),
-						A2(
-							$elm$core$Maybe$map,
-							function (t) {
-								return A2($elm$http$Http$header, 'Authorization', 'token ' + t);
-							},
-							context.token))
-					]),
+				expect: A2($elm$http$Http$expectStringResponse, $author$project$GitHub$Message$GotEvents, $author$project$GitHub$APIv3$getEventsResponse),
+				headers: headers,
 				method: 'GET',
 				timeout: $elm$core$Maybe$Nothing,
 				tracker: $elm$core$Maybe$Nothing,
 				url: url
 			});
 	});
-var $author$project$Github$APIv3$githubApiUrl = 'https://api.github.com';
-var $author$project$Github$APIv3$readGithubEvents = F2(
+var $author$project$GitHub$APIv3$githubApiUrl = 'https://api.github.com';
+var $author$project$GitHub$APIv3$readGitHubEvents = F2(
 	function (source, context) {
 		if (source.$ === 'None') {
 			return $elm$core$Platform$Cmd$none;
 		} else {
 			var user = source.a;
-			return A2($author$project$Github$APIv3$getEventsWithIntervalRequest, $author$project$Github$APIv3$githubApiUrl + ('/users/' + (user + '/events')), context);
+			return A2($author$project$GitHub$APIv3$getEventsWithIntervalRequest, $author$project$GitHub$APIv3$githubApiUrl + ('/users/' + (user + '/events')), context);
 		}
 	});
-var $author$project$Github$APIv3$readGithubEventsNextPage = F2(
+var $author$project$GitHub$APIv3$readGitHubEventsNextPage = F2(
 	function (url, context) {
-		return A2($author$project$Github$APIv3$getEventsWithIntervalRequest, url, context);
+		return A2($author$project$GitHub$APIv3$getEventsWithIntervalRequest, url, context);
 	});
-var $arturopala$elm_monocle$Monocle$Lens$compose = F2(
-	function (outer, inner) {
-		var set = F2(
-			function (c, a) {
-				return function (b) {
-					return A2(outer.set, b, a);
-				}(
-					A2(
-						inner.set,
-						c,
-						outer.get(a)));
-			});
-		return A2(
-			$arturopala$elm_monocle$Monocle$Lens$Lens,
-			A2($elm$core$Basics$composeR, outer.get, inner.get),
-			set);
-	});
-var $author$project$EventStream$Model$contextLens = A2(
-	$arturopala$elm_monocle$Monocle$Lens$Lens,
-	function ($) {
-		return $.context;
-	},
-	F2(
-		function (b, a) {
-			return _Utils_update(
-				a,
-				{context: b});
-		}));
 var $author$project$EventStream$Model$etagLens = A2(
 	$arturopala$elm_monocle$Monocle$Lens$Lens,
 	function ($) {
@@ -8187,10 +8239,10 @@ var $author$project$EventStream$Update$update = F2(
 							[
 								A2(
 								$elm$core$Platform$Cmd$map,
-								$author$project$EventStream$Message$GithubResponseEvents,
-								A2($author$project$Github$APIv3$readGithubEvents, eventStream.source, eventStream.context))
+								$author$project$EventStream$Message$GitHubResponseEvents,
+								A2($author$project$GitHub$APIv3$readGitHubEvents, eventStream.source, eventStream.context))
 							])));
-			case 'GithubResponseEvents':
+			case 'GitHubResponseEvents':
 				if (msg.a.a.$ === 'Ok') {
 					var response = msg.a.a.a;
 					return _Utils_Tuple2(
@@ -8214,10 +8266,10 @@ var $author$project$EventStream$Update$update = F2(
 							[
 								A2(
 								$elm$core$Platform$Cmd$map,
-								$author$project$EventStream$Message$GithubResponseEventsNextPage,
-								A2($author$project$Github$APIv3$readGithubEventsNextPage, url, eventStream.context))
+								$author$project$EventStream$Message$GitHubResponseEventsNextPage,
+								A2($author$project$GitHub$APIv3$readGitHubEventsNextPage, url, eventStream.context))
 							])));
-			case 'GithubResponseEventsNextPage':
+			case 'GitHubResponseEventsNextPage':
 				if (msg.a.a.$ === 'Ok') {
 					var response = msg.a.a.a;
 					return _Utils_Tuple2(
@@ -8242,6 +8294,22 @@ var $author$project$EventStream$Update$update = F2(
 			default:
 				return _Utils_Tuple2(eventStream, $elm$core$Platform$Cmd$none);
 		}
+	});
+var $author$project$Util$wrapCmd = F2(
+	function (f, _v0) {
+		var m = _v0.a;
+		var cmd = _v0.b;
+		return _Utils_Tuple2(
+			m,
+			A2($elm$core$Platform$Cmd$map, f, cmd));
+	});
+var $author$project$Util$wrapModel = F3(
+	function (lens, a, _v0) {
+		var b = _v0.a;
+		var c = _v0.b;
+		return _Utils_Tuple2(
+			A2(lens.set, b, a),
+			c);
 	});
 var $author$project$Main$update = F2(
 	function (m, model) {
@@ -8273,90 +8341,62 @@ var $author$project$Main$update = F2(
 				if (event.$ === 'OAuthToken') {
 					var token = event.a;
 					var scope = event.b;
+					var mode = _Utils_eq(model.mode, $author$project$Model$Welcome) ? $author$project$Model$Timeline : model.mode;
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
 							{
 								authorization: $author$project$Model$Token(token),
+								mode: mode,
 								title: $author$project$Main$title + (' - ' + token)
 							}),
-						A2($elm$browser$Browser$Navigation$pushUrl, model.key, '#events/users/hmrc'));
+						A2($elm$browser$Browser$Navigation$pushUrl, model.key, '/#events/users/arturopala'));
 				} else {
 					var error = event.a;
-					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{authorization: $author$project$Model$Unauthorized, mode: $author$project$Model$Welcome}),
+						$elm$core$Platform$Cmd$none);
 				}
 			case 'ShowTimeline':
 				var msg = m.a;
-				return A2(
-					$author$project$Util$wrapCmdIn,
-					$author$project$Message$ShowTimeline,
-					A3(
-						$author$project$Util$wrapModelIn,
-						$author$project$Model$eventStreamLens,
-						model,
-						A2($author$project$EventStream$Update$update, msg, model.eventStream)));
+				var _v3 = model.authorization;
+				if (_v3.$ === 'Token') {
+					var token = _v3.a;
+					return A2(
+						$author$project$Util$wrapCmd,
+						$author$project$Message$ShowTimeline,
+						A3(
+							$author$project$Util$modifyModel,
+							$author$project$Model$modeLens,
+							$author$project$Model$Timeline,
+							A3(
+								$author$project$Util$wrapModel,
+								$author$project$Model$eventStreamLens,
+								model,
+								A2(
+									$author$project$EventStream$Update$update,
+									msg,
+									A2($author$project$EventStream$Model$contextTokenOpt.set, token, model.eventStream)))));
+				} else {
+					return A2(
+						$author$project$Util$wrapCmd,
+						$author$project$Message$ShowTimeline,
+						A3(
+							$author$project$Util$modifyModel,
+							$author$project$Model$modeLens,
+							$author$project$Model$Timeline,
+							A3(
+								$author$project$Util$wrapModel,
+								$author$project$Model$eventStreamLens,
+								model,
+								A2($author$project$EventStream$Update$update, msg, model.eventStream))));
+				}
 			default:
 				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 		}
 	});
-var $arturopala$elm_monocle$Monocle$Optional$Optional = F2(
-	function (getOption, set) {
-		return {getOption: getOption, set: set};
-	});
-var $arturopala$elm_monocle$Monocle$Optional$flip = F3(
-	function (f, b, a) {
-		return A2(f, a, b);
-	});
-var $arturopala$elm_monocle$Monocle$Optional$compose = F2(
-	function (outer, inner) {
-		var set = F2(
-			function (c, a) {
-				return A2(
-					$elm$core$Maybe$withDefault,
-					a,
-					A2(
-						$elm$core$Maybe$map,
-						A2(
-							$elm$core$Basics$composeR,
-							inner.set(c),
-							A2($arturopala$elm_monocle$Monocle$Optional$flip, outer.set, a)),
-						outer.getOption(a)));
-			});
-		var getOption = function (a) {
-			var _v0 = outer.getOption(a);
-			if (_v0.$ === 'Just') {
-				var x = _v0.a;
-				return inner.getOption(x);
-			} else {
-				return $elm$core$Maybe$Nothing;
-			}
-		};
-		return A2($arturopala$elm_monocle$Monocle$Optional$Optional, getOption, set);
-	});
-var $arturopala$elm_monocle$Monocle$Optional$fromLens = function (lens) {
-	var getOption = function (a) {
-		return $elm$core$Maybe$Just(
-			lens.get(a));
-	};
-	return A2($arturopala$elm_monocle$Monocle$Optional$Optional, getOption, lens.set);
-};
-var $author$project$EventStream$Model$tokenOpt = A2(
-	$arturopala$elm_monocle$Monocle$Optional$Optional,
-	function ($) {
-		return $.token;
-	},
-	F2(
-		function (b, a) {
-			return _Utils_update(
-				a,
-				{
-					token: $elm$core$Maybe$Just(b)
-				});
-		}));
-var $author$project$EventStream$Model$contextTokenOpt = A2(
-	$arturopala$elm_monocle$Monocle$Optional$compose,
-	$arturopala$elm_monocle$Monocle$Optional$fromLens($author$project$EventStream$Model$contextLens),
-	$author$project$EventStream$Model$tokenOpt);
 var $elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
 		return A2(
@@ -8374,7 +8414,7 @@ var $author$project$Timeline$View$sourceTitle = function (source) {
 		return '';
 	} else {
 		var user = source.a;
-		return ' Github.com repos of ' + (user + '?');
+		return ' GitHub.com repos of ' + (user + '?');
 	}
 };
 var $elm$html$Html$span = _VirtualDom_node('span');
@@ -8841,7 +8881,7 @@ var $author$project$View$view = function (_v0) {
 										$elm$html$Html$a,
 										_List_fromArray(
 											[
-												$elm$html$Html$Attributes$href('https://github.com/login/oauth/authorize?client_id=22030043f4425febdf23&scope=repo'),
+												$elm$html$Html$Attributes$href('https://github.com/login/oauth/authorize?client_id=22030043f4425febdf23&scope=read:org'),
 												$elm$html$Html$Attributes$class('mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect mdl-color-text--white')
 											]),
 										_List_fromArray(
@@ -8869,22 +8909,20 @@ var $author$project$View$view = function (_v0) {
 };
 var $elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
 var $elm$html$Html$map = $elm$virtual_dom$VirtualDom$map;
-var $author$project$Util$wrapMsgIn = F2(
+var $author$project$Util$wrapMsg = F2(
 	function (f, html) {
 		return A2($elm$html$Html$map, f, html);
 	});
 var $author$project$Main$view = function (model) {
-	var _v0 = model.authorization;
-	if (_v0.$ === 'Token') {
-		var token = _v0.a;
+	var _v0 = model.mode;
+	if (_v0.$ === 'Timeline') {
 		return {
 			body: _List_fromArray(
 				[
 					A2(
-					$author$project$Util$wrapMsgIn,
+					$author$project$Util$wrapMsg,
 					$author$project$Message$ShowTimeline,
-					$author$project$Timeline$View$view(
-						A2($author$project$EventStream$Model$contextTokenOpt.set, token, model.eventStream)))
+					$author$project$Timeline$View$view(model.eventStream))
 				]),
 			title: model.title
 		};

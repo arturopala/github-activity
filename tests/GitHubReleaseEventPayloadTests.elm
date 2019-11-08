@@ -1,8 +1,8 @@
-module GithubReleaseEventPayloadTests exposing (all)
+module GitHubReleaseEventPayloadTests exposing (all)
 
 import Expect
-import Github.Decode
-import Github.Model
+import GitHub.Decode
+import GitHub.Model
 import Json.Decode exposing (decodeString)
 import Test exposing (..)
 
@@ -13,7 +13,7 @@ all =
         [ test "decode valid ReleaseEvent json" <|
             \() ->
                 Expect.equal
-                    (decodeString Github.Decode.decodeReleaseEventPayload
+                    (decodeString GitHub.Decode.decodeReleaseEventPayload
                         """{
   "action": "published",
   "release": {
@@ -164,8 +164,8 @@ all =
 }"""
                     )
                     (Ok
-                        (Github.Model.GithubReleaseEventPayload "published"
-                            (Github.Model.GithubRelease "https://api.github.com/repos/baxterthehacker/public-repo/releases/1261438" "0.0.1")
+                        (GitHub.Model.GitHubReleaseEventPayload "published"
+                            (GitHub.Model.GitHubRelease "https://api.github.com/repos/baxterthehacker/public-repo/releases/1261438" "0.0.1")
                         )
                     )
         ]

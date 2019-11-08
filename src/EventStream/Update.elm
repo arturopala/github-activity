@@ -3,20 +3,20 @@ module EventStream.Update exposing (readFrom, update)
 import Dict
 import EventStream.Message exposing (..)
 import EventStream.Model exposing (..)
-import Github.APIv3 exposing (readGithubEvents, readGithubEventsNextPage)
-import Github.Message
-import Github.Model exposing (GithubContext, GithubEventSource(..), GithubEventsResponse)
+import GitHub.APIv3 exposing (readGitHubEvents, readGitHubEventsNextPage)
+import GitHub.Message
+import GitHub.Model exposing (GitHubContext, GitHubEventSource(..), GitHubEventsResponse)
 import Http
 import Util exposing (..)
 
 
-readFrom : GithubEventSource -> Model -> ( Model, Cmd Msg )
+readFrom : GitHubEventSource -> Model -> ( Model, Cmd Msg )
 readFrom source eventStream =
     ( { eventStream
         | source = source
         , events = []
         , interval = eventStream.interval
-        , context = GithubContext "" Nothing
+        , context = GitHubContext "" Nothing
         , error = Nothing
       }
     , Cmd.batch [ delaySeconds 0 ReadEvents ]
@@ -29,12 +29,12 @@ update msg eventStream =
         ReadEvents ->
             ( eventStream
             , Cmd.batch
-                [ readGithubEvents eventStream.source eventStream.context
-                    |> Cmd.map GithubResponseEvents
+                [ readGitHubEvents eventStream.source eventStream.context
+                    |> Cmd.map GitHubResponseEvents
                 ]
             )
 
-        GithubResponseEvents (Github.Message.GotEvents (Ok response)) ->
+        GitHubResponseEvents (GitHub.Message.GotEvents (Ok response)) ->
             ( setResponse response eventStream
             , Cmd.batch
                 [ delaySeconds response.interval ReadEvents
@@ -42,24 +42,24 @@ update msg eventStream =
                 ]
             )
 
-        GithubResponseEvents (Github.Message.GotEvents (Err error)) ->
+        GitHubResponseEvents (GitHub.Message.GotEvents (Err error)) ->
             handleHttpError error eventStream
 
         ReadEventsNextPage url ->
             ( eventStream
             , Cmd.batch
-                [ readGithubEventsNextPage url eventStream.context
-                    |> Cmd.map GithubResponseEventsNextPage
+                [ readGitHubEventsNextPage url eventStream.context
+                    |> Cmd.map GitHubResponseEventsNextPage
                 ]
             )
 
-        GithubResponseEventsNextPage (Github.Message.GotEvents (Ok response)) ->
+        GitHubResponseEventsNextPage (GitHub.Message.GotEvents (Ok response)) ->
             ( eventStream
                 |> eventsLens.set (eventStream.events ++ response.events)
             , Cmd.batch [ readEventsNextPage response ]
             )
 
-        GithubResponseEventsNextPage (Github.Message.GotEvents (Err error)) ->
+        GitHubResponseEventsNextPage (GitHub.Message.GotEvents (Err error)) ->
             ( errorLens.set (Just error) eventStream, Cmd.none )
 
         NoOp ->
@@ -84,7 +84,7 @@ handleHttpError error eventStream =
             ( errorLens.set (Just error) eventStream, Cmd.none )
 
 
-setResponse : GithubEventsResponse -> Model -> Model
+setResponse : GitHubEventsResponse -> Model -> Model
 setResponse response eventStream =
     eventStream
         |> eventsLens.set (eventStream.events ++ response.events)
@@ -93,7 +93,7 @@ setResponse response eventStream =
         |> errorLens.set Nothing
 
 
-readEventsNextPage : GithubEventsResponse -> Cmd Msg
+readEventsNextPage : GitHubEventsResponse -> Cmd Msg
 readEventsNextPage response =
     Dict.get "next" response.links
         |> Maybe.map ReadEventsNextPage

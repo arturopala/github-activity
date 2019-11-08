@@ -2,7 +2,7 @@ module Model exposing (Authorization(..), Mode(..), Model, eventStreamLens, even
 
 import Browser.Navigation exposing (Key)
 import EventStream.Model as EventStream exposing (Model, sourceLens)
-import Github.Model
+import GitHub.Model
 import Monocle.Lens exposing (Lens, compose)
 import Routing exposing (Route(..))
 
@@ -42,6 +42,6 @@ routeLens =
     Lens .route (\b a -> { a | route = b })
 
 
-eventStreamSourceLens : Lens Model Github.Model.GithubEventSource
+eventStreamSourceLens : Lens Model GitHub.Model.GitHubEventSource
 eventStreamSourceLens =
     compose eventStreamLens sourceLens

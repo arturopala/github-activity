@@ -5,7 +5,7 @@ import Browser.Navigation as Nav
 import EventStream.Message
 import EventStream.Model exposing (contextTokenOpt, initialEventStream)
 import EventStream.Update
-import Github.OAuthProxy exposing (requestAccessToken)
+import GitHub.OAuthProxy exposing (requestAccessToken)
 import Message exposing (Msg(..))
 import Model exposing (..)
 import Routing exposing (Route(..))
@@ -97,7 +97,7 @@ update m model =
 
         Authorized event ->
             case event of
-                Github.OAuthProxy.OAuthToken token scope ->
+                GitHub.OAuthProxy.OAuthToken token scope ->
                     let
                         mode =
                             if model.mode == Welcome then
@@ -110,7 +110,7 @@ update m model =
                     , Nav.pushUrl model.key "/#events/users/arturopala"
                     )
 
-                Github.OAuthProxy.OAuthError error ->
+                GitHub.OAuthProxy.OAuthError error ->
                     ( { model | authorization = Unauthorized, mode = Welcome }, Cmd.none )
 
         ShowTimeline msg ->

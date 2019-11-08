@@ -1,11 +1,11 @@
-module EventStream.Message exposing (..)
+module EventStream.Message exposing (Msg(..))
 
-import Github.Message
+import GitHub.Message
 
 
 type Msg
     = NoOp
     | ReadEvents
     | ReadEventsNextPage String
-    | GithubResponseEvents Github.Message.Msg
-    | GithubResponseEventsNextPage Github.Message.Msg
+    | GitHubResponseEvents GitHub.Message.Msg
+    | GitHubResponseEventsNextPage GitHub.Message.Msg

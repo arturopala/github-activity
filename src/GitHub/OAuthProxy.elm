@@ -1,4 +1,4 @@
-module Github.OAuthProxy exposing (Msg(..), requestAccessToken)
+module GitHub.OAuthProxy exposing (Msg(..), requestAccessToken)
 
 import Http
 import Json.Decode as Decode exposing (Decoder, andThen, bool, decodeString, field, map, string)

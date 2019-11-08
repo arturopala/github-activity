@@ -1,9 +1,9 @@
-module Github.APIv3 exposing (readGithubEvents, readGithubEventsNextPage)
+module GitHub.APIv3 exposing (readGitHubEvents, readGitHubEventsNextPage)
 
 import Dict exposing (Dict)
-import Github.Decode exposing (decodeEvents)
-import Github.Message exposing (Msg(..))
-import Github.Model exposing (..)
+import GitHub.Decode exposing (decodeEvents)
+import GitHub.Message exposing (Msg(..))
+import GitHub.Model exposing (..)
 import Http
 import Json.Decode exposing (decodeString, errorToString)
 
@@ -13,22 +13,22 @@ githubApiUrl =
     "https://api.github.com"
 
 
-readGithubEvents : GithubEventSource -> GithubContext -> Cmd Msg
-readGithubEvents source context =
+readGitHubEvents : GitHubEventSource -> GitHubContext -> Cmd Msg
+readGitHubEvents source context =
     case source of
         None ->
             Cmd.none
 
-        GithubUser user ->
+        GitHubUser user ->
             getEventsWithIntervalRequest (githubApiUrl ++ "/users/" ++ user ++ "/events") context
 
 
-readGithubEventsNextPage : String -> GithubContext -> Cmd Msg
-readGithubEventsNextPage url context =
+readGitHubEventsNextPage : String -> GitHubContext -> Cmd Msg
+readGitHubEventsNextPage url context =
     getEventsWithIntervalRequest url context
 
 
-getEventsWithIntervalRequest : String -> GithubContext -> Cmd Msg
+getEventsWithIntervalRequest : String -> GitHubContext -> Cmd Msg
 getEventsWithIntervalRequest url context =
     let
         headers =
@@ -49,14 +49,14 @@ getEventsWithIntervalRequest url context =
         }
 
 
-getEventsResponse : Http.Response String -> Result Http.Error GithubEventsResponse
+getEventsResponse : Http.Response String -> Result Http.Error GitHubEventsResponse
 getEventsResponse response =
     case response of
         Http.GoodStatus_ metadata body ->
             decodeString decodeEvents body
                 |> Result.map
                     (\events ->
-                        GithubEventsResponse events
+                        GitHubEventsResponse events
                             (getPollInterval metadata.headers)
                             (getETag metadata.headers)
                             (getLinks metadata.headers)

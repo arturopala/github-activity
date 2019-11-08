@@ -2,7 +2,7 @@ module Timeline.View exposing (view)
 
 import EventStream.Message exposing (..)
 import EventStream.Model exposing (Model)
-import Github.Model exposing (..)
+import GitHub.Model exposing (..)
 import Html exposing (Html, div, header, main_, section, span, text)
 import Html.Attributes exposing (..)
 import Http
@@ -23,7 +23,7 @@ view eventStream =
         ]
 
 
-viewEvent : GithubEvent -> Html Msg
+viewEvent : GitHubEvent -> Html Msg
 viewEvent event =
     section
         [ classList [ ( "card-event mdl-card mdl-shadow--2dp", True ), ( "card-event-" ++ event.eventType, True ) ] ]
@@ -137,11 +137,11 @@ viewError error =
             text ("Bad payload " ++ reason)
 
 
-sourceTitle : GithubEventSource -> String
+sourceTitle : GitHubEventSource -> String
 sourceTitle source =
     case source of
         None ->
             ""
 
-        GithubUser user ->
-            " Github.com repos of " ++ user ++ "?"
+        GitHubUser user ->
+            " GitHub.com repos of " ++ user ++ "?"

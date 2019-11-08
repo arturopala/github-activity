@@ -1,7 +1,7 @@
 module RoutingTests exposing (all)
 
 import Expect
-import Github.Model
+import GitHub.Model
 import Routing
 import Test exposing (..)
 import Url
@@ -34,6 +34,6 @@ all =
                             |> Maybe.map Routing.parseLocation
                             |> Maybe.withDefault Routing.RouteNotFound
                         )
-                        (Routing.EventsRoute (Github.Model.GithubUser "foo"))
+                        (Routing.EventsRoute (GitHub.Model.GitHubUser "foo"))
             ]
         ]
