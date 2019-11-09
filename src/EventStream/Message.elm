@@ -5,8 +5,6 @@ import Url exposing (Url)
 
 
 type Msg
-    = NoOp
-    | ReadEvents
+    = ReadEvents
     | ReadEventsNextPage Url
     | GitHubResponseEvents GitHub.Message.Msg
-    | GitHubResponseEventsNextPage GitHub.Message.Msg

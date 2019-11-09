@@ -1,25 +1,25 @@
 module Timeline.View exposing (view)
 
 import EventStream.Message exposing (..)
-import EventStream.Model exposing (Model)
 import GitHub.Model exposing (..)
 import Html exposing (Html, div, header, main_, section, span, text)
 import Html.Attributes exposing (..)
 import Http
+import Model exposing (Model)
 import Time exposing (..)
 
 
 view : Model -> Html Msg
-view eventStream =
+view model =
     section [ class "mdl-layout mdl-js-layout" ]
         [ header [ class "mdl-layout__header" ]
             [ div [ class "mdl-layout__header-row" ]
                 [ span [ class "mdl-layout__title" ]
-                    [ text ("GitHub Activity stream of " ++ sourceTitle eventStream.source) ]
+                    [ text ("GitHub Activity of " ++ sourceTitle model.eventStream.source) ]
                 ]
             ]
-        , section [ class "timeline-error" ] [ viewError eventStream.error ]
-        , main_ [ class "timeline mdl-layout__content" ] (List.map viewEvent eventStream.events)
+        , section [ class "timeline-error" ] [ viewError model.eventStream.error ]
+        , main_ [ class "timeline mdl-layout__content" ] (List.map viewEvent model.timeline.events)
         ]
 
 

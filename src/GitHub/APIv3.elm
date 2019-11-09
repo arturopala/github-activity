@@ -5,8 +5,10 @@ import GitHub.Decode exposing (decodeEvents, decodeGitHubUserInfo)
 import GitHub.Message exposing (Msg(..))
 import GitHub.Model exposing (..)
 import Http
+import Iso8601
 import Json.Decode exposing (Decoder, decodeString, errorToString)
 import Model exposing (Authorization(..))
+import Time exposing (Posix, millisToPosix)
 import Url exposing (Url)
 
 
@@ -71,9 +73,13 @@ decodeGitHubResponse decoder response =
                 |> Result.map
                     (\content ->
                         GitHubResponse content
-                            (getPollInterval metadata.headers)
-                            (getETag metadata.headers)
+                            (getHeaderAsString "ETag" metadata.headers "")
                             (getLinks metadata.headers)
+                            (GitHubApiLimits (getHeaderAsInt "X-RateLimit-Limit" metadata.headers 60)
+                                (getHeaderAsInt "X-RateLimit-Remaining" metadata.headers 60)
+                                (getHeaderAsPosix "X-RateLimit-Reset" metadata.headers)
+                                (getHeaderAsInt "X-Poll-Interval" metadata.headers 120)
+                            )
                     )
                 |> Result.mapError (\e -> Http.BadBody (errorToString e))
 
@@ -90,19 +96,26 @@ decodeGitHubResponse decoder response =
             Err (Http.BadStatus metadata.statusCode)
 
 
-getPollInterval : Dict String String -> Int
-getPollInterval headers =
+getHeaderAsString : String -> Dict String String -> String -> String
+getHeaderAsString name headers default =
     headers
-        |> Dict.get "x-poll-interval"
+        |> Dict.get (String.toLower name)
+        |> Maybe.withDefault default
+
+
+getHeaderAsInt : String -> Dict String String -> Int -> Int
+getHeaderAsInt name headers default =
+    headers
+        |> Dict.get (String.toLower name)
         |> Maybe.andThen String.toInt
-        |> Maybe.withDefault 120
+        |> Maybe.withDefault default
 
 
-getETag : Dict String String -> String
-getETag headers =
+getHeaderAsPosix : String -> Dict String String -> Maybe Posix
+getHeaderAsPosix name headers =
     headers
-        |> Dict.get "etag"
-        |> Maybe.withDefault ""
+        |> Dict.get (String.toLower name)
+        |> Maybe.andThen (Iso8601.toTime >> Result.toMaybe)
 
 
 getLinks : Dict String String -> Dict String String

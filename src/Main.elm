@@ -3,7 +3,7 @@ module Main exposing (main)
 import Browser exposing (..)
 import Browser.Navigation as Nav
 import EventStream.Message
-import EventStream.Update
+import EventStream.Update exposing (resetEventStreamIfSourceChanged)
 import GitHub.APIv3 exposing (readCurrentUserInfo)
 import GitHub.Message
 import GitHub.Model
@@ -11,9 +11,12 @@ import GitHub.OAuthProxy exposing (requestAccessToken)
 import Message exposing (Msg(..))
 import Model exposing (..)
 import Routing exposing (Route(..), modifyUrlGivenSource)
+import Time
+import Timeline.Message
+import Timeline.Update
 import Timeline.View
 import Url exposing (Url)
-import Util exposing (modifyModel, push, wrapCmd, wrapModel, wrapMsg)
+import Util exposing (modifyModel, push, wrapCmd, wrapMsg)
 import View
 
 
@@ -31,7 +34,16 @@ main =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    case model.mode of
+        Timeline ->
+            if List.isEmpty model.eventStream.events then
+                Sub.none
+
+            else
+                Time.every model.preferences.tickIntervalMilliseconds (\_ -> TickMsg)
+
+        Homepage ->
+            Sub.none
 
 
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -56,7 +68,11 @@ route r model =
             ( model, requestAccessToken code |> Cmd.map LoginMsg )
 
         EventsRoute source ->
-            ( eventStreamSourceLens.set source model, push (TimelineMsg EventStream.Message.ReadEvents) )
+            ( model
+                |> resetEventStreamIfSourceChanged source
+                |> modeLens.set Timeline
+            , push (EventStreamMsg EventStream.Message.ReadEvents)
+            )
 
         RouteNotFound ->
             ( { model | mode = Homepage }, Cmd.none )
@@ -91,11 +107,22 @@ update m model =
             , pushUrl model (modifyUrlGivenSource model.url (GitHub.Model.GitHubEventSourceUser response.content.login))
             )
 
+        EventStreamMsg msg ->
+            EventStream.Update.update msg model.authorization model
+                |> wrapCmd EventStreamMsg
+
         TimelineMsg msg ->
-            EventStream.Update.update msg model.authorization model.eventStream
-                |> wrapModel eventStreamLens model
-                |> modifyModel modeLens Timeline
+            Timeline.Update.update msg model
                 |> wrapCmd TimelineMsg
+
+        TickMsg ->
+            case model.mode of
+                Homepage ->
+                    ( model, Cmd.none )
+
+                Timeline ->
+                    Timeline.Update.update Timeline.Message.TickMsg model
+                        |> wrapCmd TimelineMsg
 
         _ ->
             ( model, Cmd.none )
@@ -107,8 +134,8 @@ view model =
         Timeline ->
             { title = model.title
             , body =
-                [ Timeline.View.view model.eventStream
-                    |> wrapMsg TimelineMsg
+                [ Timeline.View.view model
+                    |> wrapMsg EventStreamMsg
                 ]
             }
 

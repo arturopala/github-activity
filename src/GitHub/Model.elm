@@ -1,4 +1,4 @@
-module GitHub.Model exposing (GitHubError, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubPullRequestEventPayload, GitHubPullRequestLink, GitHubReleaseEventPayload, GitHubReleaseLink, GitHubRepoLink, GitHubResponse, GitHubUserInfo)
+module GitHub.Model exposing (GitHubApiLimits, GitHubError, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubPullRequestEventPayload, GitHubPullRequestLink, GitHubReleaseEventPayload, GitHubReleaseLink, GitHubRepoLink, GitHubResponse, GitHubUserInfo)
 
 import Dict exposing (Dict)
 import Time exposing (Posix)
@@ -7,9 +7,17 @@ import Url exposing (Url)
 
 type alias GitHubResponse a =
     { content : a
-    , interval : Int
     , etag : String
     , links : Dict String String
+    , limits : GitHubApiLimits
+    }
+
+
+type alias GitHubApiLimits =
+    { xRateLimit : Int
+    , xRateRemaining : Int
+    , xRateReset : Maybe Posix
+    , xPollInterval : Int
     }
 
 
