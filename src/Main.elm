@@ -11,6 +11,7 @@ import GitHub.OAuthProxy exposing (requestAccessToken)
 import Message exposing (Msg(..))
 import Model exposing (..)
 import Routing exposing (Route(..), modifyUrlGivenSource)
+import Task
 import Time
 import Timeline.Message
 import Timeline.Update
@@ -55,7 +56,7 @@ init flags url key =
         ( model, cmd ) =
             route initialRoute (initialModel key url)
     in
-    ( model, Cmd.batch [ cmd ] )
+    ( model, Cmd.batch [ cmd, Task.perform TimeZoneMsg Time.here ] )
 
 
 route : Route -> Model -> ( Model, Cmd Msg )
@@ -123,6 +124,9 @@ update m model =
                 Timeline ->
                     Timeline.Update.update Timeline.Message.TickMsg model
                         |> wrapCmd TimelineMsg
+
+        TimeZoneMsg zone ->
+            ( { model | zone = zone }, Cmd.none )
 
         _ ->
             ( model, Cmd.none )

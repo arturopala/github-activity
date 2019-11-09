@@ -5,15 +5,14 @@ import GitHub.Decode exposing (decodeEvents, decodeGitHubUserInfo)
 import GitHub.Message exposing (Msg(..))
 import GitHub.Model exposing (..)
 import Http
-import Iso8601
 import Json.Decode exposing (Decoder, decodeString, errorToString)
 import Model exposing (Authorization(..))
-import Time exposing (Posix, millisToPosix)
+import Time exposing (Posix)
 import Url exposing (Url)
 
 
 type alias ResultToMsg a =
-    Result Http.Error (GitHubResponse a) -> Msg
+    Result ( Http.Error, Maybe GitHubApiLimits ) (GitHubResponse a) -> Msg
 
 
 githubApiUrl : Url
@@ -65,7 +64,7 @@ httpGet url etag auth resultToMsg decoder =
         }
 
 
-decodeGitHubResponse : Decoder a -> Http.Response String -> Result Http.Error (GitHubResponse a)
+decodeGitHubResponse : Decoder a -> Http.Response String -> Result ( Http.Error, Maybe GitHubApiLimits ) (GitHubResponse a)
 decodeGitHubResponse decoder response =
     case response of
         Http.GoodStatus_ metadata body ->
@@ -75,25 +74,33 @@ decodeGitHubResponse decoder response =
                         GitHubResponse content
                             (getHeaderAsString "ETag" metadata.headers "")
                             (getLinks metadata.headers)
-                            (GitHubApiLimits (getHeaderAsInt "X-RateLimit-Limit" metadata.headers 60)
-                                (getHeaderAsInt "X-RateLimit-Remaining" metadata.headers 60)
-                                (getHeaderAsPosix "X-RateLimit-Reset" metadata.headers)
-                                (getHeaderAsInt "X-Poll-Interval" metadata.headers 120)
-                            )
+                            (parseLimits metadata)
                     )
-                |> Result.mapError (\e -> Http.BadBody (errorToString e))
+                |> Result.mapError (\e -> ( Http.BadBody (errorToString e), Just (parseLimits metadata) ))
 
         Http.BadUrl_ url ->
-            Err (Http.BadUrl ("Bad URL " ++ url))
+            Err ( Http.BadUrl ("Bad URL " ++ url), Nothing )
 
         Http.Timeout_ ->
-            Err Http.Timeout
+            Err ( Http.Timeout, Nothing )
 
         Http.NetworkError_ ->
-            Err Http.NetworkError
+            Err ( Http.NetworkError, Nothing )
 
         Http.BadStatus_ metadata body ->
-            Err (Http.BadStatus metadata.statusCode)
+            let
+                limits =
+                    parseLimits metadata
+            in
+            Err ( Http.BadStatus metadata.statusCode, Just limits )
+
+
+parseLimits : Http.Metadata -> GitHubApiLimits
+parseLimits metadata =
+    GitHubApiLimits (getHeaderAsInt "X-RateLimit-Limit" metadata.headers 60)
+        (getHeaderAsInt "X-RateLimit-Remaining" metadata.headers 60)
+        (getHeaderAsPosix "X-RateLimit-Reset" metadata.headers)
+        (getHeaderAsInt "X-Poll-Interval" metadata.headers 120)
 
 
 getHeaderAsString : String -> Dict String String -> String -> String
@@ -115,7 +122,9 @@ getHeaderAsPosix : String -> Dict String String -> Maybe Posix
 getHeaderAsPosix name headers =
     headers
         |> Dict.get (String.toLower name)
-        |> Maybe.andThen (Iso8601.toTime >> Result.toMaybe)
+        |> Maybe.andThen String.toInt
+        |> Maybe.map (\i -> i * 1000)
+        |> Maybe.map Time.millisToPosix
 
 
 getLinks : Dict String String -> Dict String String

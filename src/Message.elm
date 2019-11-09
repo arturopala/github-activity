@@ -4,6 +4,7 @@ import Browser exposing (UrlRequest)
 import EventStream.Message
 import GitHub.Message
 import GitHub.OAuthProxy
+import Time exposing (Zone)
 import Timeline.Message
 import Url exposing (Url)
 
@@ -16,3 +17,4 @@ type Msg
     | TimelineMsg Timeline.Message.Msg
     | UserMsg GitHub.Message.Msg
     | TickMsg
+    | TimeZoneMsg Zone

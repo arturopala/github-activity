@@ -6,6 +6,7 @@ import GitHub.Model exposing (GitHubApiLimits, GitHubEvent)
 import Http
 import Monocle.Lens exposing (Lens, compose)
 import Routing exposing (Route(..))
+import Time exposing (Zone)
 import Timeline.Model as Timeline
 import Url exposing (Url)
 
@@ -22,6 +23,7 @@ type alias Model =
     , preferences : Preferences
     , url : Url
     , limits : GitHubApiLimits
+    , zone : Zone
     }
 
 
@@ -47,6 +49,7 @@ initialModel key url =
     , key = key
     , url = url
     , limits = GitHubApiLimits 60 60 Nothing 120
+    , zone = Time.utc
     }
 
 

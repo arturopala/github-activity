@@ -1,5 +1,6 @@
 module Timeline.View exposing (view)
 
+import DateFormat
 import EventStream.Message exposing (..)
 import GitHub.Model exposing (..)
 import Html exposing (Html, div, header, main_, section, span, text)
@@ -15,7 +16,7 @@ view model =
         [ header [ class "mdl-layout__header" ]
             [ div [ class "mdl-layout__header-row" ]
                 [ span [ class "mdl-layout__title" ]
-                    [ text ("GitHub Activity of " ++ sourceTitle model.eventStream.source) ]
+                    [ text ("GitHub Activity of " ++ sourceTitle model.eventStream.source ++ " " ++ modelStatusDebug model) ]
                 ]
             ]
         , section [ class "timeline-error" ] [ viewError model.eventStream.error ]
@@ -145,3 +146,31 @@ sourceTitle source =
 
         GitHubEventSourceUser user ->
             "user: " ++ user
+
+
+modelStatusDebug : Model -> String
+modelStatusDebug model =
+    [ String.fromInt model.limits.xRateRemaining
+    , model.limits.xRateReset |> Maybe.map (formatDateTime model.zone) |> Maybe.withDefault "-"
+    , String.fromInt <| List.length model.eventStream.events
+    , String.fromInt <| List.length model.timeline.events
+    ]
+        |> List.foldl (\a b -> a ++ " | " ++ b) ""
+
+
+formatDateTime : Zone -> Posix -> String
+formatDateTime zone =
+    DateFormat.format
+        [ DateFormat.yearNumber
+        , DateFormat.text "-"
+        , DateFormat.monthNumber
+        , DateFormat.text "-"
+        , DateFormat.dayOfMonthNumber
+        , DateFormat.text " "
+        , DateFormat.hourNumber
+        , DateFormat.text ":"
+        , DateFormat.minuteNumber
+        , DateFormat.text ":"
+        , DateFormat.secondNumber
+        ]
+        zone
