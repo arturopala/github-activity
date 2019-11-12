@@ -3,6 +3,7 @@ module Timeline.Update exposing (update)
 import EventStream.Model
 import List exposing ((::))
 import Model exposing (Model, eventStreamEventsLens, timelineEventsLens)
+import Time exposing (posixToMillis)
 import Timeline.Message exposing (Msg(..))
 import Timeline.Model
 
@@ -20,11 +21,14 @@ updateEventsOnDisplay : Model -> Model
 updateEventsOnDisplay model =
     let
         display =
-            model.eventStream.events
-                |> List.head
-                |> Maybe.map (\v -> v :: model.timeline.events)
-                |> Maybe.map (List.take model.preferences.numberOfEventsOnDisplay)
-                |> Maybe.withDefault model.timeline.events
+            case model.eventStream.events of
+                head :: _ ->
+                    (head :: model.timeline.events)
+                        |> List.take model.preferences.numberOfEventsOnDisplay
+                        |> List.sortBy (.created_at >> posixToMillis >> negate)
+
+                [] ->
+                    model.timeline.events
 
         queue =
             model.eventStream.events

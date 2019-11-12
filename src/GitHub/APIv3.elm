@@ -29,6 +29,12 @@ readGitHubEvents source etag auth =
         GitHubEventSourceUser user ->
             httpGet { githubApiUrl | path = "/users/" ++ user ++ "/events" } etag auth GitHubEventsMsg decodeEvents
 
+        GitHubEventSourceOrganisation org ->
+            httpGet { githubApiUrl | path = "/orgs/" ++ org ++ "/events" } etag auth GitHubEventsMsg decodeEvents
+
+        GitHubEventSourceRepository owner repo ->
+            httpGet { githubApiUrl | path = "/repos/" ++ owner ++ "/" ++ repo ++ "/events" } etag auth GitHubEventsMsg decodeEvents
+
 
 readGitHubEventsNextPage : Url -> String -> Authorization -> Cmd Msg
 readGitHubEventsNextPage url etag auth =
@@ -72,7 +78,7 @@ decodeGitHubResponse decoder response =
                 |> Result.map
                     (\content ->
                         GitHubResponse content
-                            (getHeaderAsString "ETag" metadata.headers "")
+                            (getEtag metadata.headers)
                             (getLinks metadata.headers)
                             (parseLimits metadata)
                     )
@@ -101,6 +107,19 @@ parseLimits metadata =
         (getHeaderAsInt "X-RateLimit-Remaining" metadata.headers 60)
         (getHeaderAsPosix "X-RateLimit-Reset" metadata.headers)
         (getHeaderAsInt "X-Poll-Interval" metadata.headers 120)
+
+
+getEtag : Dict String String -> String
+getEtag headers =
+    let
+        etag =
+            getHeaderAsString "ETag" headers ""
+    in
+    if String.startsWith "W/" etag then
+        String.dropLeft 2 etag
+
+    else
+        etag
 
 
 getHeaderAsString : String -> Dict String String -> String -> String

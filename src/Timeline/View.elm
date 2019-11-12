@@ -3,8 +3,9 @@ module Timeline.View exposing (view)
 import DateFormat
 import EventStream.Message exposing (..)
 import GitHub.Model exposing (..)
-import Html exposing (Html, div, header, main_, section, span, text)
+import Html exposing (Html, a, div, header, i, section, span, text)
 import Html.Attributes exposing (..)
+import Html.Keyed exposing (node)
 import Http
 import Model exposing (Model)
 import Time exposing (..)
@@ -15,24 +16,33 @@ view model =
     section [ class "mdl-layout mdl-js-layout" ]
         [ header [ class "mdl-layout__header" ]
             [ div [ class "mdl-layout__header-row" ]
-                [ span [ class "mdl-layout__title" ]
+                ([ span [ class "mdl-layout__title" ]
                     [ text ("GitHub Activity of " ++ sourceTitle model.eventStream.source ++ " " ++ modelStatusDebug model) ]
-                ]
+                 , div [ class "mdl-layout-spacer" ] []
+                 ]
+                    ++ signInButton model
+                )
             ]
         , section [ class "timeline-error" ] [ viewError model.eventStream.error ]
-        , main_ [ class "timeline mdl-layout__content" ] (List.map viewEvent model.timeline.events)
+        , node "main" [ class "timeline mdl-layout__content" ] (viewEvents model.zone model.timeline.events)
         ]
 
 
-viewEvent : GitHubEvent -> Html Msg
-viewEvent event =
-    section
+viewEvents : Zone -> List GitHubEvent -> List ( String, Html Msg )
+viewEvents zone events =
+    List.map (viewEvent zone) events
+
+
+viewEvent : Zone -> GitHubEvent -> ( String, Html Msg )
+viewEvent zone event =
+    ( event.id
+    , section
         [ classList [ ( "card-event mdl-card mdl-shadow--2dp", True ), ( "card-event-" ++ event.eventType, True ) ] ]
         [ div
             [ class "mdl-card__supporting-text mdl-card--expand"
             , style "background-image" ("url('" ++ event.actor.avatar_url ++ "')")
             ]
-            [ div [ class "card-event-datetime" ] (formatDate event.created_at)
+            [ div [ class "card-event-datetime" ] (formatDate zone event.created_at)
             , div [ class "card-event-repo" ] [ text (String.dropLeft 5 event.repo.name) ]
             , div [ class "card-event-actor" ] [ text event.actor.display_login ]
             ]
@@ -40,24 +50,25 @@ viewEvent event =
             [ span [ class "card-event-type" ] [ text (String.dropRight 5 event.eventType) ]
             ]
         ]
+    )
 
 
-formatDate : Posix -> List (Html Msg)
-formatDate date =
+formatDate : Zone -> Posix -> List (Html Msg)
+formatDate zone date =
     [ span [ class "card-event-time" ]
         [ text
-            (to2String (Time.toHour utc date)
+            (to2String (Time.toHour zone date)
                 ++ ":"
-                ++ to2String (Time.toMinute utc date)
+                ++ to2String (Time.toMinute zone date)
                 ++ ":"
-                ++ to2String (Time.toSecond utc date)
+                ++ to2String (Time.toSecond zone date)
             )
         ]
     , span [ class "card-event-date" ]
         [ text
-            (to2String (Time.toDay utc date)
+            (to2String (Time.toDay zone date)
                 ++ "/"
-                ++ toMonthNo (Time.toMonth utc date)
+                ++ toMonthNo (Time.toMonth zone date)
             )
         ]
     ]
@@ -145,7 +156,13 @@ sourceTitle source =
             "all users"
 
         GitHubEventSourceUser user ->
-            "user: " ++ user
+            user ++ " user"
+
+        GitHubEventSourceOrganisation org ->
+            org ++ " organisation"
+
+        GitHubEventSourceRepository owner repo ->
+            owner ++ "/" ++ repo ++ " repository"
 
 
 modelStatusDebug : Model -> String
@@ -155,7 +172,7 @@ modelStatusDebug model =
     , String.fromInt <| List.length model.eventStream.events
     , String.fromInt <| List.length model.timeline.events
     ]
-        |> List.foldl (\a b -> a ++ " | " ++ b) ""
+        |> List.foldl (\a b -> b ++ " | " ++ a) ""
 
 
 formatDateTime : Zone -> Posix -> String
@@ -167,10 +184,33 @@ formatDateTime zone =
         , DateFormat.text "-"
         , DateFormat.dayOfMonthNumber
         , DateFormat.text " "
-        , DateFormat.hourNumber
+        , DateFormat.hourMilitaryFixed
         , DateFormat.text ":"
-        , DateFormat.minuteNumber
+        , DateFormat.minuteFixed
         , DateFormat.text ":"
-        , DateFormat.secondNumber
+        , DateFormat.secondFixed
         ]
         zone
+
+
+signInButton : Model -> List (Html Msg)
+signInButton model =
+    case model.user of
+        Just user ->
+            [ span
+                [ class "mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect mdl-color-text--white"
+                ]
+                [ text user.name
+                ]
+            , i [ class "fab fa-github fa-lg" ] []
+            ]
+
+        Nothing ->
+            [ a
+                [ href "https://github.com/login/oauth/authorize?client_id=22030043f4425febdf23&scope=read:org"
+                , class "mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect mdl-color-text--white"
+                ]
+                [ text "Sign in with GitHub"
+                ]
+            , i [ class "fab fa-github fa-lg" ] []
+            ]

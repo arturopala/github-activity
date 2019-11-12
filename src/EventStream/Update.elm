@@ -9,7 +9,7 @@ import GitHub.Message
 import GitHub.Model exposing (GitHubApiLimits, GitHubEvent, GitHubEventSource(..), GitHubEventsChunk, GitHubResponse)
 import Http
 import List as Math
-import Model exposing (Authorization, Model, eventStreamErrorLens, eventStreamEventsLens, eventStreamSourceLens, limitsLens, timelineEventsLens)
+import Model exposing (Authorization, Model, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamSourceLens, limitsLens, timelineEventsLens)
 import Time exposing (posixToMillis)
 import Url
 import Util exposing (..)
@@ -27,14 +27,23 @@ update msg auth model =
         ReadEventsNextPage source url ->
             ( model
             , if source == model.eventStream.source then
-                readGitHubEventsNextPage url model.eventStream.etag auth
-                    |> Cmd.map GitHubResponseEvents
+                readGitHubEventsNextPage url "" auth
+                    |> Cmd.map GitHubResponseEventsNextPage
 
               else
                 Cmd.none
             )
 
         GitHubResponseEvents (GitHub.Message.GitHubEventsMsg (Ok response)) ->
+            let
+                model2 =
+                    updateEventStream response model
+            in
+            ( { model2 | eventStream = model.eventStream |> etagLens.set response.etag }
+            , maybeReadEventsNextPage model response
+            )
+
+        GitHubResponseEventsNextPage (GitHub.Message.GitHubEventsMsg (Ok response)) ->
             let
                 model2 =
                     updateEventStream response model
@@ -59,7 +68,12 @@ update msg auth model =
 handleHttpError : Http.Error -> Model -> ( Model, Cmd Msg )
 handleHttpError error model =
     case error of
-        Http.BadStatus status ->
+        Http.BadStatus 304 ->
+            ( model
+            , delayMessageBasedOnApiLimits model.limits model.limits.xPollInterval ReadEvents
+            )
+
+        Http.BadStatus 403 ->
             ( eventStreamErrorLens.set (Just error) model
             , delayMessageBasedOnApiLimits model.limits model.limits.xPollInterval ReadEvents
             )
@@ -74,13 +88,13 @@ updateEventStream : GitHubEventsChunk -> Model -> Model
 updateEventStream response model =
     let
         queue =
-            List.sortBy (.created_at >> posixToMillis >> negate) (model.eventStream.events ++ response.content)
+            List.sortBy (.created_at >> posixToMillis) (model.eventStream.events ++ response.content)
+                |> (\list -> List.drop (List.length list - model.preferences.maxNumberOfEventsInQueue) list)
     in
     { model
         | eventStream =
             model.eventStream
                 |> eventsLens.set queue
-                |> etagLens.set response.etag
                 |> errorLens.set Nothing
     }
         |> limitsLens.set response.limits
@@ -122,6 +136,7 @@ resetEventStreamIfSourceChanged source model =
         model
             |> eventStreamSourceLens.set source
             |> eventStreamEventsLens.set []
+            |> eventStreamEtagLens.set ""
             |> timelineEventsLens.set []
 
     else

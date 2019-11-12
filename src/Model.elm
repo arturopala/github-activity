@@ -1,7 +1,7 @@
-module Model exposing (Authorization(..), Mode(..), Model, eventStreamErrorLens, eventStreamEventsLens, eventStreamLens, eventStreamSourceLens, initialModel, limitsLens, modeLens, routeLens, timelineEventsLens, timelineLens, urlLens)
+module Model exposing (Authorization(..), Mode(..), Model, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamLens, eventStreamSourceLens, initialModel, limitsLens, modeLens, routeLens, timelineEventsLens, timelineLens, urlLens)
 
 import Browser.Navigation exposing (Key)
-import EventStream.Model as EventStream exposing (Model, sourceLens)
+import EventStream.Model as EventStream exposing (Model, etagLens, sourceLens)
 import GitHub.Model exposing (GitHubApiLimits, GitHubEvent)
 import Http
 import Monocle.Lens exposing (Lens, compose)
@@ -44,7 +44,7 @@ initialModel key url =
     , preferences =
         { numberOfEventsOnDisplay = 100
         , maxNumberOfEventsInQueue = 1000
-        , tickIntervalMilliseconds = 500
+        , tickIntervalMilliseconds = 250
         }
     , key = key
     , url = url
@@ -103,6 +103,11 @@ limitsLens =
 eventStreamSourceLens : Lens Model GitHub.Model.GitHubEventSource
 eventStreamSourceLens =
     compose eventStreamLens sourceLens
+
+
+eventStreamEtagLens : Lens Model String
+eventStreamEtagLens =
+    compose eventStreamLens etagLens
 
 
 eventStreamEventsLens : Lens Model (List GitHubEvent)

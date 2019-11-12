@@ -41,6 +41,8 @@ matchers =
     oneOf
         [ top <?> Query.string "code" |> map (\c -> c |> Maybe.map OAuthCode |> Maybe.withDefault StartRoute)
         , s "events" </> s "users" </> string |> map GitHubEventSourceUser |> map EventsRoute
+        , s "events" </> s "orgs" </> string |> map GitHubEventSourceOrganisation |> map EventsRoute
+        , s "events" </> s "repos" </> string </> string |> map GitHubEventSourceRepository |> map EventsRoute
         , s "events" |> map GitHubEventSourceDefault |> map EventsRoute
         ]
 
@@ -59,3 +61,9 @@ modifyUrlGivenSource url source =
 
         GitHubEventSourceUser user ->
             { url | fragment = Just ("events/users/" ++ user), query = Nothing }
+
+        GitHubEventSourceOrganisation org ->
+            { url | fragment = Just ("events/orgs/" ++ org), query = Nothing }
+
+        GitHubEventSourceRepository owner repo ->
+            { url | fragment = Just ("events/repos/" ++ owner ++ "/" ++ repo), query = Nothing }

@@ -33,6 +33,8 @@ type alias GitHubEventsChunk =
 type GitHubEventSource
     = GitHubEventSourceDefault
     | GitHubEventSourceUser String
+    | GitHubEventSourceOrganisation String
+    | GitHubEventSourceRepository String String
 
 
 type alias GitHubEvent =
