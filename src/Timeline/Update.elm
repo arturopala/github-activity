@@ -24,8 +24,8 @@ updateEventsOnDisplay model =
             case model.eventStream.events of
                 head :: _ ->
                     (head :: model.timeline.events)
-                        |> List.take model.preferences.numberOfEventsOnDisplay
                         |> List.sortBy (.created_at >> posixToMillis >> negate)
+                        |> List.take model.preferences.numberOfEventsOnDisplay
 
                 [] ->
                     model.timeline.events

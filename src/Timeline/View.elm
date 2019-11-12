@@ -206,7 +206,7 @@ signInButton model =
                 [ href "https://github.com/login/oauth/authorize?client_id=22030043f4425febdf23&scope=read:org"
                 , class "mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect mdl-color-text--white"
                 ]
-                [ text "Sign in with GitHub"
-                , i [ class "fab fa-github fa-lg" ] []
+                [ text "Sign in"
+                , i [ class "fab fa-github fa-lg left-spaced" ] []
                 ]
             ]

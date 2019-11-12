@@ -39,7 +39,7 @@ update msg auth model =
                 model2 =
                     updateEventStream response model
             in
-            ( { model2 | eventStream = model.eventStream |> etagLens.set response.etag }
+            ( { model2 | eventStream = model2.eventStream |> etagLens.set response.etag }
             , maybeReadEventsNextPage model response
             )
 
