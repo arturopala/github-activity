@@ -23,8 +23,9 @@ view model =
                     ++ signInButton model
                 )
             ]
-        , section [ class "timeline-error" ] [ viewError model.eventStream.error ]
-        , node "main" [ class "timeline mdl-layout__content" ] (viewEvents model.zone model.timeline.events)
+        , node "main"
+            [ class "timeline mdl-layout__content" ]
+            (viewEvents model.zone model.timeline.events)
         ]
 
 
@@ -43,7 +44,7 @@ viewEvent zone event =
             , style "background-image" ("url('" ++ event.actor.avatar_url ++ "')")
             ]
             [ div [ class "card-event-datetime" ] (formatDate zone event.created_at)
-            , div [ class "card-event-repo" ] [ text (String.dropLeft 5 event.repo.name) ]
+            , div [ class "card-event-repo" ] [ text (String.replace "/" " / " event.repo.name) ]
             , div [ class "card-event-actor" ] [ text event.actor.display_login ]
             ]
         , div [ class "mdl-card__actions" ]
@@ -197,12 +198,7 @@ signInButton : Model -> List (Html Msg)
 signInButton model =
     case model.user of
         Just user ->
-            [ span
-                [ class "mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect mdl-color-text--white"
-                ]
-                [ text user.name
-                ]
-            , i [ class "fab fa-github fa-lg" ] []
+            [ i [ class "fab fa-github fa-lg", title ("Signed in as " ++ user.name) ] []
             ]
 
         Nothing ->
@@ -211,6 +207,6 @@ signInButton model =
                 , class "mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect mdl-color-text--white"
                 ]
                 [ text "Sign in with GitHub"
+                , i [ class "fab fa-github fa-lg" ] []
                 ]
-            , i [ class "fab fa-github fa-lg" ] []
             ]
