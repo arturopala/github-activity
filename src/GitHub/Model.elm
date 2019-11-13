@@ -1,4 +1,4 @@
-module GitHub.Model exposing (GitHubApiLimits, GitHubError, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubPullRequestEventPayload, GitHubPullRequestLink, GitHubReleaseEventPayload, GitHubReleaseLink, GitHubRepoLink, GitHubResponse, GitHubUserInfo)
+module GitHub.Model exposing (GitHubApiLimits, GitHubError, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubOrganisationInfo, GitHubPullRequestEventPayload, GitHubPullRequestLink, GitHubReleaseEventPayload, GitHubReleaseLink, GitHubRepoLink, GitHubResponse, GitHubUserInfo)
 
 import Dict exposing (Dict)
 import Time exposing (Posix)
@@ -107,4 +107,16 @@ type alias GitHubUserInfo =
     , public_gists : Int
     , followers : Int
     , following : Int
+    }
+
+
+type alias GitHubOrganisationInfo =
+    { login : String
+    , id : Int
+    , node_id : String
+    , url : Url
+    , repos_url : Url
+    , events_url : Url
+    , avatar_url : Url
+    , description : String
     }

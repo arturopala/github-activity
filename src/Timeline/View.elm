@@ -3,17 +3,20 @@ module Timeline.View exposing (view)
 import DateFormat
 import EventStream.Message exposing (..)
 import GitHub.Model exposing (..)
-import Html exposing (Html, a, div, header, i, section, span, text)
+import Html exposing (Html, a, button, div, header, i, section, span, text)
 import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
 import Html.Keyed exposing (node)
 import Http
+import Message exposing (Msg(..))
 import Model exposing (Model)
 import Time exposing (..)
+import Util exposing (push)
 
 
 view : Model -> Html Msg
 view model =
-    section [ class "mdl-layout mdl-js-layout" ]
+    section [ class "mdl-layout " ]
         [ header [ class "mdl-layout__header" ]
             [ div [ class "mdl-layout__header-row" ]
                 ([ span [ class "mdl-layout__title" ]
@@ -198,13 +201,26 @@ signInButton : Model -> List (Html Msg)
 signInButton model =
     case model.user of
         Just user ->
-            [ i [ class "fab fa-github fa-lg", title ("Signed in as " ++ user.name) ] []
+            [ button
+                [ onClick (NavigateCommand (Just "") Nothing)
+                , class "mdl-button mdl-button--colored mdl-color-text--white"
+                ]
+                [ text "Change source"
+                , i [ class "fas fa-plug fa-lg left-spaced" ] []
+                ]
+            , button
+                [ onClick SignOutCommand
+                , class "mdl-button mdl-button--colored mdl-color-text--white"
+                ]
+                [ text "Sign out"
+                , i [ class "fas fa-sign-out-alt fa-lg left-spaced" ] []
+                ]
             ]
 
         Nothing ->
-            [ a
-                [ href "https://github.com/login/oauth/authorize?client_id=22030043f4425febdf23&scope=read:org"
-                , class "mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect mdl-color-text--white"
+            [ button
+                [ onClick (AuthorizeUserCommand (push (ChangeEventSourceCommand model.eventStream.source)))
+                , class "mdl-button mdl-button--colored mdl-color-text--white"
                 ]
                 [ text "Sign in"
                 , i [ class "fab fa-github fa-lg left-spaced" ] []

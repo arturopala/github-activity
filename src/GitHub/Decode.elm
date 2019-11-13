@@ -1,4 +1,4 @@
-module GitHub.Decode exposing (decodeActor, decodeDateTime, decodeEvent, decodeEventByType, decodeEvents, decodeGitHubUserInfo, decodePayload, decodePullRequest, decodePullRequestEventPayload, decodeRelease, decodeReleaseEventPayload, decodeRepo)
+module GitHub.Decode exposing (decodeActor, decodeDateTime, decodeEvent, decodeEventByType, decodeEvents, decodeGitHubOrganisationInfo, decodeGitHubUserInfo, decodePayload, decodePullRequest, decodePullRequestEventPayload, decodeRelease, decodeReleaseEventPayload, decodeRepo)
 
 import GitHub.Model exposing (..)
 import Iso8601 exposing (toTime)
@@ -111,6 +111,19 @@ decodeGitHubUserInfo =
         |> required "public_gists" int
         |> required "followers" int
         |> required "following" int
+
+
+decodeGitHubOrganisationInfo : Decoder GitHubOrganisationInfo
+decodeGitHubOrganisationInfo =
+    Decode.succeed GitHubOrganisationInfo
+        |> required "login" string
+        |> required "id" int
+        |> required "node_id" string
+        |> required "url" decodeUrl
+        |> required "repos_url" decodeUrl
+        |> required "events_url" decodeUrl
+        |> required "avatar_url" decodeUrl
+        |> required "description" string
 
 
 dummyUrl : Url.Url

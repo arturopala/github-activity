@@ -1,9 +1,11 @@
-module Model exposing (Authorization(..), Mode(..), Model, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamLens, eventStreamSourceLens, initialModel, limitsLens, modeLens, routeLens, timelineEventsLens, timelineLens, urlLens)
+module Model exposing (Authorization(..), Model, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamLens, eventStreamSourceLens, initialModel, limitsLens, modeLens, routeLens, timelineEventsLens, timelineLens, urlLens)
 
 import Browser.Navigation exposing (Key)
 import EventStream.Model as EventStream exposing (Model, etagLens, sourceLens)
 import GitHub.Model exposing (GitHubApiLimits, GitHubEvent)
 import Http
+import Message exposing (Msg)
+import Mode exposing (Mode)
 import Monocle.Lens exposing (Lens, compose)
 import Routing exposing (Route(..))
 import Time exposing (Zone)
@@ -20,10 +22,12 @@ type alias Model =
     , timeline : Timeline.Model
     , authorization : Authorization
     , user : Maybe GitHub.Model.GitHubUserInfo
+    , organisations : List GitHub.Model.GitHubOrganisationInfo
     , preferences : Preferences
     , url : Url
     , limits : GitHubApiLimits
     , zone : Zone
+    , doAfterAuthorized : Maybe (Cmd Msg)
     }
 
 
@@ -35,12 +39,13 @@ title =
 initialModel : Key -> Url -> Model
 initialModel key url =
     { title = title
-    , mode = Homepage
+    , mode = Mode.Homepage
     , route = StartRoute
     , eventStream = EventStream.initialEventStream
     , timeline = Timeline.initialTimeline
     , authorization = Unauthorized
     , user = Nothing
+    , organisations = []
     , preferences =
         { numberOfEventsOnDisplay = 100
         , maxNumberOfEventsInQueue = 1000
@@ -50,12 +55,8 @@ initialModel key url =
     , url = url
     , limits = GitHubApiLimits 60 60 Nothing 120
     , zone = Time.utc
+    , doAfterAuthorized = Nothing
     }
-
-
-type Mode
-    = Homepage
-    | Timeline
 
 
 type Authorization

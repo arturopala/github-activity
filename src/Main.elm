@@ -4,11 +4,13 @@ import Browser exposing (..)
 import Browser.Navigation as Nav
 import EventStream.Message
 import EventStream.Update exposing (resetEventStreamIfSourceChanged)
-import GitHub.APIv3 exposing (readCurrentUserInfo)
+import GitHub.APIv3 exposing (readCurrentUserInfo, readCurrentUserOrganisations)
 import GitHub.Message
 import GitHub.Model
 import GitHub.OAuthProxy exposing (requestAccessToken)
+import Homepage.View
 import Message exposing (Msg(..))
+import Mode exposing (Mode(..))
 import Model exposing (..)
 import Routing exposing (Route(..), modifyUrlGivenSource)
 import Task
@@ -17,8 +19,7 @@ import Timeline.Message
 import Timeline.Update
 import Timeline.View
 import Url exposing (Url)
-import Util exposing (modifyModel, push, wrapCmd, wrapMsg)
-import View
+import Util exposing (modifyModel, push, wrapCmd)
 
 
 main : Program () Model Msg
@@ -28,22 +29,22 @@ main =
         , init = init
         , update = update
         , subscriptions = subscriptions
-        , onUrlRequest = OnUrlRequestMsg
-        , onUrlChange = OnUrlChangeMsg
+        , onUrlRequest = ChangeUrlCommand
+        , onUrlChange = UrlChangedEvent
         }
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model.mode of
-        Timeline ->
+        Mode.Timeline ->
             if List.isEmpty model.eventStream.events then
                 Sub.none
 
             else
-                Time.every model.preferences.tickIntervalMilliseconds (\_ -> TickMsg)
+                Time.every model.preferences.tickIntervalMilliseconds (\_ -> ClockTickEvent)
 
-        Homepage ->
+        _ ->
             Sub.none
 
 
@@ -56,37 +57,37 @@ init flags url key =
         ( model, cmd ) =
             route initialRoute (initialModel key url)
     in
-    ( model, Cmd.batch [ cmd, Task.perform TimeZoneMsg Time.here ] )
+    ( model, Cmd.batch [ cmd, Task.perform GotTimeZoneEvent Time.here ] )
 
 
 route : Route -> Model -> ( Model, Cmd Msg )
 route r model =
     case r of
         StartRoute ->
-            ( { model | mode = Homepage }, Cmd.none )
+            ( { model | mode = Mode.Homepage }, Cmd.none )
 
         OAuthCode code ->
-            ( model, requestAccessToken code |> Cmd.map LoginMsg )
+            ( model, requestAccessToken code |> Cmd.map GotTokenEvent )
 
         EventsRoute source ->
             ( model
                 |> resetEventStreamIfSourceChanged source
-                |> modeLens.set Timeline
+                |> modeLens.set Mode.Timeline
             , push (EventStreamMsg EventStream.Message.ReadEvents)
             )
 
         RouteNotFound ->
-            ( { model | mode = Homepage }, Cmd.none )
+            ( model, push (NavigateCommand Nothing Nothing) )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update m model =
     case m of
-        OnUrlChangeMsg url ->
+        UrlChangedEvent url ->
             route (Routing.parseLocation url) model
                 |> modifyModel urlLens url
 
-        OnUrlRequestMsg urlRequest ->
+        ChangeUrlCommand urlRequest ->
             case urlRequest of
                 Internal url ->
                     ( model
@@ -98,14 +99,46 @@ update m model =
                     , Nav.load url
                     )
 
-        LoginMsg (GitHub.OAuthProxy.OAuthToken token scope) ->
-            ( { model | authorization = Token token scope }
-            , readCurrentUserInfo (Token token scope) |> Cmd.map UserMsg
+        NavigateCommand maybeFragment maybeQuery ->
+            let
+                url =
+                    model.url
+            in
+            ( model, pushUrl model { url | fragment = maybeFragment, query = maybeQuery } )
+
+        AuthorizeUserCommand cmd ->
+            ( { model | doAfterAuthorized = Just cmd }, Nav.load Routing.signInUrl )
+
+        SignOutCommand ->
+            ( { model
+                | authorization = Unauthorized
+                , user = Nothing
+                , organisations = []
+              }
+            , push (NavigateCommand Nothing Nothing)
             )
 
-        UserMsg (GitHub.Message.GitHubUserMsg (Ok response)) ->
+        GotTokenEvent (GitHub.OAuthProxy.OAuthToken token scope) ->
+            let
+                url =
+                    model.url
+            in
+            ( { model | authorization = Token token scope }
+            , Cmd.batch
+                [ pushUrl model { url | query = Nothing }
+                , readCurrentUserInfo (Token token scope) |> Cmd.map GotGitHubApiResponseEvent
+                , model.doAfterAuthorized |> Maybe.withDefault Cmd.none
+                ]
+            )
+
+        GotGitHubApiResponseEvent (GitHub.Message.GitHubUserMsg (Ok response)) ->
             ( { model | user = Just response.content }
-            , pushUrl model (modifyUrlGivenSource model.url (GitHub.Model.GitHubEventSourceUser response.content.login))
+            , readCurrentUserOrganisations model.authorization |> Cmd.map GotGitHubApiResponseEvent
+            )
+
+        GotGitHubApiResponseEvent (GitHub.Message.GitHubUserOrganisationsMsg (Ok response)) ->
+            ( { model | organisations = response.content }
+            , Cmd.none
             )
 
         EventStreamMsg msg ->
@@ -116,17 +149,29 @@ update m model =
             Timeline.Update.update msg model
                 |> wrapCmd TimelineMsg
 
-        TickMsg ->
+        ClockTickEvent ->
             case model.mode of
-                Homepage ->
-                    ( model, Cmd.none )
-
-                Timeline ->
+                Mode.Timeline ->
                     Timeline.Update.update Timeline.Message.TickMsg model
                         |> wrapCmd TimelineMsg
 
-        TimeZoneMsg zone ->
+                _ ->
+                    ( model, Cmd.none )
+
+        GotTimeZoneEvent zone ->
             ( { model | zone = zone }, Cmd.none )
+
+        ChangeEventSourceCommand source ->
+            let
+                cmd =
+                    case model.authorization of
+                        Unauthorized ->
+                            push (AuthorizeUserCommand (push (ChangeEventSourceCommand source)))
+
+                        Token _ _ ->
+                            pushUrl model (modifyUrlGivenSource model.url source)
+            in
+            ( model |> eventStreamSourceLens.set source, cmd )
 
         _ ->
             ( model, Cmd.none )
@@ -135,17 +180,16 @@ update m model =
 view : Model -> Browser.Document Msg
 view model =
     case model.mode of
-        Timeline ->
+        Mode.Homepage ->
+            { title = model.title
+            , body = [ Homepage.View.view model ]
+            }
+
+        Mode.Timeline ->
             { title = model.title
             , body =
                 [ Timeline.View.view model
-                    |> wrapMsg EventStreamMsg
                 ]
-            }
-
-        Homepage ->
-            { title = model.title
-            , body = [ View.view model ]
             }
 
 

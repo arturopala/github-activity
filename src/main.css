@@ -1,4 +1,4 @@
-.welcome {
+.homepage {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -9,7 +9,6 @@
 
 .card-login.mdl-card {
   width: 300px;
-  height: 300px;
 }
 .card-login > .mdl-card__actions {
   border-color: rgba(0, 0, 0, 0.2);

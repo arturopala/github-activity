@@ -1,11 +1,11 @@
-module GitHub.APIv3 exposing (readCurrentUserInfo, readGitHubEvents, readGitHubEventsNextPage)
+module GitHub.APIv3 exposing (readCurrentUserInfo, readCurrentUserOrganisations, readGitHubEvents, readGitHubEventsNextPage)
 
 import Dict exposing (Dict)
-import GitHub.Decode exposing (decodeEvents, decodeGitHubUserInfo)
+import GitHub.Decode exposing (decodeEvents, decodeGitHubOrganisationInfo, decodeGitHubUserInfo)
 import GitHub.Message exposing (Msg(..))
 import GitHub.Model exposing (..)
 import Http
-import Json.Decode exposing (Decoder, decodeString, errorToString)
+import Json.Decode as Decode exposing (Decoder, decodeString, errorToString)
 import Model exposing (Authorization(..))
 import Time exposing (Posix)
 import Url exposing (Url)
@@ -44,6 +44,11 @@ readGitHubEventsNextPage url etag auth =
 readCurrentUserInfo : Authorization -> Cmd Msg
 readCurrentUserInfo auth =
     httpGet { githubApiUrl | path = "/user" } "" auth GitHubUserMsg decodeGitHubUserInfo
+
+
+readCurrentUserOrganisations : Authorization -> Cmd Msg
+readCurrentUserOrganisations auth =
+    httpGet { githubApiUrl | path = "/user/orgs" } "" auth GitHubUserOrganisationsMsg (Decode.list decodeGitHubOrganisationInfo)
 
 
 httpGet : Url -> String -> Authorization -> ResultToMsg a -> Decoder a -> Cmd Msg
