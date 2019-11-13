@@ -42,22 +42,76 @@ viewEvents zone events =
 
 viewEvent : Zone -> GitHubEvent -> ( String, Html Msg )
 viewEvent zone event =
+    let
+        label =
+            eventLabel event
+
+        snake =
+            String.replace " " "-" label
+    in
     ( event.id
     , section
-        [ classList [ ( "card-event mdl-card mdl-shadow--2dp", True ), ( "card-event-" ++ event.eventType, True ) ] ]
+        [ classList [ ( "card-event mdl-card mdl-shadow--2dp", True ), ( "event-" ++ snake, True ) ] ]
         [ div
             [ class "mdl-card__supporting-text mdl-card--expand"
             , style "background-image" ("url('" ++ event.actor.avatar_url ++ "')")
             ]
             [ div [ class "card-event-datetime" ] (formatDate zone event.created_at)
             , div [ class "card-event-repo" ] [ text (String.replace "/" " / " event.repo.name) ]
+            , div [ class "card-event-content" ] (contentPreview event)
             , div [ class "card-event-actor" ] [ text event.actor.display_login ]
             ]
-        , div [ class "mdl-card__actions" ]
-            [ span [ class "card-event-type" ] [ text (String.dropRight 5 event.eventType) ]
+        , div [ classList [ ( "mdl-card__actions", True ), ( "event-" ++ snake, True ) ] ]
+            [ span [ class "card-event-type" ] [ text label ]
             ]
         ]
     )
+
+
+eventLabel : GitHubEvent -> String
+eventLabel event =
+    String.toLower <|
+        case event.payload of
+            GitHubPullRequestEvent payload ->
+                "Pull Request "
+                    ++ (case payload.action of
+                            "closed" ->
+                                if payload.pull_request.merged then
+                                    "merged"
+
+                                else
+                                    "rejected"
+
+                            _ ->
+                                payload.action
+                       )
+
+            _ ->
+                case event.eventType of
+                    "PullRequestReviewCommentEvent" ->
+                        "Review Comment"
+
+                    "IssueCommentEvent" ->
+                        "Issue Comment"
+
+                    _ ->
+                        String.dropRight 5 event.eventType
+
+
+contentPreview : GitHubEvent -> List (Html Msg)
+contentPreview event =
+    case event.payload of
+        GitHubPullRequestEvent payload ->
+            [ div [ class "e-pr" ]
+                [ span [ class "e-pr__cf" ] [ i [ class "far fa-file-alt fa-sm sm-right-spaced" ] [], text ("" ++ String.fromInt payload.pull_request.changed_files) ]
+                , span [ class "e-pr__ad" ] [ i [ class "far fa-plus-square fa-sm sm-spaced" ] [], text ("" ++ String.fromInt payload.pull_request.additions) ]
+                , span [ class "e-pr__de" ] [ i [ class "far fa-minus-square fa-sm sm-spaced" ] [], text ("" ++ String.fromInt payload.pull_request.deletions) ]
+                ]
+            , text (String.left 100 payload.pull_request.title)
+            ]
+
+        _ ->
+            []
 
 
 formatDate : Zone -> Posix -> List (Html Msg)

@@ -1,12 +1,17 @@
-module GitHub.Decode exposing (decodeActor, decodeDateTime, decodeEvent, decodeEventByType, decodeEvents, decodeGitHubOrganisationInfo, decodeGitHubUserInfo, decodePayload, decodePullRequest, decodePullRequestEventPayload, decodeRelease, decodeReleaseEventPayload, decodeRepo)
+module GitHub.Decode exposing (decodeActor, decodeDateTime, decodeEvent, decodeEventByType, decodeEvents, decodeOrganisation, decodePayload, decodePullRequest, decodePullRequestEventPayload, decodeReleaseEventPayload, decodeReleaseRef, decodeRepoLink, decodeRepository, decodeUser, decodeUserRef)
 
 import GitHub.Model exposing (..)
 import Iso8601 exposing (toTime)
-import Json.Decode as Decode exposing (Decoder, andThen, field, int, list, map, string)
+import Json.Decode as Decode exposing (Decoder, andThen, bool, field, int, list, map, maybe, string)
 import Json.Decode.Pipeline exposing (optional, required)
 import Regex exposing (Regex)
 import Time exposing (Posix)
 import Url
+
+
+notrequi : String -> Decoder a -> Decoder (Maybe a -> b) -> Decoder b
+notrequi key valDecoder decoder =
+    optional key (maybe valDecoder) Nothing decoder
 
 
 decodeEvents : Decoder (List GitHubEvent)
@@ -26,7 +31,7 @@ decodeEventByType t =
         |> required "id" string
         |> required "type" string
         |> required "actor" decodeActor
-        |> required "repo" decodeRepo
+        |> required "repo" decodeRepoLink
         |> required "payload" (decodePayload t)
         |> required "created_at" decodeDateTime
 
@@ -38,11 +43,37 @@ decodeActor =
         |> required "avatar_url" string
 
 
-decodeRepo : Decoder GitHubRepoLink
-decodeRepo =
-    Decode.succeed GitHubRepoLink
+decodeRepoLink : Decoder GitHubRepoRef
+decodeRepoLink =
+    Decode.succeed GitHubRepoRef
+        |> required "id" int
         |> required "name" string
-        |> required "url" string
+        |> required "url" decodeUrl
+
+
+decodeRepository : Decoder GitHubRepository
+decodeRepository =
+    Decode.succeed GitHubRepository
+        |> required "id" int
+        |> required "name" string
+        |> required "full_name" string
+        |> required "url" decodeUrl
+        |> required "html_url" decodeUrl
+        |> required "events_url" decodeUrl
+        |> required "owner" decodeUser
+        |> required "private" bool
+        |> required "fork" bool
+        |> required "forks_count" int
+        |> required "watchers_count" int
+        |> required "subscribers_count" int
+        |> required "network_count" int
+        |> required "size" int
+        |> required "open_issues_count" int
+        |> required "default_branch" string
+        |> required "topics" (list string)
+        |> required "created_at" decodeDateTime
+        |> required "updated_at" decodeDateTime
+        |> required "pushed_at" decodeDateTime
 
 
 decodePayload : String -> Decoder GitHubEventPayload
@@ -67,33 +98,62 @@ decodePullRequestEventPayload : Decoder GitHubPullRequestEventPayload
 decodePullRequestEventPayload =
     Decode.succeed GitHubPullRequestEventPayload
         |> required "action" string
+        |> required "number" int
         |> required "pull_request" decodePullRequest
 
 
-decodePullRequest : Decoder GitHubPullRequestLink
+decodePullRequest : Decoder GitHubPullRequest
 decodePullRequest =
-    Decode.succeed GitHubPullRequestLink
-        |> required "url" string
+    Decode.succeed GitHubPullRequest
         |> required "id" int
+        |> required "url" decodeUrl
+        |> required "html_url" decodeUrl
+        |> required "diff_url" decodeUrl
+        |> required "commits_url" decodeUrl
+        |> required "comments_url" decodeUrl
+        |> required "state" string
+        |> required "title" string
+        |> required "body" string
+        |> required "created_at" decodeDateTime
+        |> notrequi "merged_at" decodeDateTime
+        |> notrequi "merged_commit_sha" string
+        |> required "user" decodeUserRef
+        |> notrequi "assignee" decodeUserRef
+        |> optional "assignees" (list decodeUserRef) []
+        |> optional "requested_reviewers" (list decodeUserRef) []
+        |> required "merged" bool
+        |> notrequi "mergeable" bool
+        |> notrequi "rebaseable" bool
+        |> required "mergeable_state" string
+        |> notrequi "merged_by" decodeUserRef
+        |> required "comments" int
+        |> required "review_comments" int
+        |> required "commits" int
+        |> required "additions" int
+        |> required "deletions" int
+        |> required "changed_files" int
+        |> required "head" decodeReference
+        |> required "base" decodeReference
 
 
 decodeReleaseEventPayload : Decoder GitHubReleaseEventPayload
 decodeReleaseEventPayload =
     Decode.succeed GitHubReleaseEventPayload
         |> required "action" string
-        |> required "release" decodeRelease
+        |> required "release" decodeReleaseRef
 
 
-decodeRelease : Decoder GitHubReleaseLink
-decodeRelease =
-    Decode.succeed GitHubReleaseLink
+decodeReleaseRef : Decoder GitHubReleaseRef
+decodeReleaseRef =
+    Decode.succeed GitHubReleaseRef
         |> required "url" string
         |> required "tag_name" string
 
 
-decodeGitHubUserInfo : Decoder GitHubUserInfo
-decodeGitHubUserInfo =
-    Decode.succeed GitHubUserInfo
+decodeUser : Decoder GitHubUser
+decodeUser =
+    Decode.succeed GitHubUser
+        |> required "id" int
         |> required "login" string
         |> required "avatar_url" decodeUrl
         |> required "url" decodeUrl
@@ -113,9 +173,20 @@ decodeGitHubUserInfo =
         |> required "following" int
 
 
-decodeGitHubOrganisationInfo : Decoder GitHubOrganisationInfo
-decodeGitHubOrganisationInfo =
-    Decode.succeed GitHubOrganisationInfo
+decodeUserRef : Decoder GitHubUserRef
+decodeUserRef =
+    Decode.succeed GitHubUserRef
+        |> required "id" int
+        |> required "login" string
+        |> required "avatar_url" decodeUrl
+        |> required "url" decodeUrl
+        |> required "html_url" decodeUrl
+        |> required "type" string
+
+
+decodeOrganisation : Decoder GitHubOrganisation
+decodeOrganisation =
+    Decode.succeed GitHubOrganisation
         |> required "login" string
         |> required "id" int
         |> required "node_id" string
@@ -124,6 +195,16 @@ decodeGitHubOrganisationInfo =
         |> required "events_url" decodeUrl
         |> required "avatar_url" decodeUrl
         |> required "description" string
+
+
+decodeReference : Decoder GitHubReference
+decodeReference =
+    Decode.succeed GitHubReference
+        |> required "label" string
+        |> required "ref" string
+        |> required "sha" string
+        |> required "user" decodeUserRef
+        |> required "repo" decodeRepoLink
 
 
 dummyUrl : Url.Url

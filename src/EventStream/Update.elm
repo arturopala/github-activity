@@ -9,6 +9,7 @@ import GitHub.Message
 import GitHub.Model exposing (GitHubApiLimits, GitHubEvent, GitHubEventSource(..), GitHubEventsChunk, GitHubResponse)
 import Http
 import Model exposing (Authorization, Model, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamSourceLens, limitsLens, timelineEventsLens)
+import Ports
 import Time exposing (posixToMillis)
 import Url
 import Util exposing (..)
@@ -81,6 +82,11 @@ handleHttpError error model =
         Http.BadStatus 403 ->
             ( eventStreamErrorLens.set (Just error) model
             , scheduleNextRead model
+            )
+
+        Http.BadBody string ->
+            ( eventStreamErrorLens.set (Just error) model
+            , Ports.logError string
             )
 
         _ ->

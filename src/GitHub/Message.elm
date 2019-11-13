@@ -6,5 +6,5 @@ import Http
 
 type Msg
     = GitHubEventsMsg (Result ( Http.Error, Maybe GitHubApiLimits ) (GitHubResponse (List GitHubEvent)))
-    | GitHubUserMsg (Result ( Http.Error, Maybe GitHubApiLimits ) (GitHubResponse GitHubUserInfo))
-    | GitHubUserOrganisationsMsg (Result ( Http.Error, Maybe GitHubApiLimits ) (GitHubResponse (List GitHubOrganisationInfo)))
+    | GitHubUserMsg (Result ( Http.Error, Maybe GitHubApiLimits ) (GitHubResponse GitHubUser))
+    | GitHubUserOrganisationsMsg (Result ( Http.Error, Maybe GitHubApiLimits ) (GitHubResponse (List GitHubOrganisation)))

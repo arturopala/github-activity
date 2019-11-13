@@ -18,3 +18,7 @@ serviceWorker.unregister();
 app.ports.storeToken.subscribe(function(token) {
   localStorage.setItem('token', token);
 });
+
+app.ports.logError.subscribe(function(log) {
+  console.error(log);
+});

@@ -45,7 +45,7 @@ showWelcome model _ =
         ]
 
 
-showSelectSource : Model -> GitHub.Model.GitHubUserInfo -> Html Msg
+showSelectSource : Model -> GitHub.Model.GitHubUser -> Html Msg
 showSelectSource model user =
     section [ class "mdl-layout " ]
         [ main_ [ class "homepage mdl-layout__content" ]
@@ -96,7 +96,7 @@ organisationButtonList model =
         |> List.map organisationButton
 
 
-organisationButton : GitHub.Model.GitHubOrganisationInfo -> Html Msg
+organisationButton : GitHub.Model.GitHubOrganisation -> Html Msg
 organisationButton organisation =
     div [ class "mdl-card__actions mdl-card--border mdl-color--secondary mdl-color-text--primary" ]
         [ button

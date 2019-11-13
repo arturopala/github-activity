@@ -15,7 +15,7 @@ all =
             \() ->
                 let
                     underTest =
-                        decodeString GitHub.Decode.decodeGitHubUserInfo
+                        decodeString GitHub.Decode.decodeUser
                             """{
                                  "login": "octocat",
                                  "id": 1,

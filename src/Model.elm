@@ -21,8 +21,8 @@ type alias Model =
     , eventStream : EventStream.Model
     , timeline : Timeline.Model
     , authorization : Authorization
-    , user : Maybe GitHub.Model.GitHubUserInfo
-    , organisations : List GitHub.Model.GitHubOrganisationInfo
+    , user : Maybe GitHub.Model.GitHubUser
+    , organisations : List GitHub.Model.GitHubOrganisation
     , preferences : Preferences
     , url : Url
     , limits : GitHubApiLimits

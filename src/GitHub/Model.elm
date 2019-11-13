@@ -1,4 +1,4 @@
-module GitHub.Model exposing (GitHubApiLimits, GitHubError, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubOrganisationInfo, GitHubPullRequestEventPayload, GitHubPullRequestLink, GitHubReleaseEventPayload, GitHubReleaseLink, GitHubRepoLink, GitHubResponse, GitHubUserInfo)
+module GitHub.Model exposing (GitHubApiLimits, GitHubError, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubOrganisation, GitHubPullRequest, GitHubPullRequestEventPayload, GitHubReference, GitHubReleaseEventPayload, GitHubReleaseRef, GitHubRepoRef, GitHubRepository, GitHubResponse, GitHubUser, GitHubUserRef)
 
 import Dict exposing (Dict)
 import Time exposing (Posix)
@@ -41,7 +41,7 @@ type alias GitHubEvent =
     { id : String
     , eventType : String
     , actor : GitHubEventActor
-    , repo : GitHubRepoLink
+    , repo : GitHubRepoRef
     , payload : GitHubEventPayload
     , created_at : Posix
     }
@@ -53,9 +53,43 @@ type alias GitHubEventActor =
     }
 
 
-type alias GitHubRepoLink =
-    { name : String
-    , url : String
+type alias GitHubRepoRef =
+    { id : Int
+    , name : String
+    , url : Url
+    }
+
+
+type alias GitHubRepository =
+    { id : Int
+    , name : String
+    , full_name : String
+    , url : Url
+    , html_url : Url
+    , events_url : Url
+    , owner : GitHubUser
+    , private : Bool
+    , fork : Bool
+    , forks_count : Int
+    , watchers_count : Int
+    , subscribers_count : Int
+    , network_count : Int
+    , size : Int
+    , open_issues_count : Int
+    , default_branch : String
+    , topics : List String
+    , created_at : Posix
+    , updated_at : Posix
+    , pushed_at : Posix
+    }
+
+
+type alias GitHubReference =
+    { label : String
+    , ref : String
+    , sha : String
+    , user : GitHubUserRef
+    , repo : GitHubRepoRef
     }
 
 
@@ -67,30 +101,59 @@ type GitHubEventPayload
 
 type alias GitHubPullRequestEventPayload =
     { action : String
-    , pull_request : GitHubPullRequestLink
+    , number : Int
+    , pull_request : GitHubPullRequest
     }
 
 
-type alias GitHubPullRequestLink =
-    { url : String
-    , id : Int
+type alias GitHubPullRequest =
+    { id : Int
+    , url : Url
+    , html_url : Url
+    , diff_url : Url
+    , commits_url : Url
+    , comments_url : Url
+    , state : String
+    , title : String
+    , body : String
+    , created_at : Posix
+    , merged_at : Maybe Posix
+    , merged_commit_sha : Maybe String
+    , user : GitHubUserRef
+    , assignee : Maybe GitHubUserRef
+    , assignees : List GitHubUserRef
+    , requested_reviewers : List GitHubUserRef
+    , merged : Bool
+    , mergeable : Maybe Bool
+    , rebaseable : Maybe Bool
+    , mergeable_state : String
+    , merged_by : Maybe GitHubUserRef
+    , comments : Int
+    , review_comments : Int
+    , commits : Int
+    , additions : Int
+    , deletions : Int
+    , changed_files : Int
+    , head : GitHubReference
+    , base : GitHubReference
     }
 
 
 type alias GitHubReleaseEventPayload =
     { action : String
-    , release : GitHubReleaseLink
+    , release : GitHubReleaseRef
     }
 
 
-type alias GitHubReleaseLink =
+type alias GitHubReleaseRef =
     { url : String
     , tag_name : String
     }
 
 
-type alias GitHubUserInfo =
-    { login : String
+type alias GitHubUser =
+    { id : Int
+    , login : String
     , avatar_url : Url
     , url : Url
     , html_url : Url
@@ -110,7 +173,17 @@ type alias GitHubUserInfo =
     }
 
 
-type alias GitHubOrganisationInfo =
+type alias GitHubUserRef =
+    { id : Int
+    , login : String
+    , avatar_url : Url
+    , url : Url
+    , html_url : Url
+    , type_ : String
+    }
+
+
+type alias GitHubOrganisation =
     { login : String
     , id : Int
     , node_id : String

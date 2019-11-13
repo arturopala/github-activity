@@ -165,7 +165,7 @@ all =
                     )
                     (Ok
                         (GitHub.Model.GitHubReleaseEventPayload "published"
-                            (GitHub.Model.GitHubReleaseLink "https://api.github.com/repos/baxterthehacker/public-repo/releases/1261438" "0.0.1")
+                            (GitHub.Model.GitHubReleaseRef "https://api.github.com/repos/baxterthehacker/public-repo/releases/1261438" "0.0.1")
                         )
                     )
         ]

@@ -57,10 +57,15 @@
 }
 .card-event > .mdl-card__actions {
   display: flex;
+  flex-direction: row;
   justify-content: center;
+  align-content: center;
+  align-items: stretch;
   background-color: white;
-  color: black;
-  border-top: solid 1px rgb(63,81,181);
+  color: rgb(63,81,181);
+  border-top-style: solid;
+  border-top-width: 1px;
+
 }
 .card-event-datetime {
   color: gray;          
@@ -68,9 +73,9 @@
 .card-event-repo {
   color: black;
   font-weight: bold;
-  font-size: 1.1rem;
+  font-size: 1rem;
   padding-top: 0.5rem;
-  flex: 2 1 3rem;
+  flex: 0 0 auto;
 }
 .card-event-actor {
   font-size: 0.8rem;
@@ -81,21 +86,84 @@
 .card-event-type {
   font-size: 1rem;
   font-weight: bold;
-  color: rgb(63,81,181);
 }
 .card-event-time {
   padding-right: 0.4rem;
+}
+
+.card-event-content {
+  font-size: 0.95rem;
+  padding-top: 0.3rem;
+  flex: 1 1 auto;
+  color: #8f93b3;
+}
+
+.card-event > .event-pull-request-opened {
+  color: white;
+  border-left: yellow 16px solid;
+  background-color: rgb(63,81,181);;
+}
+.card-event > .event-pull-request-merged {
+  color: white;
+  border-left: lawngreen 16px solid;
+  background-color: rgb(63,81,181);;
+}
+.card-event > .event-pull-request-rejected {
+  color: white;
+  border-left: red 16px solid;
+  background-color: rgb(63,81,181);;
+}
+.card-event > .event-release {
+  color: white;
+  background: url(
+    data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAJ0lEQVQYV2NUyFP9/yDuJQMMMDKc4fsP5zEwMMAFFBaJM4BUYqgAAN7nDGm+bho5AAAAAElFTkSuQmCC
+  ) repeat;
+}
+.card-event > .event-push {
+  color: white;
+  background-color: #8f93b3;
+}
+.card-event > .event-create {
+  color: darkgreen;
+}
+.card-event > .event-delete {
+  color: darkred;
 }
 
 .left-spaced {
     padding-left: 1rem;
 }
 
+.sm-spaced {
+  padding-right: 3px;
+  padding-left: 5px;
+}
+
+.sm-right-spaced {
+  padding-right: 3px;
+}
+
 .mdl-layout__header-row {
   padding-left: 24px;
 }
 
+.e-pr {
+  font-size: 0.9rem;
+}
+
+.e-pr__ad {
+  color: green;
+}
+
+.e-pr__de {
+  color: red;
+}
+
 @media screen and (max-width: 767px) {
+
+  .left-spaced {
+    padding: 0 0.5rem;
+  }
 
   .button-text {
     display: none;
