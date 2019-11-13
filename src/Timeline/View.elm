@@ -1,9 +1,8 @@
 module Timeline.View exposing (view)
 
 import DateFormat
-import EventStream.Message exposing (..)
 import GitHub.Model exposing (..)
-import Html exposing (Html, a, button, div, header, i, section, span, text)
+import Html exposing (Html, a, button, div, header, i, main_, nav, section, span, text)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Html.Keyed exposing (node)
@@ -11,24 +10,28 @@ import Http
 import Message exposing (Msg(..))
 import Model exposing (Model)
 import Time exposing (..)
+import Timeline.Message
 import Util exposing (push)
 
 
 view : Model -> Html Msg
 view model =
-    section [ class "mdl-layout " ]
+    section [ classList [ ( "mdl-layout", True ), ( "mdl-layout--fixed-header", True ) ] ]
         [ header [ class "mdl-layout__header" ]
             [ div [ class "mdl-layout__header-row" ]
                 ([ span [ class "mdl-layout__title" ]
-                    [ text ("GitHub Activity of " ++ sourceTitle model.eventStream.source ++ " " ++ modelStatusDebug model) ]
+                    [ text "GitHub Activity Stream" ]
                  , div [ class "mdl-layout-spacer" ] []
                  ]
-                    ++ signInButton model
+                    ++ navigation model
                 )
             ]
-        , node "main"
-            [ class "timeline mdl-layout__content" ]
-            (viewEvents model.zone model.timeline.events)
+        , main_
+            [ class "mdl-layout__content" ]
+            [ node "div"
+                [ class "timeline page-content" ]
+                (viewEvents model.zone model.timeline.events)
+            ]
         ]
 
 
@@ -197,32 +200,79 @@ formatDateTime zone =
         zone
 
 
-signInButton : Model -> List (Html Msg)
-signInButton model =
-    case model.user of
-        Just user ->
-            [ button
-                [ onClick (NavigateCommand (Just "") Nothing)
-                , class "mdl-button mdl-button--colored mdl-color-text--white"
-                ]
-                [ text "Change source"
-                , i [ class "fas fa-plug fa-lg left-spaced" ] []
-                ]
-            , button
-                [ onClick SignOutCommand
-                , class "mdl-button mdl-button--colored mdl-color-text--white"
-                ]
-                [ text "Sign out"
-                , i [ class "fas fa-sign-out-alt fa-lg left-spaced" ] []
-                ]
-            ]
+navigation : Model -> List (Html Msg)
+navigation model =
+    let
+        elements =
+            case model.user of
+                Just user ->
+                    pauseResumeButton model
+                        ++ [ button
+                                [ onClick (NavigateCommand (Just "") Nothing)
+                                , class "mdl-button mdl-button--colored mdl-color-text--white"
+                                ]
+                                [ span [ class "button-text" ] [ text (sourceName model.eventStream.source) ]
+                                , i [ class "fas fa-plug fa-lg left-spaced" ] []
+                                ]
+                           , button
+                                [ onClick SignOutCommand
+                                , class "mdl-button mdl-button--colored mdl-color-text--white"
+                                ]
+                                [ span [ class "button-text" ] [ text "Sign out" ]
+                                , i [ class "fas fa-sign-out-alt fa-lg left-spaced" ] []
+                                ]
+                           ]
 
-        Nothing ->
-            [ button
-                [ onClick (AuthorizeUserCommand (push (ChangeEventSourceCommand model.eventStream.source)))
-                , class "mdl-button mdl-button--colored mdl-color-text--white"
-                ]
-                [ text "Sign in"
-                , i [ class "fab fa-github fa-lg left-spaced" ] []
-                ]
+                Nothing ->
+                    [ button
+                        [ onClick (AuthorizeUserCommand (push (ChangeEventSourceCommand model.eventStream.source)))
+                        , class "mdl-button mdl-button--colored mdl-color-text--white"
+                        ]
+                        [ span [ class "button-text" ] [ text "Sign in" ]
+                        , i [ class "fab fa-github fa-lg left-spaced" ] []
+                        ]
+                    ]
+    in
+    [ nav
+        [ class "mdl-navigation" ]
+        elements
+    ]
+
+
+sourceName : GitHubEventSource -> String
+sourceName source =
+    case source of
+        GitHubEventSourceDefault ->
+            "all github"
+
+        GitHubEventSourceUser user ->
+            "user: " ++ user
+
+        GitHubEventSourceOrganisation org ->
+            "org: " ++ org
+
+        GitHubEventSourceRepository owner repo ->
+            "repo: " ++ owner ++ "/" ++ repo
+
+
+pauseResumeButton : Model -> List (Html Msg)
+pauseResumeButton model =
+    if model.timeline.active then
+        [ button
+            [ onClick (TimelineMsg Timeline.Message.PauseCommand)
+            , class "mdl-button mdl-button--colored mdl-color-text--white"
             ]
+            [ span [ class "button-text" ] [ text "Pause" ]
+            , i [ class "fas fa-pause fa-lg left-spaced" ] []
+            ]
+        ]
+
+    else
+        [ button
+            [ onClick (TimelineMsg Timeline.Message.PlayCommand)
+            , class "mdl-button mdl-button--colored mdl-color-text--white"
+            ]
+            [ span [ class "button-text" ] [ text "Play" ]
+            , i [ class "fas fa-play fa-lg left-spaced" ] []
+            ]
+        ]

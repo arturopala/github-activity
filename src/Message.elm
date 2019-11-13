@@ -19,7 +19,6 @@ type Msg
     | GotGitHubApiResponseEvent GitHub.Message.Msg
     | GotTimeZoneEvent Zone
     | GotTokenEvent GitHub.OAuthProxy.Msg
-    | ClockTickEvent
     | UrlChangedEvent Url
     | EventStreamMsg EventStream.Message.Msg
     | TimelineMsg Timeline.Message.Msg

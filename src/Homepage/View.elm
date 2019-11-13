@@ -56,10 +56,10 @@ showSelectSource model user =
                         , text " Activity"
                         ]
                     ]
-                 , div [ class "mdl-card__actions mdl-card--border mdl-color--primary mdl-color-text--white" ]
+                 , div [ class "mdl-card__actions mdl-card--border mdl-color--secondary mdl-color-text--primary" ]
                     [ button
                         [ onClick (ChangeEventSourceCommand (GitHub.Model.GitHubEventSourceUser user.login))
-                        , class "mdl-button mdl-button--colored mdl-color-text--white"
+                        , class "mdl-button mdl-button--colored mdl-color-text--primary"
                         ]
                         [ text ("Stream " ++ user.login ++ " user events")
                         ]
@@ -73,6 +73,16 @@ showSelectSource model user =
                                 ]
                                 [ text "Stream all public events"
                                 ]
+                            ]
+                       , div [ class "mdl-card__actions mdl-card--border mdl-color--primary mdl-color-text--white" ]
+                            [ button
+                                [ onClick SignOutCommand
+                                , class "mdl-button mdl-button--colored mdl-color-text--white"
+                                ]
+                                [ text "Sign out"
+                                ]
+                            , div [ class "mdl-layout-spacer" ] []
+                            , i [ class "fas fa-sign-out-alt fa-lg left-spaced" ] []
                             ]
                        ]
                 )

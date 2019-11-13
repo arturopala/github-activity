@@ -1,4 +1,4 @@
-module Model exposing (Authorization(..), Model, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamLens, eventStreamSourceLens, initialModel, limitsLens, modeLens, routeLens, timelineEventsLens, timelineLens, urlLens)
+module Model exposing (Authorization(..), Model, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamLens, eventStreamSourceLens, initialModel, limitsLens, modeLens, routeLens, timelineActiveLens, timelineEventsLens, timelineLens, urlLens)
 
 import Browser.Navigation exposing (Key)
 import EventStream.Model as EventStream exposing (Model, etagLens, sourceLens)
@@ -36,14 +36,14 @@ title =
     "GitHub Activity Dashboard"
 
 
-initialModel : Key -> Url -> Model
-initialModel key url =
+initialModel : Key -> Url -> Maybe String -> Model
+initialModel key url flags =
     { title = title
     , mode = Mode.Homepage
     , route = StartRoute
     , eventStream = EventStream.initialEventStream
     , timeline = Timeline.initialTimeline
-    , authorization = Unauthorized
+    , authorization = parseToken flags
     , user = Nothing
     , organisations = []
     , preferences =
@@ -69,6 +69,26 @@ type alias Preferences =
     , maxNumberOfEventsInQueue : Int
     , tickIntervalMilliseconds : Float
     }
+
+
+parseToken : Maybe String -> Authorization
+parseToken s =
+    let
+        parts =
+            s |> Maybe.map (String.split ",")
+
+        token =
+            parts |> Maybe.andThen List.head
+
+        scope =
+            parts |> Maybe.map (List.drop 1) |> Maybe.andThen List.head |> Maybe.withDefault ""
+    in
+    case token of
+        Just value ->
+            Token value scope
+
+        Nothing ->
+            Unauthorized
 
 
 eventStreamLens : Lens Model EventStream.Model
@@ -124,3 +144,8 @@ eventStreamErrorLens =
 timelineEventsLens : Lens Model (List GitHubEvent)
 timelineEventsLens =
     compose timelineLens Timeline.eventsLens
+
+
+timelineActiveLens : Lens Model Bool
+timelineActiveLens =
+    compose timelineLens Timeline.activeLens

@@ -38,7 +38,7 @@
 }
 
 .card-event.mdl-card {
-  flex: 1 1 content;
+  flex: 1 1 auto;
   height: 10rem;
   width: 12rem;
   background: white;
@@ -89,4 +89,21 @@
 
 .left-spaced {
     padding-left: 1rem;
+}
+
+.mdl-layout__header-row {
+  padding-left: 24px;
+}
+
+@media screen and (max-width: 767px) {
+
+  .button-text {
+    display: none;
+  }
+
+  .mdl-button {
+    min-width: 0;
+    padding: 0 4px;
+  }
+
 }

@@ -12,17 +12,17 @@ import Homepage.View
 import Message exposing (Msg(..))
 import Mode exposing (Mode(..))
 import Model exposing (..)
+import Ports
 import Routing exposing (Route(..), modifyUrlGivenSource)
 import Task
 import Time
-import Timeline.Message
 import Timeline.Update
 import Timeline.View
 import Url exposing (Url)
 import Util exposing (modifyModel, push, wrapCmd)
 
 
-main : Program () Model Msg
+main : Program (Maybe String) Model Msg
 main =
     Browser.application
         { view = view
@@ -36,28 +36,33 @@ main =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    case model.mode of
-        Mode.Timeline ->
-            if List.isEmpty model.eventStream.events then
-                Sub.none
-
-            else
-                Time.every model.preferences.tickIntervalMilliseconds (\_ -> ClockTickEvent)
-
-        _ ->
-            Sub.none
+    Timeline.Update.subscriptions model
+        |> Sub.map TimelineMsg
 
 
-init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
+init : Maybe String -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
     let
         initialRoute =
             Routing.parseLocation url
 
         ( model, cmd ) =
-            route initialRoute (initialModel key url)
+            route initialRoute (initialModel key url flags)
+
+        readUserCmd =
+            case model.authorization of
+                Token token scope ->
+                    case model.user of
+                        Just user ->
+                            Cmd.none
+
+                        Nothing ->
+                            readCurrentUserInfo (Token token scope) |> Cmd.map GotGitHubApiResponseEvent
+
+                Unauthorized ->
+                    Cmd.none
     in
-    ( model, Cmd.batch [ cmd, Task.perform GotTimeZoneEvent Time.here ] )
+    ( model, Cmd.batch [ Task.perform GotTimeZoneEvent Time.here, readUserCmd, cmd ] )
 
 
 route : Route -> Model -> ( Model, Cmd Msg )
@@ -125,7 +130,8 @@ update m model =
             in
             ( { model | authorization = Token token scope }
             , Cmd.batch
-                [ pushUrl model { url | query = Nothing }
+                [ saveToken (token ++ "," ++ scope)
+                , pushUrl model { url | query = Nothing }
                 , readCurrentUserInfo (Token token scope) |> Cmd.map GotGitHubApiResponseEvent
                 , model.doAfterAuthorized |> Maybe.withDefault Cmd.none
                 ]
@@ -149,15 +155,6 @@ update m model =
             Timeline.Update.update msg model
                 |> wrapCmd TimelineMsg
 
-        ClockTickEvent ->
-            case model.mode of
-                Mode.Timeline ->
-                    Timeline.Update.update Timeline.Message.TickMsg model
-                        |> wrapCmd TimelineMsg
-
-                _ ->
-                    ( model, Cmd.none )
-
         GotTimeZoneEvent zone ->
             ( { model | zone = zone }, Cmd.none )
 
@@ -171,7 +168,7 @@ update m model =
                         Token _ _ ->
                             pushUrl model (modifyUrlGivenSource model.url source)
             in
-            ( model |> eventStreamSourceLens.set source, cmd )
+            ( model, cmd )
 
         _ ->
             ( model, Cmd.none )
@@ -196,3 +193,8 @@ view model =
 pushUrl : Model -> Url -> Cmd Msg
 pushUrl model nextUrl =
     Nav.pushUrl model.key (Url.toString nextUrl)
+
+
+saveToken : String -> Cmd msg
+saveToken token =
+    Ports.storeToken token

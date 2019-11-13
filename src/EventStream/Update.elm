@@ -8,7 +8,6 @@ import GitHub.APIv3 exposing (readGitHubEvents, readGitHubEventsNextPage)
 import GitHub.Message
 import GitHub.Model exposing (GitHubApiLimits, GitHubEvent, GitHubEventSource(..), GitHubEventsChunk, GitHubResponse)
 import Http
-import List as Math
 import Model exposing (Authorization, Model, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamSourceLens, limitsLens, timelineEventsLens)
 import Time exposing (posixToMillis)
 import Url
@@ -19,10 +18,16 @@ update : Msg -> Authorization -> Model -> ( Model, Cmd Msg )
 update msg auth model =
     case msg of
         ReadEvents ->
-            ( model
-            , readGitHubEvents model.eventStream.source model.eventStream.etag auth
-                |> Cmd.map GitHubResponseEvents
-            )
+            let
+                cmd =
+                    if model.timeline.active then
+                        readGitHubEvents model.eventStream.source model.eventStream.etag auth
+                            |> Cmd.map GitHubResponseEvents
+
+                    else
+                        scheduleNextRead model
+            in
+            ( model, cmd )
 
         ReadEventsNextPage source url ->
             ( model
@@ -70,12 +75,12 @@ handleHttpError error model =
     case error of
         Http.BadStatus 304 ->
             ( model
-            , delayMessageBasedOnApiLimits model.limits model.limits.xPollInterval ReadEvents
+            , scheduleNextRead model
             )
 
         Http.BadStatus 403 ->
             ( eventStreamErrorLens.set (Just error) model
-            , delayMessageBasedOnApiLimits model.limits model.limits.xPollInterval ReadEvents
+            , scheduleNextRead model
             )
 
         _ ->
@@ -104,7 +109,7 @@ maybeReadEventsNextPage : Model -> GitHubEventsChunk -> Cmd Msg
 maybeReadEventsNextPage model response =
     let
         readEventsAfterDelay =
-            delayMessageBasedOnApiLimits model.limits model.limits.xPollInterval ReadEvents
+            scheduleNextRead model
     in
     if List.length model.eventStream.events >= model.preferences.maxNumberOfEventsInQueue then
         readEventsAfterDelay
@@ -141,3 +146,8 @@ resetEventStreamIfSourceChanged source model =
 
     else
         model
+
+
+scheduleNextRead : Model -> Cmd Msg
+scheduleNextRead model =
+    delayMessageBasedOnApiLimits model.limits model.limits.xPollInterval ReadEvents

@@ -1,18 +1,43 @@
-module Timeline.Update exposing (update)
+module Timeline.Update exposing (subscriptions, update)
 
 import EventStream.Model
 import List exposing ((::))
-import Model exposing (Model, eventStreamEventsLens, timelineEventsLens)
+import Mode
+import Model exposing (Model, eventStreamEventsLens, timelineActiveLens, timelineEventsLens)
 import Time exposing (posixToMillis)
 import Timeline.Message exposing (Msg(..))
 import Timeline.Model
 
 
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    case model.mode of
+        Mode.Timeline ->
+            if List.isEmpty model.eventStream.events || not model.timeline.active then
+                Sub.none
+
+            else
+                Time.every model.preferences.tickIntervalMilliseconds (\_ -> TickEvent)
+
+        _ ->
+            Sub.none
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        TickMsg ->
+        TickEvent ->
             ( updateEventsOnDisplay model
+            , Cmd.none
+            )
+
+        PlayCommand ->
+            ( model |> timelineActiveLens.set True
+            , Cmd.none
+            )
+
+        PauseCommand ->
+            ( model |> timelineActiveLens.set False
             , Cmd.none
             )
 
