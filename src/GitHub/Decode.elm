@@ -60,17 +60,17 @@ decodeRepository =
         |> required "url" decodeUrl
         |> required "html_url" decodeUrl
         |> required "events_url" decodeUrl
-        |> required "owner" decodeUser
+        |> required "owner" decodeUserRef
         |> required "private" bool
         |> required "fork" bool
         |> required "forks_count" int
         |> required "watchers_count" int
-        |> required "subscribers_count" int
-        |> required "network_count" int
+        |> notrequi "subscribers_count" int
+        |> notrequi "network_count" int
         |> required "size" int
         |> required "open_issues_count" int
         |> required "default_branch" string
-        |> required "topics" (list string)
+        |> optional "topics" (list string) []
         |> required "created_at" decodeDateTime
         |> required "updated_at" decodeDateTime
         |> required "pushed_at" decodeDateTime
@@ -209,7 +209,7 @@ decodeReference =
         |> required "ref" string
         |> required "sha" string
         |> required "user" decodeUserRef
-        |> required "repo" decodeRepoLink
+        |> required "repo" decodeRepository
 
 
 dummyUrl : Url.Url

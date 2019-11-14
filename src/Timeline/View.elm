@@ -108,7 +108,32 @@ contentPreview : GitHubEvent -> List (Html Msg)
 contentPreview event =
     case event.payload of
         GitHubPullRequestEvent payload ->
-            [ div [ class "e-pr" ]
+            let
+                master =
+                    payload.pull_request.base.repo.default_branch
+
+                base =
+                    payload.pull_request.base.ref
+
+                head =
+                    payload.pull_request.head.ref
+            in
+            [ div [ class "e-pr-b" ]
+                (if base /= master && head /= base then
+                    [ span [ class "e-pr-b-base" ] [ text (String.left 15 base) ]
+                    , i [ class "fas fa-arrow-circle-left fa-sm sm-spaced" ] []
+                    , span [ class "e-pr-b-head" ] [ text (String.left 15 head) ]
+                    ]
+
+                 else if head /= master then
+                    [ i [ class "fas fa-arrow-circle-right fa-sm sm-right-spaced" ] []
+                    , span [ class "e-pr-b-head" ] [ text (String.left 22 head) ]
+                    ]
+
+                 else
+                    []
+                )
+            , div [ class "e-pr" ]
                 [ span [ class "e-pr__cf" ] [ i [ class "far fa-file-alt fa-sm sm-right-spaced" ] [], text ("" ++ String.fromInt payload.pull_request.changed_files) ]
                 , span [ class "e-pr__ad" ] [ i [ class "far fa-plus-square fa-sm sm-spaced" ] [], text ("" ++ String.fromInt payload.pull_request.additions) ]
                 , span [ class "e-pr__de" ] [ i [ class "far fa-minus-square fa-sm sm-spaced" ] [], text ("" ++ String.fromInt payload.pull_request.deletions) ]

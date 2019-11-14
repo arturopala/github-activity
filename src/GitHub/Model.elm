@@ -67,13 +67,13 @@ type alias GitHubRepository =
     , url : Url
     , html_url : Url
     , events_url : Url
-    , owner : GitHubUser
+    , owner : GitHubUserRef
     , private : Bool
     , fork : Bool
     , forks_count : Int
     , watchers_count : Int
-    , subscribers_count : Int
-    , network_count : Int
+    , subscribers_count : Maybe Int
+    , network_count : Maybe Int
     , size : Int
     , open_issues_count : Int
     , default_branch : String
@@ -89,7 +89,7 @@ type alias GitHubReference =
     , ref : String
     , sha : String
     , user : GitHubUserRef
-    , repo : GitHubRepoRef
+    , repo : GitHubRepository
     }
 
 
