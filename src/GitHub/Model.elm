@@ -1,4 +1,4 @@
-module GitHub.Model exposing (GitHubApiLimits, GitHubError, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubOrganisation, GitHubPullRequest, GitHubPullRequestEventPayload, GitHubReference, GitHubReleaseEventPayload, GitHubReleaseRef, GitHubRepoRef, GitHubRepository, GitHubResponse, GitHubUser, GitHubUserRef)
+module GitHub.Model exposing (GitHubApiLimits, GitHubAuthor, GitHubCommit, GitHubError, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubOrganisation, GitHubPullRequest, GitHubPullRequestEventPayload, GitHubPushEventPayload, GitHubReference, GitHubReleaseEventPayload, GitHubReleaseRef, GitHubRepoRef, GitHubRepository, GitHubResponse, GitHubUser, GitHubUserRef)
 
 import Dict exposing (Dict)
 import Time exposing (Posix)
@@ -96,6 +96,7 @@ type alias GitHubReference =
 type GitHubEventPayload
     = GitHubPullRequestEvent GitHubPullRequestEventPayload
     | GitHubReleaseEvent GitHubReleaseEventPayload
+    | GitHubPushEvent GitHubPushEventPayload
     | GitHubOtherEventPayload
 
 
@@ -142,6 +143,31 @@ type alias GitHubPullRequest =
 type alias GitHubReleaseEventPayload =
     { action : String
     , release : GitHubReleaseRef
+    }
+
+
+type alias GitHubPushEventPayload =
+    { ref : String
+    , head : String
+    , before : String
+    , size : Int
+    , distinct_size : Int
+    , commits : List GitHubCommit
+    }
+
+
+type alias GitHubCommit =
+    { sha : String
+    , message : String
+    , author : GitHubAuthor
+    , url : Url
+    , distinct : Bool
+    }
+
+
+type alias GitHubAuthor =
+    { name : String
+    , email : String
     }
 
 

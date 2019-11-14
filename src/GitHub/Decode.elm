@@ -1,4 +1,4 @@
-module GitHub.Decode exposing (decodeActor, decodeDateTime, decodeEvent, decodeEventByType, decodeEvents, decodeOrganisation, decodePayload, decodePullRequest, decodePullRequestEventPayload, decodeReleaseEventPayload, decodeReleaseRef, decodeRepoLink, decodeRepository, decodeUser, decodeUserRef)
+module GitHub.Decode exposing (decodeActor, decodeDateTime, decodeEvent, decodeEventByType, decodeEvents, decodeGitHubAuthor, decodeGitHubCommit, decodeOrganisation, decodePayload, decodePullRequest, decodePullRequestEventPayload, decodePushEventPayload, decodeReleaseEventPayload, decodeReleaseRef, decodeRepoLink, decodeRepository, decodeUser, decodeUserRef)
 
 import GitHub.Model exposing (..)
 import Iso8601 exposing (toTime)
@@ -85,6 +85,9 @@ decodePayload tag =
         "ReleaseEvent" ->
             map GitHubReleaseEvent decodeReleaseEventPayload
 
+        "PushEvent" ->
+            map GitHubPushEvent decodePushEventPayload
+
         _ ->
             Decode.succeed GitHubOtherEventPayload
 
@@ -141,6 +144,34 @@ decodeReleaseEventPayload =
     Decode.succeed GitHubReleaseEventPayload
         |> required "action" string
         |> required "release" decodeReleaseRef
+
+
+decodePushEventPayload : Decoder GitHubPushEventPayload
+decodePushEventPayload =
+    Decode.succeed GitHubPushEventPayload
+        |> required "ref" string
+        |> required "head" string
+        |> required "before" string
+        |> required "size" int
+        |> required "distinct_size" int
+        |> required "commits" (list decodeGitHubCommit)
+
+
+decodeGitHubCommit : Decoder GitHubCommit
+decodeGitHubCommit =
+    Decode.succeed GitHubCommit
+        |> required "sha" string
+        |> required "message" string
+        |> required "author" decodeGitHubAuthor
+        |> required "url" decodeUrl
+        |> required "distinct" bool
+
+
+decodeGitHubAuthor : Decoder GitHubAuthor
+decodeGitHubAuthor =
+    Decode.succeed GitHubAuthor
+        |> required "name" string
+        |> required "email" string
 
 
 decodeReleaseRef : Decoder GitHubReleaseRef

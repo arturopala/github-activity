@@ -2,11 +2,10 @@ module Timeline.View exposing (view)
 
 import DateFormat
 import GitHub.Model exposing (..)
-import Html exposing (Html, a, button, div, header, i, main_, nav, section, span, text)
+import Html exposing (Html, button, div, header, i, main_, nav, section, span, text)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Html.Keyed exposing (node)
-import Http
 import Message exposing (Msg(..))
 import Model exposing (Model)
 import Time exposing (..)
@@ -42,117 +41,159 @@ viewEvents zone events =
 
 viewEvent : Zone -> GitHubEvent -> ( String, Html Msg )
 viewEvent zone event =
-    let
-        label =
-            eventLabel event
-
-        snake =
-            String.replace " " "-" label
-    in
     ( event.id
-    , section
+    , case event.payload of
+        GitHubPullRequestEvent payload ->
+            viewPullRequestEvent zone event payload
+
+        GitHubReleaseEvent payload ->
+            viewReleaseEvent zone event payload
+
+        GitHubPushEvent payload ->
+            viewPushEvent zone event payload
+
+        _ ->
+            let
+                label =
+                    case event.eventType of
+                        "PullRequestReviewCommentEvent" ->
+                            "Review Comment"
+
+                        "IssueCommentEvent" ->
+                            "Issue Comment"
+
+                        "CommitCommentEvent" ->
+                            "Commit Comment"
+
+                        _ ->
+                            String.dropRight 5 event.eventType
+            in
+            viewEventTemplate1 zone event [] label
+    )
+
+
+viewEventTemplate1 : Zone -> GitHubEvent -> List (Html Msg) -> String -> Html Msg
+viewEventTemplate1 zone event content label =
+    let
+        snake =
+            String.replace " " "-" (String.toLower label)
+    in
+    section
         [ classList [ ( "card-event mdl-card mdl-shadow--2dp", True ), ( "event-" ++ snake, True ) ] ]
         [ div
             [ class "mdl-card__supporting-text mdl-card--expand"
             , style "background-image" ("url('" ++ event.actor.avatar_url ++ "')")
             ]
-            [ div [ class "card-event-datetime" ] (formatDate zone event.created_at)
+            [ div [ class "card-event-actor" ] [ text event.actor.display_login ]
+            , div [ class "card-event-datetime" ] (formatDate zone event.created_at)
             , div [ class "card-event-repo" ] [ text (String.replace "/" " / " event.repo.name) ]
-            , div [ class "card-event-content" ] (contentPreview event)
-            , div [ class "card-event-actor" ] [ text event.actor.display_login ]
+            , div [ class "card-event-content" ] content
             ]
         , div [ classList [ ( "mdl-card__actions", True ), ( "event-" ++ snake, True ) ] ]
-            [ span [ class "card-event-type" ] [ text label ]
+            [ span [ class "card-event-type" ] [ text (String.toLower label) ]
             ]
         ]
-    )
 
 
-eventLabel : GitHubEvent -> String
-eventLabel event =
-    String.toLower <|
-        case event.payload of
-            GitHubPullRequestEvent payload ->
-                "Pull Request "
-                    ++ (case payload.action of
-                            "closed" ->
-                                if payload.pull_request.merged then
-                                    "merged"
+viewPullRequestEvent : Zone -> GitHubEvent -> GitHubPullRequestEventPayload -> Html Msg
+viewPullRequestEvent zone event payload =
+    let
+        master =
+            payload.pull_request.base.repo.default_branch
 
-                                else
-                                    "rejected"
+        base =
+            payload.pull_request.base.ref
 
-                            _ ->
-                                payload.action
-                       )
+        head =
+            payload.pull_request.head.ref
 
-            GitHubReleaseEvent payload ->
-                "Release " ++ payload.action
+        label =
+            "Pull Request "
+                ++ (case payload.action of
+                        "closed" ->
+                            if payload.pull_request.merged then
+                                "merged"
 
-            _ ->
-                case event.eventType of
-                    "PullRequestReviewCommentEvent" ->
-                        "Review Comment"
+                            else
+                                "rejected"
 
-                    "IssueCommentEvent" ->
-                        "Issue Comment"
+                        _ ->
+                            payload.action
+                   )
 
-                    "CommitCommentEvent" ->
-                        "Commit Comment"
+        content =
+            [ div [ class "e-pr-b", title ("merge from " ++ payload.pull_request.head.label ++ " into " ++ payload.pull_request.base.label) ]
+                (case payload.action of
+                    "closed" ->
+                        [ i
+                            [ class "mdi mdi-arrow-collapse-right sm-spaced" ]
+                            []
+                        , span [ class "e-pr-b-base" ] [ text (String.left 23 base) ]
+                        ]
+
+                    "rejected" ->
+                        [ i
+                            [ class "mdi mdi-cancel sm-spaced" ]
+                            []
+                        , span [ class "e-pr-b-head" ] [ text (String.left 23 head) ]
+                        ]
 
                     _ ->
-                        String.dropRight 5 event.eventType
+                        if head /= base then
+                            [ span [ class "e-pr-b-base" ] [ text (String.left 11 base) ]
+                            , i [ class "mdi mdi-arrow-left sm-spaced" ] []
+                            , span [ class "e-pr-b-head" ] [ text (String.left (23 - Basics.min (String.length base) 11) head) ]
+                            ]
 
-
-contentPreview : GitHubEvent -> List (Html Msg)
-contentPreview event =
-    case event.payload of
-        GitHubPullRequestEvent payload ->
-            let
-                master =
-                    payload.pull_request.base.repo.default_branch
-
-                base =
-                    payload.pull_request.base.ref
-
-                head =
-                    payload.pull_request.head.ref
-            in
-            [ div [ class "e-pr-b" ]
-                (if base /= master && head /= base then
-                    [ span [ class "e-pr-b-base" ] [ text (String.left 15 base) ]
-                    , i [ class "fas fa-arrow-circle-left fa-sm sm-spaced" ] []
-                    , span [ class "e-pr-b-head" ] [ text (String.left 15 head) ]
-                    ]
-
-                 else if base /= master && head == base then
-                    [ i [ class "fas fa-arrow-circle-right fa-sm sm-right-spaced" ] []
-                    , span [ class "e-pr-b-head" ] [ text (String.left 22 head) ]
-                    ]
-
-                 else if base == master && head /= base then
-                    [ i [ class "fas fa-arrow-circle-left fa-sm sm-right-spaced" ] []
-                    , span [ class "e-pr-b-head" ] [ text (String.left 22 head) ]
-                    ]
-
-                 else
-                    []
+                        else
+                            [ i
+                                [ class "mdi mdi-arrow-expand-right sm-spaced" ]
+                                []
+                            , span [ class "e-pr-b-head" ] [ text (String.left 23 head) ]
+                            ]
                 )
             , div [ class "e-pr" ]
-                [ span [ class "e-pr__cf" ] [ i [ class "far fa-file-alt fa-sm sm-right-spaced" ] [], text ("" ++ String.fromInt payload.pull_request.changed_files) ]
-                , span [ class "e-pr__ad" ] [ i [ class "far fa-plus-square fa-sm sm-spaced" ] [], text ("" ++ String.fromInt payload.pull_request.additions) ]
-                , span [ class "e-pr__de" ] [ i [ class "far fa-minus-square fa-sm sm-spaced" ] [], text ("" ++ String.fromInt payload.pull_request.deletions) ]
+                [ span [ class "e-pr__co", title "number of commits" ] [ i [ class "mdi mdi-source-commit sm-right-spaced" ] [], text (String.fromInt payload.pull_request.commits) ]
+                , span [ class "e-pr__cf", title "number of files changed" ] [ i [ class "mdi mdi-file-code-outline sm-spaced" ] [], text (String.fromInt payload.pull_request.changed_files) ]
+                , span [ class "e-pr__ad", title "number of additions" ] [ i [ class "mdi mdi-plus-box-outline sm-spaced" ] [], text (String.fromInt payload.pull_request.additions) ]
+                , span [ class "e-pr__de", title "number of deletions" ] [ i [ class "mdi mdi-minus-box-outline sm-spaced" ] [], text (String.fromInt payload.pull_request.deletions) ]
                 ]
-            , text (String.left 100 payload.pull_request.title)
+            , span [ class "e-msg" ] [ text (String.left 100 payload.pull_request.title) ]
             ]
+    in
+    viewEventTemplate1 zone event content label
 
-        GitHubReleaseEvent payload ->
+
+viewReleaseEvent : Zone -> GitHubEvent -> GitHubReleaseEventPayload -> Html Msg
+viewReleaseEvent zone event payload =
+    let
+        label =
+            "Release " ++ payload.action
+
+        content =
             [ div [ class "e-rel" ]
                 [ text payload.release.tag_name ]
             ]
+    in
+    viewEventTemplate1 zone event content label
 
-        _ ->
-            []
+
+viewPushEvent : Zone -> GitHubEvent -> GitHubPushEventPayload -> Html Msg
+viewPushEvent zone event payload =
+    let
+        label =
+            "Push"
+
+        content =
+            [ div [ class "e-pr-b" ]
+                [ span [ class "e-pr__co", title "number of commits" ] [ i [ class "mdi mdi-source-commit sm-right-spaced" ] [], text (String.fromInt payload.distinct_size) ]
+                , i [ class "mdi mdi-arrow-expand-right sm-spaced" ] []
+                , span [ class "e-pr-b-head" ] [ text (String.left 20 (String.replace "refs/heads/" "" payload.ref)) ]
+                ]
+            , span [ class "e-msg" ] [ text (String.left 100 (List.head payload.commits |> Maybe.map .message |> Maybe.withDefault "")) ]
+            ]
+    in
+    viewEventTemplate1 zone event content label
 
 
 formatDate : Zone -> Posix -> List (Html Msg)
@@ -229,54 +270,6 @@ to2String i =
         s
 
 
-viewError : Maybe Http.Error -> Html Msg
-viewError error =
-    case error of
-        Nothing ->
-            text ""
-
-        Just (Http.BadUrl str) ->
-            text ("Bad URL " ++ str)
-
-        Just Http.Timeout ->
-            text "Timeout"
-
-        Just Http.NetworkError ->
-            text "Network error"
-
-        Just (Http.BadStatus status) ->
-            text ("Bad status " ++ String.fromInt status)
-
-        Just (Http.BadBody reason) ->
-            text ("Bad payload " ++ reason)
-
-
-sourceTitle : GitHubEventSource -> String
-sourceTitle source =
-    case source of
-        GitHubEventSourceDefault ->
-            "all users"
-
-        GitHubEventSourceUser user ->
-            user ++ " user"
-
-        GitHubEventSourceOrganisation org ->
-            org ++ " organisation"
-
-        GitHubEventSourceRepository owner repo ->
-            owner ++ "/" ++ repo ++ " repository"
-
-
-modelStatusDebug : Model -> String
-modelStatusDebug model =
-    [ String.fromInt model.limits.xRateRemaining
-    , model.limits.xRateReset |> Maybe.map (formatDateTime model.zone) |> Maybe.withDefault "-"
-    , String.fromInt <| List.length model.eventStream.events
-    , String.fromInt <| List.length model.timeline.events
-    ]
-        |> List.foldl (\a b -> b ++ " | " ++ a) ""
-
-
 formatDateTime : Zone -> Posix -> String
 formatDateTime zone =
     DateFormat.format
@@ -307,14 +300,14 @@ navigation model =
                                 , class "mdl-button mdl-button--colored mdl-color-text--white"
                                 ]
                                 [ span [ class "button-text" ] [ text (sourceName model.eventStream.source) ]
-                                , i [ class "fas fa-plug fa-lg left-spaced" ] []
+                                , i [ class "mdi mdi-power-plug left-spaced" ] []
                                 ]
                            , button
                                 [ onClick SignOutCommand
                                 , class "mdl-button mdl-button--colored mdl-color-text--white"
                                 ]
                                 [ span [ class "button-text" ] [ text "Sign out" ]
-                                , i [ class "fas fa-sign-out-alt fa-lg left-spaced" ] []
+                                , i [ class "mdi mdi-logout left-spaced" ] []
                                 ]
                            ]
 
@@ -324,7 +317,7 @@ navigation model =
                         , class "mdl-button mdl-button--colored mdl-color-text--white"
                         ]
                         [ span [ class "button-text" ] [ text "Sign in" ]
-                        , i [ class "fab fa-github fa-lg left-spaced" ] []
+                        , i [ class "mdi mdi-github-circle left-spaced" ] []
                         ]
                     ]
     in
@@ -358,7 +351,7 @@ pauseResumeButton model =
             , class "mdl-button mdl-button--colored mdl-color-text--white"
             ]
             [ span [ class "button-text" ] [ text "Pause" ]
-            , i [ class "fas fa-pause fa-lg left-spaced" ] []
+            , i [ class "mdi mdi-pause left-spaced" ] []
             ]
         ]
 
@@ -368,6 +361,6 @@ pauseResumeButton model =
             , class "mdl-button mdl-button--colored mdl-color-text--white"
             ]
             [ span [ class "button-text" ] [ text "Play" ]
-            , i [ class "fas fa-play fa-lg left-spaced" ] []
+            , i [ class "mdi mdi-play left-spaced" ] []
             ]
         ]

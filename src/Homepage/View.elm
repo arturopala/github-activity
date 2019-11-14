@@ -38,7 +38,7 @@ showWelcome model _ =
                         [ text "Sign in with GitHub"
                         ]
                     , div [ class "mdl-layout-spacer" ] []
-                    , i [ class "fab fa-github fa-lg" ] []
+                    , i [ class "mdi mdi-github-circle" ] []
                     ]
                 ]
             ]
@@ -82,7 +82,7 @@ showSelectSource model user =
                                 [ text "Sign out"
                                 ]
                             , div [ class "mdl-layout-spacer" ] []
-                            , i [ class "fas fa-sign-out-alt fa-lg left-spaced" ] []
+                            , i [ class "mdi mdi-logout left-spaced" ] []
                             ]
                        ]
                 )
