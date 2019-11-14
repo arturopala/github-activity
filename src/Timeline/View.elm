@@ -125,8 +125,13 @@ contentPreview event =
                     , span [ class "e-pr-b-head" ] [ text (String.left 15 head) ]
                     ]
 
-                 else if head /= master then
+                 else if base /= master && head == base then
                     [ i [ class "fas fa-arrow-circle-right fa-sm sm-right-spaced" ] []
+                    , span [ class "e-pr-b-head" ] [ text (String.left 22 head) ]
+                    ]
+
+                 else if base == master && head /= base then
+                    [ i [ class "fas fa-arrow-circle-left fa-sm sm-right-spaced" ] []
                     , span [ class "e-pr-b-head" ] [ text (String.left 22 head) ]
                     ]
 
