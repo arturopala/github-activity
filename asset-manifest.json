@@ -1,15 +1,15 @@
 {
-  "main.css": "./github-activity/static/css/main.75b69ecc.chunk.css",
-  "main.js": "./github-activity/static/js/main.55fbf4bd.chunk.js",
-  "main.js.map": "./github-activity/static/js/main.55fbf4bd.chunk.js.map",
-  "runtime~main.js": "./github-activity/static/js/runtime~main.9b306818.js",
-  "runtime~main.js.map": "./github-activity/static/js/runtime~main.9b306818.js.map",
-  "vendors~main.js": "./github-activity/static/js/vendors~main.3ca81432.chunk.js",
-  "vendors~main.js.map": "./github-activity/static/js/vendors~main.3ca81432.chunk.js.map",
-  "./service-worker.js": "./github-activity/./service-worker.js",
-  "favicon.ico": "./github-activity/favicon.ico",
-  "index.html": "./github-activity/index.html",
-  "logo.svg": "./github-activity/logo.svg",
-  "manifest.json": "./github-activity/manifest.json",
-  "precache-manifest.a91624420ea80cc9f3bfa6b3001c1acb.js": "./github-activity/precache-manifest.a91624420ea80cc9f3bfa6b3001c1acb.js"
+  "main.css": "https://arturopala.github.io/github-activity/static/css/main.75b69ecc.chunk.css",
+  "main.js": "https://arturopala.github.io/github-activity/static/js/main.497751af.chunk.js",
+  "main.js.map": "https://arturopala.github.io/github-activity/static/js/main.497751af.chunk.js.map",
+  "runtime~main.js": "https://arturopala.github.io/github-activity/static/js/runtime~main.de8c3396.js",
+  "runtime~main.js.map": "https://arturopala.github.io/github-activity/static/js/runtime~main.de8c3396.js.map",
+  "vendors~main.js": "https://arturopala.github.io/github-activity/static/js/vendors~main.3ca81432.chunk.js",
+  "vendors~main.js.map": "https://arturopala.github.io/github-activity/static/js/vendors~main.3ca81432.chunk.js.map",
+  "./service-worker.js": "https://arturopala.github.io/github-activity/./service-worker.js",
+  "favicon.ico": "https://arturopala.github.io/github-activity/favicon.ico",
+  "index.html": "https://arturopala.github.io/github-activity/index.html",
+  "logo.svg": "https://arturopala.github.io/github-activity/logo.svg",
+  "manifest.json": "https://arturopala.github.io/github-activity/manifest.json",
+  "precache-manifest.b16fac9619c58a5a62829ccc4e45f406.js": "https://arturopala.github.io/github-activity/precache-manifest.b16fac9619c58a5a62829ccc4e45f406.js"
 }
