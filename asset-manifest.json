@@ -1,15 +1,15 @@
 {
-  "main.css": "/static/css/main.75b69ecc.chunk.css",
-  "main.js": "/static/js/main.b29af62b.chunk.js",
-  "main.js.map": "/static/js/main.b29af62b.chunk.js.map",
-  "runtime~main.js": "/static/js/runtime~main.1b922744.js",
-  "runtime~main.js.map": "/static/js/runtime~main.1b922744.js.map",
-  "vendors~main.js": "/static/js/vendors~main.3ca81432.chunk.js",
-  "vendors~main.js.map": "/static/js/vendors~main.3ca81432.chunk.js.map",
-  "./service-worker.js": "/./service-worker.js",
-  "favicon.ico": "/favicon.ico",
-  "index.html": "/index.html",
-  "logo.svg": "/logo.svg",
-  "manifest.json": "/manifest.json",
-  "precache-manifest.79be9ecee0967f013159a535e6eacff4.js": "/precache-manifest.79be9ecee0967f013159a535e6eacff4.js"
+  "main.css": "./github-activity/static/css/main.75b69ecc.chunk.css",
+  "main.js": "./github-activity/static/js/main.55fbf4bd.chunk.js",
+  "main.js.map": "./github-activity/static/js/main.55fbf4bd.chunk.js.map",
+  "runtime~main.js": "./github-activity/static/js/runtime~main.9b306818.js",
+  "runtime~main.js.map": "./github-activity/static/js/runtime~main.9b306818.js.map",
+  "vendors~main.js": "./github-activity/static/js/vendors~main.3ca81432.chunk.js",
+  "vendors~main.js.map": "./github-activity/static/js/vendors~main.3ca81432.chunk.js.map",
+  "./service-worker.js": "./github-activity/./service-worker.js",
+  "favicon.ico": "./github-activity/favicon.ico",
+  "index.html": "./github-activity/index.html",
+  "logo.svg": "./github-activity/logo.svg",
+  "manifest.json": "./github-activity/manifest.json",
+  "precache-manifest.a91624420ea80cc9f3bfa6b3001c1acb.js": "./github-activity/precache-manifest.a91624420ea80cc9f3bfa6b3001c1acb.js"
 }
