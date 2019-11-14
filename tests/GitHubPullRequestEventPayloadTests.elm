@@ -5,7 +5,6 @@ import GitHub.Decode
 import Json.Decode exposing (decodeString, errorToString)
 import Test exposing (..)
 import TestUtil exposing (expectOk, having)
-import Url
 
 
 all : Test
@@ -437,6 +436,13 @@ all =
                         [ expectOk errorToString
                             [ having .action (Expect.equal "opened")
                             , having .number (Expect.equal 1)
+                            , having .pull_request
+                                (Expect.all
+                                    [ having .id (Expect.equal 34778301)
+                                    , having .state (Expect.equal "open")
+                                    , having .title (Expect.equal "Update the README with new information")
+                                    ]
+                                )
                             ]
                         ]
         ]

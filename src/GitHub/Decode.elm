@@ -146,8 +146,13 @@ decodeReleaseEventPayload =
 decodeReleaseRef : Decoder GitHubReleaseRef
 decodeReleaseRef =
     Decode.succeed GitHubReleaseRef
-        |> required "url" string
+        |> required "id" int
+        |> required "url" decodeUrl
+        |> required "html_url" decodeUrl
         |> required "tag_name" string
+        |> notrequi "body" string
+        |> required "draft" bool
+        |> required "prerelease" bool
 
 
 decodeUser : Decoder GitHubUser

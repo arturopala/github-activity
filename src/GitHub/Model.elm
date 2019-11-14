@@ -146,8 +146,13 @@ type alias GitHubReleaseEventPayload =
 
 
 type alias GitHubReleaseRef =
-    { url : String
+    { id : Int
+    , url : Url
+    , html_url : Url
     , tag_name : String
+    , body : Maybe String
+    , draft : Bool
+    , prerelease : Bool
     }
 
 

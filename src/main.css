@@ -95,7 +95,12 @@
   font-size: 0.95rem;
   padding-top: 0.3rem;
   flex: 1 1 auto;
-  color: #8f93b3;
+  color: darkgray;
+}
+.event-release-published .card-event-content {
+  padding-top: 1rem;
+  font-size: 2rem;
+  color: #00CC0E;
 }
 
 .card-event > .event-pull-request-opened {
@@ -113,7 +118,7 @@
   border-left: red 16px solid;
   background-color: rgb(63,81,181);;
 }
-.card-event > .event-release {
+.card-event > .event-release-published {
   color: white;
   background: url(
     data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAJ0lEQVQYV2NUyFP9/yDuJQMMMDKc4fsP5zEwMMAFFBaJM4BUYqgAAN7nDGm+bho5AAAAAElFTkSuQmCC
@@ -149,6 +154,10 @@
 
 .e-pr {
   font-size: 0.9rem;
+}
+
+.e-pr__cf {
+  color: #8f93b3;
 }
 
 .e-pr__ad {

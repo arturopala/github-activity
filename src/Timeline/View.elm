@@ -86,6 +86,9 @@ eventLabel event =
                                 payload.action
                        )
 
+            GitHubReleaseEvent payload ->
+                "Release " ++ payload.action
+
             _ ->
                 case event.eventType of
                     "PullRequestReviewCommentEvent" ->
@@ -93,6 +96,9 @@ eventLabel event =
 
                     "IssueCommentEvent" ->
                         "Issue Comment"
+
+                    "CommitCommentEvent" ->
+                        "Commit Comment"
 
                     _ ->
                         String.dropRight 5 event.eventType
@@ -108,6 +114,11 @@ contentPreview event =
                 , span [ class "e-pr__de" ] [ i [ class "far fa-minus-square fa-sm sm-spaced" ] [], text ("" ++ String.fromInt payload.pull_request.deletions) ]
                 ]
             , text (String.left 100 payload.pull_request.title)
+            ]
+
+        GitHubReleaseEvent payload ->
+            [ div [ class "e-rel" ]
+                [ text payload.release.tag_name ]
             ]
 
         _ ->
