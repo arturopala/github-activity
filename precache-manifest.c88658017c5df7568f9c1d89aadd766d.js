@@ -4,7 +4,7 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "https://arturopala.github.io/github-activity/favicon.ico"
   },
   {
-    "revision": "375a054fda350a5ba3d2bc6329eb3874",
+    "revision": "24d26d5b211a6f7628d0248a699e51cd",
     "url": "https://arturopala.github.io/github-activity/index.html"
   },
   {
@@ -16,12 +16,12 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "https://arturopala.github.io/github-activity/manifest.json"
   },
   {
-    "revision": "aeb2c7e03dce741b6025",
+    "revision": "7da94a1dd0d199b209cb",
     "url": "https://arturopala.github.io/github-activity/static/css/main.30071c86.chunk.css"
   },
   {
-    "revision": "aeb2c7e03dce741b6025",
-    "url": "https://arturopala.github.io/github-activity/static/js/main.aeb2c7e0.chunk.js"
+    "revision": "7da94a1dd0d199b209cb",
+    "url": "https://arturopala.github.io/github-activity/static/js/main.7da94a1d.chunk.js"
   },
   {
     "revision": "de8c3396049086a680ff",
