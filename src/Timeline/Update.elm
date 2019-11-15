@@ -44,26 +44,45 @@ update msg model =
 
 updateEventsOnDisplay : Model -> Model
 updateEventsOnDisplay model =
-    let
-        pull source target =
-            case source of
-                head :: tail ->
-                    if List.member head target then
-                        pull tail target
+    if List.isEmpty model.timeline.events then
+        let
+            reduced =
+                model.eventStream.events
+                    |> List.drop (List.length model.eventStream.events - model.preferences.numberOfEventsOnDisplay - 5)
 
-                    else
-                        ( tail
-                        , (head :: target)
-                            |> List.sortBy (.created_at >> posixToMillis >> negate)
-                            |> List.take model.preferences.numberOfEventsOnDisplay
-                        )
+            display =
+                reduced
+                    |> List.take (List.length reduced - 5)
+                    |> List.reverse
 
-                [] ->
-                    ( source, target )
+            queue =
+                reduced |> List.drop (List.length reduced - 5)
+        in
+        model
+            |> eventStreamEventsLens.set queue
+            |> timelineEventsLens.set display
 
-        ( queue, display ) =
-            pull model.eventStream.events model.timeline.events
-    in
-    model
-        |> eventStreamEventsLens.set queue
-        |> timelineEventsLens.set display
+    else
+        let
+            pull source target =
+                case source of
+                    head :: tail ->
+                        if List.member head target then
+                            pull tail target
+
+                        else
+                            ( tail
+                            , (head :: target)
+                                |> List.sortBy (.created_at >> posixToMillis >> negate)
+                                |> List.take model.preferences.numberOfEventsOnDisplay
+                            )
+
+                    [] ->
+                        ( source, target )
+
+            ( queue, display ) =
+                pull model.eventStream.events model.timeline.events
+        in
+        model
+            |> eventStreamEventsLens.set queue
+            |> timelineEventsLens.set display

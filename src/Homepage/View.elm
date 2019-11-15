@@ -61,7 +61,7 @@ showSelectSource model user =
                         [ onClick (ChangeEventSourceCommand (GitHub.Model.GitHubEventSourceUser user.login))
                         , class "mdl-button mdl-button--colored mdl-color-text--primary"
                         ]
-                        [ text ("Stream " ++ user.login ++ " user events")
+                        [ text ("Stream " ++ user.login ++ " user")
                         ]
                     ]
                  ]
@@ -71,7 +71,7 @@ showSelectSource model user =
                                 [ onClick (ChangeEventSourceCommand GitHub.Model.GitHubEventSourceDefault)
                                 , class "mdl-button mdl-button--colored mdl-color-text--primary"
                                 ]
-                                [ text "Stream all public events"
+                                [ text "Stream all github"
                                 ]
                             ]
                        , div [ class "mdl-card__actions mdl-card--border mdl-color--primary mdl-color-text--white" ]
@@ -103,6 +103,6 @@ organisationButton organisation =
             [ onClick (ChangeEventSourceCommand (GitHub.Model.GitHubEventSourceOrganisation organisation.login))
             , class "mdl-button mdl-button--colored mdl-color-text--primary"
             ]
-            [ text ("Stream " ++ organisation.login ++ " org events")
+            [ text ("Stream " ++ organisation.login ++ " org")
             ]
         ]

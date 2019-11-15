@@ -49,7 +49,7 @@ initialModel key url flags =
     , preferences =
         { numberOfEventsOnDisplay = 200
         , maxNumberOfEventsInQueue = 1000
-        , tickIntervalMilliseconds = 250
+        , tickIntervalMilliseconds = 500
         }
     , key = key
     , url = url
