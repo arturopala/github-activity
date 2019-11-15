@@ -147,8 +147,8 @@ header.mdl-layout__header {
 }
 .card-event > .event-pull-request-opened {
   color: white;
-  border-left: lawngreen 10px solid;
-  border-right: lawngreen 10px solid;
+  border-left: yellowgreen 10px solid;
+  border-right: yellowgreen 10px solid;
   background-color: rgb(63,81,181);
   border-top-width: 0;
 }
@@ -228,6 +228,15 @@ header.mdl-layout__header {
 }
 
 .cb-big {
+  text-align: center;
+}
+
+.waiting-for-content {
+  flex: auto;
+  align-self: center;
+  font-size: 300px;
+  color: #ced3f4;
+  line-height: normal;
   text-align: center;
 }
 

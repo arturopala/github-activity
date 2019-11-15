@@ -1,4 +1,4 @@
-module Model exposing (Authorization(..), Model, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamLens, eventStreamSourceLens, initialModel, limitsLens, modeLens, routeLens, timelineActiveLens, timelineEventsLens, timelineLens, urlLens)
+module Model exposing (Authorization(..), Model, eventStreamChunksLens, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamLens, eventStreamSourceLens, initialModel, limitsLens, modeLens, routeLens, timelineActiveLens, timelineEventsLens, timelineLens, urlLens)
 
 import Browser.Navigation exposing (Key)
 import EventStream.Model as EventStream exposing (Model, etagLens, sourceLens)
@@ -134,6 +134,11 @@ eventStreamEtagLens =
 eventStreamEventsLens : Lens Model (List GitHubEvent)
 eventStreamEventsLens =
     compose eventStreamLens EventStream.eventsLens
+
+
+eventStreamChunksLens : Lens Model (List GitHubEvent)
+eventStreamChunksLens =
+    compose eventStreamLens EventStream.chunksLens
 
 
 eventStreamErrorLens : Lens Model (Maybe Http.Error)

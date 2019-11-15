@@ -31,9 +31,24 @@ view model =
             [ class "mdl-layout__content" ]
             [ node "div"
                 [ class "timeline page-content" ]
-                (viewEvents model.zone model.timeline.events)
+                (case model.timeline.events of
+                    [] ->
+                        viewSpinner model
+
+                    events ->
+                        viewEvents model.zone events
+                )
             ]
         ]
+
+
+viewSpinner : Model -> List ( String, Html Msg )
+viewSpinner model =
+    [ ( "spinner"
+      , div [ class "animated bounceInDown delay-2s waiting-for-content" ]
+            [ i [ class "mdi mdi-cloud-download" ] [] ]
+      )
+    ]
 
 
 viewEvents : Zone -> List GitHubEvent -> List ( String, Html Msg )

@@ -1,4 +1,4 @@
-module EventStream.Model exposing (Model, errorLens, etagLens, eventsLens, initialEventStream, sourceLens)
+module EventStream.Model exposing (Model, chunksLens, errorLens, etagLens, eventsLens, initialEventStream, sourceLens)
 
 import GitHub.Model exposing (..)
 import Http exposing (Error)
@@ -8,6 +8,7 @@ import Monocle.Lens exposing (..)
 type alias Model =
     { source : GitHubEventSource
     , events : List GitHubEvent
+    , chunks : List GitHubEvent
     , etag : String
     , error : Maybe Http.Error
     }
@@ -17,6 +18,7 @@ initialEventStream : Model
 initialEventStream =
     { source = GitHubEventSourceDefault
     , events = []
+    , chunks = []
     , etag = ""
     , error = Nothing
     }
@@ -30,6 +32,11 @@ sourceLens =
 eventsLens : Lens Model (List GitHubEvent)
 eventsLens =
     Lens .events (\b a -> { a | events = b })
+
+
+chunksLens : Lens Model (List GitHubEvent)
+chunksLens =
+    Lens .chunks (\b a -> { a | chunks = b })
 
 
 etagLens : Lens Model String

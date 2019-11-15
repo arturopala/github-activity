@@ -3,12 +3,12 @@ module EventStream.Update exposing (resetEventStreamIfSourceChanged, update)
 import Basics as Math
 import Dict
 import EventStream.Message exposing (..)
-import EventStream.Model exposing (errorLens, etagLens, eventsLens)
+import EventStream.Model exposing (chunksLens, errorLens, etagLens, eventsLens)
 import GitHub.APIv3 exposing (readGitHubEvents, readGitHubEventsNextPage)
 import GitHub.Message
 import GitHub.Model exposing (GitHubApiLimits, GitHubEvent, GitHubEventSource(..), GitHubEventsChunk, GitHubResponse)
 import Http
-import Model exposing (Authorization, Model, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamSourceLens, limitsLens, timelineEventsLens)
+import Model exposing (Authorization, Model, eventStreamChunksLens, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamSourceLens, limitsLens, timelineEventsLens)
 import Ports
 import Time exposing (posixToMillis)
 import Url
@@ -43,20 +43,17 @@ update msg auth model =
         GitHubResponseEvents (GitHub.Message.GitHubEventsMsg (Ok response)) ->
             let
                 model2 =
-                    updateEventStream response model
+                    updateChunks response model
+                        |> eventStreamEtagLens.set response.etag
             in
-            ( { model2 | eventStream = model2.eventStream |> etagLens.set response.etag }
-            , maybeReadEventsNextPage model response
-            )
+            maybeReadEventsNextPage model2 response
 
         GitHubResponseEventsNextPage (GitHub.Message.GitHubEventsMsg (Ok response)) ->
             let
                 model2 =
-                    updateEventStream response model
+                    updateChunks response model
             in
-            ( model2
-            , maybeReadEventsNextPage model response
-            )
+            maybeReadEventsNextPage model2 response
 
         GitHubResponseEvents (GitHub.Message.GitHubEventsMsg (Err ( error, limits ))) ->
             let
@@ -104,37 +101,46 @@ handleHttpError error model =
             )
 
 
-updateEventStream : GitHubEventsChunk -> Model -> Model
-updateEventStream response model =
+updateChunks : GitHubEventsChunk -> Model -> Model
+updateChunks response model =
     let
-        queue =
-            List.sortBy (.created_at >> posixToMillis) (model.eventStream.events ++ response.content)
-                |> (\list -> List.drop (List.length list - model.preferences.maxNumberOfEventsInQueue) list)
+        chunks =
+            model.eventStream.chunks ++ response.content
     in
     { model
         | eventStream =
             model.eventStream
-                |> eventsLens.set queue
+                |> chunksLens.set chunks
                 |> errorLens.set Nothing
     }
         |> limitsLens.set response.limits
 
 
-maybeReadEventsNextPage : Model -> GitHubEventsChunk -> Cmd Msg
+maybeReadEventsNextPage : Model -> GitHubEventsChunk -> ( Model, Cmd Msg )
 maybeReadEventsNextPage model response =
     let
-        readEventsAfterDelay =
-            scheduleNextRead model
+        readEventsAfterDelay _ =
+            let
+                events =
+                    List.sortBy (.created_at >> posixToMillis) (model.eventStream.chunks ++ model.eventStream.events)
+                        |> (\list -> List.drop (List.length list - model.preferences.maxNumberOfEventsInQueue) list)
+
+                model2 =
+                    model
+                        |> eventStreamEventsLens.set events
+                        |> eventStreamChunksLens.set []
+            in
+            ( model2, scheduleNextRead model2 )
     in
     if List.length model.eventStream.events >= model.preferences.maxNumberOfEventsInQueue then
-        readEventsAfterDelay
+        readEventsAfterDelay ()
 
     else
         Dict.get "next" response.links
             |> Maybe.andThen Url.fromString
             |> Maybe.map (ReadEventsNextPage model.eventStream.source)
-            |> Maybe.map (delayMessageBasedOnApiLimits model.limits 0)
-            |> Maybe.withDefault readEventsAfterDelay
+            |> Maybe.map (\url -> ( model, delayMessageBasedOnApiLimits model.limits 0 url ))
+            |> Maybe.withDefault (readEventsAfterDelay ())
 
 
 delayMessageBasedOnApiLimits : GitHubApiLimits -> Int -> m -> Cmd m
