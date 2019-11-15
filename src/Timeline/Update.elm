@@ -42,21 +42,26 @@ update msg model =
             )
 
 
+numberOfEventsToStreamWhenStarted : Int
+numberOfEventsToStreamWhenStarted =
+    20
+
+
 updateEventsOnDisplay : Model -> Model
 updateEventsOnDisplay model =
     if List.isEmpty model.timeline.events then
         let
             reduced =
                 model.eventStream.events
-                    |> List.drop (List.length model.eventStream.events - model.preferences.numberOfEventsOnDisplay - 5)
+                    |> List.drop (List.length model.eventStream.events - model.preferences.numberOfEventsOnDisplay - numberOfEventsToStreamWhenStarted)
 
             display =
                 reduced
-                    |> List.take (List.length reduced - 5)
+                    |> List.take (List.length reduced - numberOfEventsToStreamWhenStarted)
                     |> List.reverse
 
             queue =
-                reduced |> List.drop (List.length reduced - 5)
+                reduced |> List.drop (List.length reduced - numberOfEventsToStreamWhenStarted)
         in
         model
             |> eventStreamEventsLens.set queue

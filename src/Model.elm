@@ -1,4 +1,4 @@
-module Model exposing (Authorization(..), Model, eventStreamChunksLens, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamLens, eventStreamSourceLens, initialModel, limitsLens, modeLens, routeLens, timelineActiveLens, timelineEventsLens, timelineLens, urlLens)
+module Model exposing (Authorization(..), Model, downloadingLens, eventStreamChunksLens, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamLens, eventStreamSourceLens, initialModel, limitsLens, modeLens, routeLens, timelineActiveLens, timelineEventsLens, timelineLens, urlLens)
 
 import Browser.Navigation exposing (Key)
 import EventStream.Model as EventStream exposing (Model, etagLens, sourceLens)
@@ -28,6 +28,7 @@ type alias Model =
     , limits : GitHubApiLimits
     , zone : Zone
     , doAfterAuthorized : Maybe (Cmd Msg)
+    , downloading : Bool
     }
 
 
@@ -56,6 +57,7 @@ initialModel key url flags =
     , limits = GitHubApiLimits 60 60 Nothing 120
     , zone = Time.utc
     , doAfterAuthorized = Nothing
+    , downloading = False
     }
 
 
@@ -119,6 +121,11 @@ routeLens =
 limitsLens : Lens Model GitHubApiLimits
 limitsLens =
     Lens .limits (\b a -> { a | limits = b })
+
+
+downloadingLens : Lens Model Bool
+downloadingLens =
+    Lens .downloading (\b a -> { a | downloading = b })
 
 
 eventStreamSourceLens : Lens Model GitHub.Model.GitHubEventSource

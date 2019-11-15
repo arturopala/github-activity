@@ -8,7 +8,7 @@ import GitHub.APIv3 exposing (readGitHubEvents, readGitHubEventsNextPage)
 import GitHub.Message
 import GitHub.Model exposing (GitHubApiLimits, GitHubEvent, GitHubEventSource(..), GitHubEventsChunk, GitHubResponse)
 import Http
-import Model exposing (Authorization, Model, eventStreamChunksLens, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamSourceLens, limitsLens, timelineEventsLens)
+import Model exposing (Authorization, Model, downloadingLens, eventStreamChunksLens, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamSourceLens, limitsLens, timelineEventsLens)
 import Ports
 import Time exposing (posixToMillis)
 import Url
@@ -20,15 +20,17 @@ update msg auth model =
     case msg of
         ReadEvents ->
             let
-                cmd =
+                ( model2, cmd ) =
                     if model.timeline.active then
-                        readGitHubEvents model.eventStream.source model.eventStream.etag auth
+                        ( { model | downloading = True }
+                        , readGitHubEvents model.eventStream.source model.eventStream.etag auth
                             |> Cmd.map GitHubResponseEvents
+                        )
 
                     else
-                        scheduleNextRead model
+                        ( model, scheduleNextRead model )
             in
-            ( model, cmd )
+            ( model2, cmd )
 
         ReadEventsNextPage source url ->
             ( model
@@ -129,6 +131,7 @@ maybeReadEventsNextPage model response =
                     model
                         |> eventStreamEventsLens.set events
                         |> eventStreamChunksLens.set []
+                        |> downloadingLens.set False
             in
             ( model2, scheduleNextRead model2 )
     in

@@ -18,7 +18,7 @@ view model =
     section [ classList [ ( "mdl-layout", True ), ( "mdl-layout--fixed-header", True ) ] ]
         [ header [ class "mdl-layout__header" ]
             [ div [ class "mdl-layout-icon" ]
-                [ i [ class "mdi mdi-github-circle" ] [] ]
+                [ i [ classList [ ( "mdi", True ), ( "mdi-github-circle", True ), ( "mdi-spin", model.downloading ) ] ] [] ]
             , div [ class "mdl-layout__header-row" ]
                 ([ span [ class "mdl-layout__title" ]
                     [ text "GitHub Activity" ]
