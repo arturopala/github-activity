@@ -67,8 +67,17 @@ update msg auth model =
             in
             handleHttpError error model2
 
+        GitHubResponseEventsNextPage (GitHub.Message.GitHubEventsMsg (Err ( error, limits ))) ->
+            let
+                model2 =
+                    limits
+                        |> Maybe.map (\l -> limitsLens.set l model)
+                        |> Maybe.withDefault model
+            in
+            handleHttpError error model2
+
         _ ->
-            ( model, Cmd.none )
+            ( model, scheduleNextRead model )
 
 
 handleHttpError : Http.Error -> Model -> ( Model, Cmd Msg )
@@ -86,12 +95,12 @@ handleHttpError error model =
 
         Http.BadBody string ->
             ( eventStreamErrorLens.set (Just error) model
-            , Ports.logError string
+            , Cmd.batch [ Ports.logError string, scheduleNextRead model ]
             )
 
         _ ->
             ( eventStreamErrorLens.set (Just error) model
-            , Cmd.none
+            , scheduleNextRead model
             )
 
 

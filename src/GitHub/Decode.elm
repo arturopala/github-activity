@@ -116,7 +116,7 @@ decodePullRequest =
         |> required "comments_url" decodeUrl
         |> required "state" string
         |> required "title" string
-        |> required "body" string
+        |> notrequi "body" string
         |> required "created_at" decodeDateTime
         |> notrequi "merged_at" decodeDateTime
         |> notrequi "merged_commit_sha" string

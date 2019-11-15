@@ -17,9 +17,11 @@ view : Model -> Html Msg
 view model =
     section [ classList [ ( "mdl-layout", True ), ( "mdl-layout--fixed-header", True ) ] ]
         [ header [ class "mdl-layout__header" ]
-            [ div [ class "mdl-layout__header-row" ]
+            [ div [ class "mdl-layout-icon" ]
+                [ i [ class "mdi mdi-github-circle" ] [] ]
+            , div [ class "mdl-layout__header-row" ]
                 ([ span [ class "mdl-layout__title" ]
-                    [ text "GitHub Activity Stream" ]
+                    [ text "GitHub Activity" ]
                  , div [ class "mdl-layout-spacer" ] []
                  ]
                     ++ navigation model
@@ -122,43 +124,46 @@ viewPullRequestEvent zone event payload =
                    )
 
         content =
-            [ div [ class "e-pr-b", title ("merge from " ++ payload.pull_request.head.label ++ " into " ++ payload.pull_request.base.label) ]
-                (case payload.action of
-                    "closed" ->
-                        [ i
-                            [ class "mdi mdi-arrow-collapse-right sm-spaced" ]
-                            []
-                        , span [ class "e-pr-b-base" ] [ text (String.left 23 base) ]
-                        ]
+            [ div [ class "card-event-content-header" ]
+                [ span [ class "ch-commits", title "number of commits" ] [ i [ class "mdi mdi-source-commit spaced" ] [], text (String.fromInt payload.pull_request.commits) ]
+                , span [ class "ch-files", title "number of files changed" ] [ i [ class "mdi mdi-file-code-outline spaced" ] [], text (String.fromInt payload.pull_request.changed_files) ]
+                , span [ class "ch-added", title "number of additions" ] [ i [ class "mdi mdi-plus-box-outline spaced" ] [], text (String.fromInt payload.pull_request.additions) ]
+                , span [ class "ch-deleted", title "number of deletions" ] [ i [ class "mdi mdi-minus-box-outline spaced" ] [], text (String.fromInt payload.pull_request.deletions) ]
+                , span [ class "ch-refs", title ("merge from " ++ payload.pull_request.head.label ++ " into " ++ payload.pull_request.base.label) ]
+                    (case payload.action of
+                        "closed" ->
+                            if payload.pull_request.merged then
+                                [ i
+                                    [ class "mdi mdi-arrow-collapse-right spaced" ]
+                                    []
+                                , span [ class "ch-refs-base" ] [ text (String.left 23 base) ]
+                                ]
 
-                    "rejected" ->
-                        [ i
-                            [ class "mdi mdi-cancel sm-spaced" ]
-                            []
-                        , span [ class "e-pr-b-head" ] [ text (String.left 23 head) ]
-                        ]
+                            else
+                                [ i
+                                    [ class "mdi mdi-cancel spaced" ]
+                                    []
+                                , span [ class "ch-refs-head" ] [ text (String.left 23 head) ]
+                                ]
 
-                    _ ->
-                        if head /= base then
-                            [ span [ class "e-pr-b-base" ] [ text (String.left 11 base) ]
-                            , i [ class "mdi mdi-arrow-left sm-spaced" ] []
-                            , span [ class "e-pr-b-head" ] [ text (String.left (23 - Basics.min (String.length base) 11) head) ]
-                            ]
+                        _ ->
+                            if head /= base then
+                                [ span [ class "ch-refs-base" ] [ text (String.left 11 base) ]
+                                , i [ class "mdi mdi-arrow-left spaced" ] []
+                                , span [ class "ch-refs-head" ] [ text (String.left (23 - Basics.min (String.length base) 11) head) ]
+                                ]
 
-                        else
-                            [ i
-                                [ class "mdi mdi-arrow-expand-right sm-spaced" ]
-                                []
-                            , span [ class "e-pr-b-head" ] [ text (String.left 23 head) ]
-                            ]
-                )
-            , div [ class "e-pr" ]
-                [ span [ class "e-pr__co", title "number of commits" ] [ i [ class "mdi mdi-source-commit sm-right-spaced" ] [], text (String.fromInt payload.pull_request.commits) ]
-                , span [ class "e-pr__cf", title "number of files changed" ] [ i [ class "mdi mdi-file-code-outline sm-spaced" ] [], text (String.fromInt payload.pull_request.changed_files) ]
-                , span [ class "e-pr__ad", title "number of additions" ] [ i [ class "mdi mdi-plus-box-outline sm-spaced" ] [], text (String.fromInt payload.pull_request.additions) ]
-                , span [ class "e-pr__de", title "number of deletions" ] [ i [ class "mdi mdi-minus-box-outline sm-spaced" ] [], text (String.fromInt payload.pull_request.deletions) ]
+                            else
+                                [ i
+                                    [ class "mdi mdi-arrow-expand-right spaced" ]
+                                    []
+                                , span [ class "ch-refs-head" ] [ text (String.left 23 head) ]
+                                ]
+                    )
                 ]
-            , span [ class "e-msg" ] [ text (String.left 100 payload.pull_request.title) ]
+            , div [ class "card-event-content-body" ]
+                [ span [ class "cb-msg" ] [ text (String.left 100 payload.pull_request.title) ]
+                ]
             ]
     in
     viewEventTemplate1 zone event content label
@@ -171,8 +176,8 @@ viewReleaseEvent zone event payload =
             "Release " ++ payload.action
 
         content =
-            [ div [ class "e-rel" ]
-                [ text payload.release.tag_name ]
+            [ div [ class "card-event-content-body card-event-content-body__center" ]
+                [ div [ class "cb-big" ] [ text payload.release.tag_name ] ]
             ]
     in
     viewEventTemplate1 zone event content label
@@ -185,12 +190,15 @@ viewPushEvent zone event payload =
             "Push"
 
         content =
-            [ div [ class "e-pr-b" ]
-                [ span [ class "e-pr__co", title "number of commits" ] [ i [ class "mdi mdi-source-commit sm-right-spaced" ] [], text (String.fromInt payload.distinct_size) ]
-                , i [ class "mdi mdi-arrow-expand-right sm-spaced" ] []
-                , span [ class "e-pr-b-head" ] [ text (String.left 20 (String.replace "refs/heads/" "" payload.ref)) ]
+            [ div [ class "card-event-content-header" ]
+                [ span [ class "ch-commits", title "number of commits" ] [ i [ class "mdi mdi-source-commit spaced" ] [], text (String.fromInt payload.distinct_size) ]
+                , span [ class "ch-refs" ]
+                    [ i [ class "mdi mdi-arrow-expand-right spaced" ] []
+                    , span [ class "e-pr-b-head" ] [ text (String.left 20 (String.replace "refs/heads/" "" payload.ref)) ]
+                    ]
                 ]
-            , span [ class "e-msg" ] [ text (String.left 100 (List.head payload.commits |> Maybe.map .message |> Maybe.withDefault "")) ]
+            , div [ class "card-event-content-body" ]
+                [ div [ class "cb-msg" ] [ text (String.left 100 (List.head payload.commits |> Maybe.map .message |> Maybe.withDefault "")) ] ]
             ]
     in
     viewEventTemplate1 zone event content label

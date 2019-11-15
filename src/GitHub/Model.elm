@@ -116,7 +116,7 @@ type alias GitHubPullRequest =
     , comments_url : Url
     , state : String
     , title : String
-    , body : String
+    , body : Maybe String
     , created_at : Posix
     , merged_at : Maybe Posix
     , merged_commit_sha : Maybe String

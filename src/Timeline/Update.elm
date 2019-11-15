@@ -45,19 +45,24 @@ update msg model =
 updateEventsOnDisplay : Model -> Model
 updateEventsOnDisplay model =
     let
-        display =
-            case model.eventStream.events of
-                head :: _ ->
-                    (head :: model.timeline.events)
-                        |> List.sortBy (.created_at >> posixToMillis >> negate)
-                        |> List.take model.preferences.numberOfEventsOnDisplay
+        pull source target =
+            case source of
+                head :: tail ->
+                    if List.member head target then
+                        pull tail target
+
+                    else
+                        ( tail
+                        , (head :: target)
+                            |> List.sortBy (.created_at >> posixToMillis >> negate)
+                            |> List.take model.preferences.numberOfEventsOnDisplay
+                        )
 
                 [] ->
-                    model.timeline.events
+                    ( source, target )
 
-        queue =
-            model.eventStream.events
-                |> List.drop 1
+        ( queue, display ) =
+            pull model.eventStream.events model.timeline.events
     in
     model
         |> eventStreamEventsLens.set queue

@@ -37,6 +37,21 @@
   margin: 10px;
 }
 
+header.mdl-layout__header {
+  min-height: 56px;
+}
+
+.mdl-layout__header-row {
+  height: 56px;
+}
+
+.mdl-layout__header > .mdl-layout-icon {
+  font-size: 30px;
+  top: 18px;
+  left: 18px;
+  overflow: visible;
+}
+
 .card-event.mdl-card {
   flex: 1 1 auto;
   height: 10rem;
@@ -49,7 +64,7 @@
   flex-direction: column;
   justify-content: flex-start;
   align-items: stretch;
-  padding: 2px 10px 0 10px;
+  padding: 5px 10px 5px 10px;
   background-size: 3rem;
   background-repeat: no-repeat;
   background-clip: padding-box;
@@ -75,7 +90,7 @@
   color: black;
   font-weight: bold;
   font-size: 1rem;
-  padding-top: 0.5rem;
+  padding-top: 0.2rem;
   flex: 0 0 auto;
 }
 .card-event-actor {
@@ -91,43 +106,80 @@
 .card-event-time {
   padding-right: 0.4rem;
 }
-
 .card-event-content {
+  flex: auto;
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: flex-start;
+  align-items: stretch;
   font-size: 0.9rem;
-  padding-top: 0.3rem;
-  flex: 1 1 auto;
+  padding: 0.3rem 0;
   color: black;
 }
-.event-release-published .card-event-content {
-  padding-top: 1rem;
-  font-size: 2rem;
-  color: #00CC0E;
+.card-event-content-header {
+  flex: initial;
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: flex-start;
+  font-size: 0.9rem;
 }
-
-.card-event > .event-pull-request-opened {
-  color: white;
-  border-left: yellow 16px solid;
-  background-color: rgb(63,81,181);;
+.card-event-content-body {
+  flex: auto;
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: center;
+  align-content: flex-start;
+  font-size: 0.9rem;
+  padding: 0.3rem 7px;
+}
+.card-event-content-body__center {
+  align-content: center!important;
 }
 .card-event > .event-pull-request-merged {
   color: white;
-  border-left: lawngreen 16px solid;
-  background-color: rgb(63,81,181);;
+  border-left: yellow 10px solid;
+  border-right: yellow 10px solid;
+  background-color: rgb(63,81,181);
+  border-top-width: 0;
+}
+.card-event.event-pull-request-merged {
+  background-color: yellow;
+}
+.card-event > .event-pull-request-opened {
+  color: white;
+  border-left: lawngreen 10px solid;
+  border-right: lawngreen 10px solid;
+  background-color: rgb(63,81,181);
+  border-top-width: 0;
 }
 .card-event > .event-pull-request-rejected {
   color: white;
-  border-left: red 16px solid;
-  background-color: rgb(63,81,181);;
+  border-left: red 10px solid;
+  border-right: red 10px solid;
+  background-color: rgb(63,81,181);
+  border-top-width: 0;
+}
+.card-event.event-release-published {
+  background-color: greenyellow;
+}
+.card-event.event-release-published .cb-big {
+  color: darkgreen;
+  text-shadow: 5px 5px 8px yellowgreen;
+  font-size: 2.5rem;
+  font-weight: bold;
 }
 .card-event > .event-release-published {
   color: white;
   background: url(
     data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAJ0lEQVQYV2NUyFP9/yDuJQMMMDKc4fsP5zEwMMAFFBaJM4BUYqgAAN7nDGm+bho5AAAAAElFTkSuQmCC
   ) repeat;
+  border-top-color: green;
 }
 .card-event > .event-push {
   color: white;
-  background-color: #8f93b3;
+  background:url(
+    data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAJ0lEQVQYV2O0D9z6P8DpHwMMMPZP3vwfzmNgYIALbNjHxABSiaECAD8sD1V4nxtEAAAAAElFTkSuQmCC
+  ) repeat;
 }
 .card-event > .event-create {
   color: darkgreen;
@@ -140,47 +192,43 @@
     padding-left: 1rem;
 }
 
-.sm-spaced {
+.spaced {
   padding-right: 1px;
   padding-left: 4px;
 }
 
-.sm-right-spaced {
-  padding-right: 1px;
-}
-
 .mdl-layout__header-row {
-  padding-left: 24px;
+  padding-left: 60px;
 }
 
-.e-pr {
-  font-size: 0.9rem;
-}
-
-.e-pr__co {
+.ch-commits {
   color: blue;
 }
 
-.e-pr__cf {
+.ch-files {
   color: #8f93b3;
 }
 
-.e-pr__ad {
+.ch-added {
   color: green;
 }
 
-.e-pr__de {
+.ch-deleted {
   color: red;
 }
 
-.e-pr-b {
+.ch-refs {
   color: #8f93b3;
   font-size: 0.9rem;
   overflow: hidden;
 }
 
-.e-msg {
+.cb-msg {
   font-style: italic;
+}
+
+.cb-big {
+  text-align: center;
 }
 
 @media screen and (max-width: 767px) {
