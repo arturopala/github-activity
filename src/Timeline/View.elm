@@ -45,7 +45,7 @@ view model =
 viewSpinner : Model -> List ( String, Html Msg )
 viewSpinner model =
     [ ( "spinner"
-      , div [ class "animated bounceInDown delay-2s waiting-for-content" ]
+      , div [ class "animated bounceInDown delay-2s slower waiting-for-content" ]
             [ i [ class "mdi mdi-cloud-download" ] [] ]
       )
     ]
