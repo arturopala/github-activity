@@ -47,6 +47,13 @@ showWelcome model _ =
 
 showSelectSource : Model -> GitHub.Model.GitHubUser -> Html Msg
 showSelectSource model user =
+    let
+        sources =
+            appendIfDistinct
+                model.eventStream.source
+                [ GitHub.Model.GitHubEventSourceUser user.login, GitHub.Model.GitHubEventSourceDefault ]
+                ++ List.map (\o -> GitHub.Model.GitHubEventSourceOrganisation o.login) model.organisations
+    in
     section [ class "mdl-layout " ]
         [ main_ [ class "homepage mdl-layout__content" ]
             [ div [ class "card-login mdl-card mdl-shadow--2dp" ]
@@ -56,25 +63,9 @@ showSelectSource model user =
                         , text " Activity"
                         ]
                     ]
-                 , div [ class "mdl-card__actions mdl-card--border mdl-color--secondary mdl-color-text--primary" ]
-                    [ button
-                        [ onClick (ChangeEventSourceCommand (GitHub.Model.GitHubEventSourceUser user.login))
-                        , class "mdl-button mdl-button--colored mdl-color-text--primary"
-                        ]
-                        [ text ("Stream " ++ user.login ++ " user")
-                        ]
-                    ]
                  ]
-                    ++ organisationButtonList model
-                    ++ [ div [ class "mdl-card__actions mdl-card--border mdl-color--secondary mdl-color-text--primary" ]
-                            [ button
-                                [ onClick (ChangeEventSourceCommand GitHub.Model.GitHubEventSourceDefault)
-                                , class "mdl-button mdl-button--colored mdl-color-text--primary"
-                                ]
-                                [ text "Stream all github"
-                                ]
-                            ]
-                       , div [ class "mdl-card__actions mdl-card--border mdl-color--primary mdl-color-text--white" ]
+                    ++ List.map (showSourceOption model) sources
+                    ++ [ div [ class "mdl-card__actions mdl-card--border mdl-color--primary mdl-color-text--white" ]
                             [ button
                                 [ onClick SignOutCommand
                                 , class "mdl-button mdl-button--colored mdl-color-text--white"
@@ -90,19 +81,48 @@ showSelectSource model user =
         ]
 
 
-organisationButtonList : Model -> List (Html Msg)
-organisationButtonList model =
-    model.organisations
-        |> List.map organisationButton
-
-
-organisationButton : GitHub.Model.GitHubOrganisation -> Html Msg
-organisationButton organisation =
+showSourceOption : Model -> GitHub.Model.GitHubEventSource -> Html Msg
+showSourceOption model source =
     div [ class "mdl-card__actions mdl-card--border mdl-color--secondary mdl-color-text--primary" ]
         [ button
-            [ onClick (ChangeEventSourceCommand (GitHub.Model.GitHubEventSourceOrganisation organisation.login))
-            , class "mdl-button mdl-button--colored mdl-color-text--primary"
+            [ onClick (ChangeEventSourceCommand source)
+            , classList
+                [ ( "mdl-button", True )
+                , ( "mdl-button--colored", True )
+                , ( "mdl-color-text--primary", True )
+                , ( "is-current-source", model.eventStream.source == source )
+                ]
             ]
-            [ text ("Stream " ++ organisation.login ++ " org")
+            [ sourceLabel source
             ]
         ]
+
+
+sourceLabel : GitHub.Model.GitHubEventSource -> Html Msg
+sourceLabel source =
+    case source of
+        GitHub.Model.GitHubEventSourceDefault ->
+            text "Stream all public GitHub"
+
+        GitHub.Model.GitHubEventSourceUser user ->
+            text ("Stream user " ++ user)
+
+        GitHub.Model.GitHubEventSourceOrganisation org ->
+            text ("Stream org " ++ org)
+
+        GitHub.Model.GitHubEventSourceRepository owner repo ->
+            text ("Stream repo" ++ owner ++ "/" ++ repo)
+
+
+appendIfDistinct : a -> List a -> List a
+appendIfDistinct a list =
+    case list of
+        [] ->
+            a :: []
+
+        x :: xs ->
+            if a == x then
+                list
+
+            else
+                x :: appendIfDistinct a xs

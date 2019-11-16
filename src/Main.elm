@@ -47,7 +47,15 @@ init flags url key =
             Routing.parseLocation url
 
         ( model, cmd ) =
-            route initialRoute (initialModel key url |> LocalStorage.decodeAndOverlayState flags)
+            let
+                model2 =
+                    initialModel key url
+            in
+            route initialRoute
+                (model2
+                    |> LocalStorage.decodeAndOverlayState flags
+                    |> Maybe.withDefault model2
+                )
 
         readUserCmd =
             case model.authorization of
@@ -75,10 +83,17 @@ route r model =
             ( model, requestAccessToken code |> Cmd.map GotTokenEvent )
 
         EventsRoute source ->
-            ( model
-                |> resetEventStreamIfSourceChanged source
-                |> modeLens.set Mode.Timeline
-            , push (EventStreamMsg EventStream.Message.ReadEvents)
+            let
+                model2 =
+                    model
+                        |> resetEventStreamIfSourceChanged source
+                        |> modeLens.set Mode.Timeline
+            in
+            ( model2
+            , Cmd.batch
+                [ LocalStorage.extractAndSaveState model2
+                , push (EventStreamMsg EventStream.Message.ReadEvents)
+                ]
             )
 
         RouteNotFound ->

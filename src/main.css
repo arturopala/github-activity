@@ -27,6 +27,9 @@
 .card-login > .mdl-card__actions > .fab {
   padding-right: 10px;
 }
+.card-login .is-current-source {
+  color: green!important;
+}
 
 .timeline {
   display: flex;
