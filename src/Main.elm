@@ -9,10 +9,10 @@ import GitHub.Message
 import GitHub.Model
 import GitHub.OAuthProxy exposing (requestAccessToken)
 import Homepage.View
+import LocalStorage
 import Message exposing (Msg(..))
 import Mode exposing (Mode(..))
 import Model exposing (..)
-import Ports
 import Routing exposing (Route(..), modifyUrlGivenSource)
 import Task
 import Time
@@ -47,7 +47,7 @@ init flags url key =
             Routing.parseLocation url
 
         ( model, cmd ) =
-            route initialRoute (initialModel key url flags)
+            route initialRoute (initialModel key url |> LocalStorage.decodeAndOverlayState flags)
 
         readUserCmd =
             case model.authorization of
@@ -115,13 +115,17 @@ update m model =
             ( { model | doAfterAuthorized = Just cmd }, Nav.load Routing.signInUrl )
 
         SignOutCommand ->
-            ( { model
-                | authorization = Unauthorized
-                , user = Nothing
-                , organisations = []
-              }
+            let
+                model2 =
+                    { model
+                        | authorization = Unauthorized
+                        , user = Nothing
+                        , organisations = []
+                    }
+            in
+            ( model2
             , Cmd.batch
-                [ Ports.storeToken ""
+                [ LocalStorage.extractAndSaveState model2
                 , push (NavigateCommand Nothing Nothing)
                 ]
             )
@@ -130,10 +134,13 @@ update m model =
             let
                 url =
                     model.url
+
+                model2 =
+                    { model | authorization = Token token scope }
             in
-            ( { model | authorization = Token token scope }
+            ( model2
             , Cmd.batch
-                [ saveToken (token ++ "," ++ scope)
+                [ LocalStorage.extractAndSaveState model2
                 , pushUrl model { url | query = Nothing }
                 , readCurrentUserInfo (Token token scope) |> Cmd.map GotGitHubApiResponseEvent
                 , model.doAfterAuthorized |> Maybe.withDefault Cmd.none
@@ -196,8 +203,3 @@ view model =
 pushUrl : Model -> Url -> Cmd Msg
 pushUrl model nextUrl =
     Nav.pushUrl model.key (Url.toString nextUrl)
-
-
-saveToken : String -> Cmd msg
-saveToken token =
-    Ports.storeToken token

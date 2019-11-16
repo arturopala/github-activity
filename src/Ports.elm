@@ -1,7 +1,7 @@
-port module Ports exposing (logError, storeToken)
+port module Ports exposing (logError, storeState)
 
 
-port storeToken : String -> Cmd msg
+port storeState : String -> Cmd msg
 
 
 port logError : String -> Cmd msg

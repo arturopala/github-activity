@@ -2,11 +2,11 @@ import './main.css';
 import { Elm } from './Main.elm';
 import * as serviceWorker from './serviceWorker';
 
-const token = localStorage.getItem('token');
+const state = localStorage.getItem('state');
 
 const app = Elm.Main.init({
   node: document.getElementById('root'),
-  flags: token
+  flags: state
 });
 
 // If you want your app to work offline and load faster, you can change
@@ -15,11 +15,11 @@ const app = Elm.Main.init({
 serviceWorker.unregister();
 
 
-app.ports.storeToken.subscribe(function(token) {
-  if(token===""){
-    localStorage.removeItem('token')
+app.ports.storeState.subscribe(function(state) {
+  if(state===""){
+    localStorage.removeItem('state')
   } else {
-    localStorage.setItem('token', token);
+    localStorage.setItem('state', state);
   }
 });
 

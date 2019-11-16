@@ -1,4 +1,4 @@
-module Model exposing (Authorization(..), Model, downloadingLens, eventStreamChunksLens, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamLens, eventStreamSourceLens, initialModel, limitsLens, modeLens, routeLens, timelineActiveLens, timelineEventsLens, timelineLens, urlLens)
+module Model exposing (Authorization(..), Model, authorizationLens, downloadingLens, eventStreamChunksLens, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamLens, eventStreamSourceLens, initialModel, limitsLens, modeLens, routeLens, timelineActiveLens, timelineEventsLens, timelineLens, urlLens)
 
 import Browser.Navigation exposing (Key)
 import EventStream.Model as EventStream exposing (Model, etagLens, sourceLens)
@@ -34,17 +34,17 @@ type alias Model =
 
 title : String
 title =
-    "GitHub Activity Dashboard"
+    "GitHub Activity"
 
 
-initialModel : Key -> Url -> Maybe String -> Model
-initialModel key url flags =
+initialModel : Key -> Url -> Model
+initialModel key url =
     { title = title
     , mode = Mode.Homepage
     , route = StartRoute
     , eventStream = EventStream.initialEventStream
     , timeline = Timeline.initialTimeline
-    , authorization = parseToken flags
+    , authorization = Unauthorized
     , user = Nothing
     , organisations = []
     , preferences =
@@ -71,32 +71,6 @@ type alias Preferences =
     , maxNumberOfEventsInQueue : Int
     , tickIntervalMilliseconds : Float
     }
-
-
-parseToken : Maybe String -> Authorization
-parseToken s =
-    let
-        parts =
-            s |> Maybe.map (String.split ",")
-
-        token =
-            parts
-                |> Maybe.andThen List.head
-                |> Maybe.map String.trim
-
-        scope =
-            parts |> Maybe.map (List.drop 1) |> Maybe.andThen List.head |> Maybe.withDefault ""
-    in
-    case token of
-        Just value ->
-            if String.isEmpty value then
-                Unauthorized
-
-            else
-                Token value scope
-
-        Nothing ->
-            Unauthorized
 
 
 eventStreamLens : Lens Model EventStream.Model
@@ -132,6 +106,11 @@ limitsLens =
 downloadingLens : Lens Model Bool
 downloadingLens =
     Lens .downloading (\b a -> { a | downloading = b })
+
+
+authorizationLens : Lens Model Authorization
+authorizationLens =
+    Lens .authorization (\b a -> { a | authorization = b })
 
 
 eventStreamSourceLens : Lens Model GitHub.Model.GitHubEventSource
