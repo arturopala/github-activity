@@ -120,7 +120,10 @@ update m model =
                 , user = Nothing
                 , organisations = []
               }
-            , push (NavigateCommand Nothing Nothing)
+            , Cmd.batch
+                [ Ports.storeToken ""
+                , push (NavigateCommand Nothing Nothing)
+                ]
             )
 
         GotTokenEvent (GitHub.OAuthProxy.OAuthToken token scope) ->

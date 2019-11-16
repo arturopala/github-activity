@@ -80,14 +80,20 @@ parseToken s =
             s |> Maybe.map (String.split ",")
 
         token =
-            parts |> Maybe.andThen List.head
+            parts
+                |> Maybe.andThen List.head
+                |> Maybe.map String.trim
 
         scope =
             parts |> Maybe.map (List.drop 1) |> Maybe.andThen List.head |> Maybe.withDefault ""
     in
     case token of
         Just value ->
-            Token value scope
+            if String.isEmpty value then
+                Unauthorized
+
+            else
+                Token value scope
 
         Nothing ->
             Unauthorized
