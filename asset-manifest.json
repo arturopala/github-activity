@@ -1,7 +1,7 @@
 {
-  "main.css": "https://arturopala.github.io/github-activity/static/css/main.30071c86.chunk.css",
-  "main.js": "https://arturopala.github.io/github-activity/static/js/main.7da94a1d.chunk.js",
-  "main.js.map": "https://arturopala.github.io/github-activity/static/js/main.7da94a1d.chunk.js.map",
+  "main.css": "https://arturopala.github.io/github-activity/static/css/main.5ea7c747.chunk.css",
+  "main.js": "https://arturopala.github.io/github-activity/static/js/main.67a6dceb.chunk.js",
+  "main.js.map": "https://arturopala.github.io/github-activity/static/js/main.67a6dceb.chunk.js.map",
   "runtime~main.js": "https://arturopala.github.io/github-activity/static/js/runtime~main.de8c3396.js",
   "runtime~main.js.map": "https://arturopala.github.io/github-activity/static/js/runtime~main.de8c3396.js.map",
   "vendors~main.js": "https://arturopala.github.io/github-activity/static/js/vendors~main.3ca81432.chunk.js",
@@ -11,5 +11,5 @@
   "index.html": "https://arturopala.github.io/github-activity/index.html",
   "logo.svg": "https://arturopala.github.io/github-activity/logo.svg",
   "manifest.json": "https://arturopala.github.io/github-activity/manifest.json",
-  "precache-manifest.c88658017c5df7568f9c1d89aadd766d.js": "https://arturopala.github.io/github-activity/precache-manifest.c88658017c5df7568f9c1d89aadd766d.js"
+  "precache-manifest.702597ba9973466c7d034af8e5895c5f.js": "https://arturopala.github.io/github-activity/precache-manifest.702597ba9973466c7d034af8e5895c5f.js"
 }
