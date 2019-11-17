@@ -3,7 +3,7 @@ module EventStream.Update exposing (resetEventStreamIfSourceChanged, update)
 import Basics as Math
 import Dict
 import EventStream.Message exposing (..)
-import EventStream.Model exposing (chunksLens, errorLens, etagLens, eventsLens)
+import EventStream.Model exposing (chunksLens, errorLens)
 import GitHub.APIv3 exposing (readGitHubEvents, readGitHubEventsNextPage)
 import GitHub.Message
 import GitHub.Model exposing (GitHubApiLimits, GitHubEvent, GitHubEventSource(..), GitHubEventsChunk, GitHubResponse)

@@ -1,9 +1,10 @@
 module Homepage.View exposing (view)
 
 import GitHub.Model
-import Html exposing (Html, button, div, h1, i, main_, section, span, text)
+import Homepage.Message
+import Html exposing (Html, button, div, h1, i, input, label, main_, section, span, text)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, onInput)
 import Html.Lazy
 import Message exposing (..)
 import Model exposing (Model)
@@ -65,7 +66,14 @@ showSelectSource model user =
                     ]
                  ]
                     ++ List.map (showSourceOption model) sources
-                    ++ [ div [ class "mdl-card__actions mdl-card--border mdl-color--primary mdl-color-text--white" ]
+                    ++ [ div [ class "mdl-card__actions mdl-card--border mdl-color--secondary mdl-color-text--primary" ]
+                            [ div [ class "" ]
+                                [ input [ class "", type_ "text", pattern "[a-zA-Z0-9-]*", id "search", onInput (HomepageMsg << Homepage.Message.SearchCommand) ] []
+                                , label [ class "", for "search" ] [ text "Search for user" ]
+                                , span [ class "" ] [ text "Letters, numbers and hyphen only" ]
+                                ]
+                            ]
+                       , div [ class "mdl-card__actions mdl-card--border mdl-color--primary mdl-color-text--white" ]
                             [ button
                                 [ onClick SignOutCommand
                                 , class "mdl-button mdl-button--colored mdl-color-text--white"

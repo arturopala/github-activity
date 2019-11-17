@@ -8,6 +8,7 @@ import GitHub.APIv3 exposing (readCurrentUserInfo, readCurrentUserOrganisations)
 import GitHub.Message
 import GitHub.Model
 import GitHub.OAuthProxy exposing (requestAccessToken)
+import Homepage.Update
 import Homepage.View
 import LocalStorage
 import Message exposing (Msg(..))
@@ -65,7 +66,7 @@ init flags url key =
                             Cmd.none
 
                         Nothing ->
-                            readCurrentUserInfo (Token token scope) |> Cmd.map GotGitHubApiResponseEvent
+                            readCurrentUserInfo (Token token scope) |> Cmd.map gitHubApiResponseAsMsg
 
                 Unauthorized ->
                     Cmd.none
@@ -103,9 +104,20 @@ route r model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update m model =
     case m of
-        UrlChangedEvent url ->
-            route (Routing.parseLocation url) model
-                |> modifyModel urlLens url
+        AuthorizeUserCommand cmd ->
+            ( { model | doAfterAuthorized = Just cmd }, Nav.load Routing.signInUrl )
+
+        ChangeEventSourceCommand source ->
+            let
+                cmd =
+                    case model.authorization of
+                        Unauthorized ->
+                            push (AuthorizeUserCommand (push (ChangeEventSourceCommand source)))
+
+                        Token _ _ ->
+                            pushUrl model (modifyUrlGivenSource model.url source)
+            in
+            ( model, cmd )
 
         ChangeUrlCommand urlRequest ->
             case urlRequest of
@@ -126,9 +138,6 @@ update m model =
             in
             ( model, pushUrl model { url | fragment = maybeFragment, query = maybeQuery } )
 
-        AuthorizeUserCommand cmd ->
-            ( { model | doAfterAuthorized = Just cmd }, Nav.load Routing.signInUrl )
-
         SignOutCommand ->
             let
                 model2 =
@@ -145,6 +154,9 @@ update m model =
                 ]
             )
 
+        GotTimeZoneEvent zone ->
+            ( { model | zone = zone }, Cmd.none )
+
         GotTokenEvent (GitHub.OAuthProxy.OAuthToken token scope) ->
             let
                 url =
@@ -157,20 +169,27 @@ update m model =
             , Cmd.batch
                 [ LocalStorage.extractAndSaveState model2
                 , pushUrl model { url | query = Nothing }
-                , readCurrentUserInfo (Token token scope) |> Cmd.map GotGitHubApiResponseEvent
+                , readCurrentUserInfo (Token token scope) |> Cmd.map gitHubApiResponseAsMsg
                 , model.doAfterAuthorized |> Maybe.withDefault Cmd.none
                 ]
             )
 
-        GotGitHubApiResponseEvent (GitHub.Message.GitHubUserMsg (Ok response)) ->
-            ( { model | user = Just response.content }
-            , readCurrentUserOrganisations model.authorization |> Cmd.map GotGitHubApiResponseEvent
+        GotTokenEvent (GitHub.OAuthProxy.OAuthError error) ->
+            ( model, Cmd.none )
+
+        ReadUserEvent user ->
+            ( { model | user = Just user }
+            , readCurrentUserOrganisations model.authorization |> Cmd.map gitHubApiResponseAsMsg
             )
 
-        GotGitHubApiResponseEvent (GitHub.Message.GitHubUserOrganisationsMsg (Ok response)) ->
-            ( { model | organisations = response.content }
+        ReadUserOrganisationsEvent organisations ->
+            ( { model | organisations = organisations }
             , Cmd.none
             )
+
+        UrlChangedEvent url ->
+            route (Routing.parseLocation url) model
+                |> modifyModel urlLens url
 
         EventStreamMsg msg ->
             EventStream.Update.update msg model.authorization model
@@ -180,22 +199,11 @@ update m model =
             Timeline.Update.update msg model
                 |> wrapCmd TimelineMsg
 
-        GotTimeZoneEvent zone ->
-            ( { model | zone = zone }, Cmd.none )
+        HomepageMsg msg ->
+            Homepage.Update.update msg model
+                |> wrapCmd HomepageMsg
 
-        ChangeEventSourceCommand source ->
-            let
-                cmd =
-                    case model.authorization of
-                        Unauthorized ->
-                            push (AuthorizeUserCommand (push (ChangeEventSourceCommand source)))
-
-                        Token _ _ ->
-                            pushUrl model (modifyUrlGivenSource model.url source)
-            in
-            ( model, cmd )
-
-        _ ->
+        NoOp ->
             ( model, Cmd.none )
 
 
@@ -218,3 +226,16 @@ view model =
 pushUrl : Model -> Url -> Cmd Msg
 pushUrl model nextUrl =
     Nav.pushUrl model.key (Url.toString nextUrl)
+
+
+gitHubApiResponseAsMsg : GitHub.Message.Msg -> Msg
+gitHubApiResponseAsMsg msg =
+    case msg of
+        GitHub.Message.GitHubUserMsg (Ok response) ->
+            ReadUserEvent response.content
+
+        GitHub.Message.GitHubUserOrganisationsMsg (Ok response) ->
+            ReadUserOrganisationsEvent response.content
+
+        _ ->
+            NoOp

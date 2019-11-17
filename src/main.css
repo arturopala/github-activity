@@ -57,8 +57,8 @@ header.mdl-layout__header {
 
 .card-event.mdl-card {
   flex: 1 1 auto;
-  height: 10rem;
-  width: 12rem;
+  height: 15rem;
+  width: 15rem;
   background: white;
   margin: 10px;
 }
@@ -72,6 +72,7 @@ header.mdl-layout__header {
   background-repeat: no-repeat;
   background-clip: padding-box;
   background-position: right 2px top 2px;
+  overflow: scroll;
 }
 .card-event > .mdl-card__actions {
   display: flex;
@@ -83,7 +84,6 @@ header.mdl-layout__header {
   color: rgb(63,81,181);
   border-top-style: solid;
   border-top-width: 1px;
-
 }
 .card-event-datetime {
   color: gray;
@@ -230,10 +230,22 @@ header.mdl-layout__header {
   font-style: italic;
 }
 
+.cb-title {
+  font-style: normal;
+  font-size: 1rem;
+}
+
 .cb-big {
   text-align: center;
 }
 
+.pull-request-ref {
+  color: #8f93b3;
+  font-size:0.8rem;
+}
+.commit-sha {
+  color: #8f93b3;
+}
 .waiting-for-content {
   flex: auto;
   align-self: center;

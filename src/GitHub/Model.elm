@@ -1,4 +1,4 @@
-module GitHub.Model exposing (GitHubApiLimits, GitHubAuthor, GitHubCommit, GitHubError, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubOrganisation, GitHubPullRequest, GitHubPullRequestEventPayload, GitHubPushEventPayload, GitHubReference, GitHubReleaseEventPayload, GitHubReleaseRef, GitHubRepoRef, GitHubRepository, GitHubResponse, GitHubUser, GitHubUserRef)
+module GitHub.Model exposing (GitHubApiLimits, GitHubAuthor, GitHubCommit, GitHubError, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubOrganisation, GitHubPullRequest, GitHubPullRequestEventPayload, GitHubPullRequestRef, GitHubPullRequestReview, GitHubPullRequestReviewComment, GitHubPullRequestReviewCommentEventPayload, GitHubPullRequestReviewEventPayload, GitHubPushEventPayload, GitHubReference, GitHubReleaseEventPayload, GitHubReleaseRef, GitHubRepoRef, GitHubRepository, GitHubResponse, GitHubSearchResult, GitHubUser, GitHubUserRef)
 
 import Dict exposing (Dict)
 import Time exposing (Posix)
@@ -95,6 +95,8 @@ type alias GitHubReference =
 
 type GitHubEventPayload
     = GitHubPullRequestEvent GitHubPullRequestEventPayload
+    | GitHubPullRequestReviewEvent GitHubPullRequestReviewEventPayload
+    | GitHubPullRequestReviewCommentEvent GitHubPullRequestReviewCommentEventPayload
     | GitHubReleaseEvent GitHubReleaseEventPayload
     | GitHubPushEvent GitHubPushEventPayload
     | GitHubOtherEventPayload
@@ -104,6 +106,20 @@ type alias GitHubPullRequestEventPayload =
     { action : String
     , number : Int
     , pull_request : GitHubPullRequest
+    }
+
+
+type alias GitHubPullRequestReviewEventPayload =
+    { action : String
+    , review : GitHubPullRequestReview
+    , pull_request : GitHubPullRequestRef
+    }
+
+
+type alias GitHubPullRequestReviewCommentEventPayload =
+    { action : String
+    , comment : GitHubPullRequestReviewComment
+    , pull_request : GitHubPullRequestRef
     }
 
 
@@ -137,6 +153,47 @@ type alias GitHubPullRequest =
     , changed_files : Int
     , head : GitHubReference
     , base : GitHubReference
+    }
+
+
+type alias GitHubPullRequestRef =
+    { id : Int
+    , url : Url
+    , html_url : Url
+    , state : String
+    , title : String
+    , body : Maybe String
+    , created_at : Posix
+    , merged_at : Maybe Posix
+    , merged_commit_sha : Maybe String
+    , user : GitHubUserRef
+    }
+
+
+type alias GitHubPullRequestReview =
+    { id : Int
+    , user : GitHubUserRef
+    , body : Maybe String
+    , commit_id : String
+    , submitted_at : Posix
+    , state : String
+    , author_association : String
+    , pull_request_url : Url
+    }
+
+
+type alias GitHubPullRequestReviewComment =
+    { id : Int
+    , pull_request_review_id : Int
+    , user : GitHubUserRef
+    , body : Maybe String
+    , commit_id : String
+    , created_at : Posix
+    , author_association : String
+    , url : Url
+    , pull_request_url : Url
+    , path : String
+    , diff_hunk : String
     }
 
 
@@ -223,4 +280,11 @@ type alias GitHubOrganisation =
     , events_url : Url
     , avatar_url : Url
     , description : String
+    }
+
+
+type alias GitHubSearchResult a =
+    { total_count : Int
+    , incomplete_results : Bool
+    , items : List a
     }

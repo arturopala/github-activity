@@ -1,4 +1,4 @@
-module GitHub.Decode exposing (decodeActor, decodeDateTime, decodeEvent, decodeEventByType, decodeEvents, decodeGitHubAuthor, decodeGitHubCommit, decodeOrganisation, decodePayload, decodePullRequest, decodePullRequestEventPayload, decodePushEventPayload, decodeReleaseEventPayload, decodeReleaseRef, decodeRepoLink, decodeRepository, decodeUser, decodeUserRef)
+module GitHub.Decode exposing (decodeActor, decodeDateTime, decodeEvent, decodeEventByType, decodeEvents, decodeGitHubAuthor, decodeGitHubCommit, decodeOrganisation, decodePayload, decodePullRequest, decodePullRequestEventPayload, decodePushEventPayload, decodeReleaseEventPayload, decodeReleaseRef, decodeRepoLink, decodeRepository, decodeUser, decodeUserRef, decodeUserSearchResult)
 
 import GitHub.Model exposing (..)
 import Iso8601 exposing (toTime)
@@ -82,6 +82,12 @@ decodePayload tag =
         "PullRequestEvent" ->
             map GitHubPullRequestEvent decodePullRequestEventPayload
 
+        "PullRequestReviewEvent" ->
+            map GitHubPullRequestReviewEvent decodePullRequestReviewPayload
+
+        "PullRequestReviewCommentEvent" ->
+            map GitHubPullRequestReviewCommentEvent decodePullRequestReviewCommentPayload
+
         "ReleaseEvent" ->
             map GitHubReleaseEvent decodeReleaseEventPayload
 
@@ -103,6 +109,22 @@ decodePullRequestEventPayload =
         |> required "action" string
         |> required "number" int
         |> required "pull_request" decodePullRequest
+
+
+decodePullRequestReviewPayload : Decoder GitHubPullRequestReviewEventPayload
+decodePullRequestReviewPayload =
+    Decode.succeed GitHubPullRequestReviewEventPayload
+        |> required "action" string
+        |> required "review" decodePullRequestReview
+        |> required "pull_request" decodePullRequestRef
+
+
+decodePullRequestReviewCommentPayload : Decoder GitHubPullRequestReviewCommentEventPayload
+decodePullRequestReviewCommentPayload =
+    Decode.succeed GitHubPullRequestReviewCommentEventPayload
+        |> required "action" string
+        |> required "comment" decodePullRequestReviewComment
+        |> required "pull_request" decodePullRequestRef
 
 
 decodePullRequest : Decoder GitHubPullRequest
@@ -137,6 +159,50 @@ decodePullRequest =
         |> required "changed_files" int
         |> required "head" decodeReference
         |> required "base" decodeReference
+
+
+decodePullRequestRef : Decoder GitHubPullRequestRef
+decodePullRequestRef =
+    Decode.succeed GitHubPullRequestRef
+        |> required "id" int
+        |> required "url" decodeUrl
+        |> required "html_url" decodeUrl
+        |> required "state" string
+        |> required "title" string
+        |> notrequi "body" string
+        |> required "created_at" decodeDateTime
+        |> notrequi "merged_at" decodeDateTime
+        |> notrequi "merged_commit_sha" string
+        |> required "user" decodeUserRef
+
+
+decodePullRequestReview : Decoder GitHubPullRequestReview
+decodePullRequestReview =
+    Decode.succeed GitHubPullRequestReview
+        |> required "id" int
+        |> required "user" decodeUserRef
+        |> notrequi "body" string
+        |> required "commit_id" string
+        |> required "submitted_at" decodeDateTime
+        |> required "state" string
+        |> required "author_association" string
+        |> required "pull_request_url" decodeUrl
+
+
+decodePullRequestReviewComment : Decoder GitHubPullRequestReviewComment
+decodePullRequestReviewComment =
+    Decode.succeed GitHubPullRequestReviewComment
+        |> required "id" int
+        |> required "pull_request_review_id" int
+        |> required "user" decodeUserRef
+        |> notrequi "body" string
+        |> required "commit_id" string
+        |> required "created_at" decodeDateTime
+        |> required "author_association" string
+        |> required "url" decodeUrl
+        |> required "pull_request_url" decodeUrl
+        |> required "path" string
+        |> required "diff_hunk" string
 
 
 decodeReleaseEventPayload : Decoder GitHubReleaseEventPayload
@@ -261,3 +327,11 @@ urlPathTemplateRegex =
 removeUrlPathTemplates : String -> String
 removeUrlPathTemplates url =
     Regex.replace urlPathTemplateRegex (\_ -> "") url
+
+
+decodeUserSearchResult : Decoder (GitHubSearchResult GitHubUserRef)
+decodeUserSearchResult =
+    Decode.succeed GitHubSearchResult
+        |> required "total_count" int
+        |> required "incomplete_results" bool
+        |> required "items" (list decodeUserRef)

@@ -1,7 +1,7 @@
-module GitHub.APIv3 exposing (readCurrentUserInfo, readCurrentUserOrganisations, readGitHubEvents, readGitHubEventsNextPage)
+module GitHub.APIv3 exposing (readCurrentUserInfo, readCurrentUserOrganisations, readGitHubEvents, readGitHubEventsNextPage, searchUsers, searchUsersByLoginAndOrganisationType)
 
 import Dict exposing (Dict)
-import GitHub.Decode exposing (decodeEvents, decodeOrganisation, decodeUser)
+import GitHub.Decode exposing (decodeEvents, decodeOrganisation, decodeUser, decodeUserSearchResult)
 import GitHub.Message exposing (Msg(..))
 import GitHub.Model exposing (..)
 import Http
@@ -49,6 +49,16 @@ readCurrentUserInfo auth =
 readCurrentUserOrganisations : Authorization -> Cmd Msg
 readCurrentUserOrganisations auth =
     httpGet { githubApiUrl | path = "/user/orgs" } "" auth GitHubUserOrganisationsMsg (Decode.list decodeOrganisation)
+
+
+searchUsersByLoginAndOrganisationType : String -> Authorization -> Cmd Msg
+searchUsersByLoginAndOrganisationType login auth =
+    searchUsers (login ++ "+in:login+type:org") auth
+
+
+searchUsers : String -> Authorization -> Cmd Msg
+searchUsers query auth =
+    httpGet { githubApiUrl | path = "/search/users", query = Just ("q=" ++ query) } "" auth GitHubUserSearchMsg decodeUserSearchResult
 
 
 httpGet : Url -> String -> Authorization -> ResultToMsg a -> Decoder a -> Cmd Msg

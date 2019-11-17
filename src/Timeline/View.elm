@@ -63,6 +63,12 @@ viewEvent zone event =
         GitHubPullRequestEvent payload ->
             viewPullRequestEvent zone event payload
 
+        GitHubPullRequestReviewEvent payload ->
+            viewPullRequestReviewEvent zone event payload
+
+        GitHubPullRequestReviewCommentEvent payload ->
+            viewPullRequestReviewCommentEvent zone event payload
+
         GitHubReleaseEvent payload ->
             viewReleaseEvent zone event payload
 
@@ -115,9 +121,6 @@ viewEventTemplate1 zone event content label =
 viewPullRequestEvent : Zone -> GitHubEvent -> GitHubPullRequestEventPayload -> Html Msg
 viewPullRequestEvent zone event payload =
     let
-        master =
-            payload.pull_request.base.repo.default_branch
-
         base =
             payload.pull_request.base.ref
 
@@ -170,15 +173,53 @@ viewPullRequestEvent zone event payload =
 
                             else
                                 [ i
-                                    [ class "mdi mdi-arrow-expand-right spaced" ]
+                                    [ class "mdi mdi-arrow-expand-right" ]
                                     []
                                 , span [ class "ch-refs-head" ] [ text (String.left 23 head) ]
                                 ]
                     )
                 ]
             , div [ class "card-event-content-body" ]
-                [ span [ class "cb-msg" ] [ text (String.left 100 payload.pull_request.title) ]
+                [ span [ class "cb-title" ]
+                    [ text payload.pull_request.title
+                    ]
                 ]
+            ]
+    in
+    viewEventTemplate1 zone event content label
+
+
+viewPullRequestReviewEvent : Zone -> GitHubEvent -> GitHubPullRequestReviewEventPayload -> Html Msg
+viewPullRequestReviewEvent zone event payload =
+    let
+        label =
+            "Review " ++ payload.action
+
+        content =
+            [ div [] [] ]
+    in
+    viewEventTemplate1 zone event content label
+
+
+viewPullRequestReviewCommentEvent : Zone -> GitHubEvent -> GitHubPullRequestReviewCommentEventPayload -> Html Msg
+viewPullRequestReviewCommentEvent zone event payload =
+    let
+        label =
+            "Review Comment " ++ payload.action
+
+        content =
+            [ div [ class "card-event-content-header pull-request-ref" ]
+                [ text payload.pull_request.title
+                ]
+            , div [ class "card-event-content-body" ]
+                (payload.comment.body
+                    |> Maybe.map
+                        (\msg ->
+                            [ span [ class "cb-msg" ] [ text msg ]
+                            ]
+                        )
+                    |> Maybe.withDefault []
+                )
             ]
     in
     viewEventTemplate1 zone event content label
@@ -209,11 +250,13 @@ viewPushEvent zone event payload =
                 [ span [ class "ch-commits", title "number of commits" ] [ i [ class "mdi mdi-source-commit spaced" ] [], text (String.fromInt payload.distinct_size) ]
                 , span [ class "ch-refs" ]
                     [ i [ class "mdi mdi-arrow-expand-right spaced" ] []
-                    , span [ class "e-pr-b-head" ] [ text (String.left 20 (String.replace "refs/heads/" "" payload.ref)) ]
+                    , span [ class "e-pr-b-head" ] [ text (String.replace "refs/heads/" "" payload.ref) ]
                     ]
                 ]
             , div [ class "card-event-content-body" ]
-                [ div [ class "cb-msg" ] [ text (String.left 100 (List.head payload.commits |> Maybe.map .message |> Maybe.withDefault "")) ] ]
+                (List.filter (\c -> not << String.isEmpty <| c.message) payload.commits
+                    |> List.map (\c -> div [ class "cb-msg" ] [ span [ class "commit-sha" ] [ text (String.left 6 c.sha), text ": " ], text c.message ])
+                )
             ]
     in
     viewEventTemplate1 zone event content label
