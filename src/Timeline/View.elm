@@ -6,6 +6,7 @@ import Html exposing (Html, button, div, header, i, main_, nav, section, span, t
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Html.Keyed exposing (node)
+import Http
 import Message exposing (Msg(..))
 import Model exposing (Model)
 import Time exposing (..)
@@ -15,7 +16,7 @@ import Util exposing (push)
 
 view : Model -> Html Msg
 view model =
-    section [ classList [ ( "mdl-layout", True ), ( "mdl-layout--fixed-header", True ) ] ]
+    section [ class "mdl-layout mdl-layout--fixed-header timeline" ]
         [ header [ class "mdl-layout__header" ]
             [ div [ class "mdl-layout-icon" ]
                 [ i [ classList [ ( "mdi", True ), ( "mdi-github-circle", True ), ( "mdi-spin", model.downloading ) ] ] [] ]
@@ -30,10 +31,15 @@ view model =
         , main_
             [ class "mdl-layout__content" ]
             [ node "div"
-                [ class "timeline page-content" ]
+                [ classList [ ( "page-content", True ), ( "waiting-for-content", List.isEmpty model.timeline.events ) ] ]
                 (case model.timeline.events of
                     [] ->
-                        viewSpinner model
+                        case model.eventStream.error of
+                            Just error ->
+                                viewError error
+
+                            Nothing ->
+                                viewSpinner model
 
                     events ->
                         viewEvents model.zone events
@@ -45,8 +51,9 @@ view model =
 viewSpinner : Model -> List ( String, Html Msg )
 viewSpinner model =
     [ ( "spinner"
-      , div [ class "animated bounceInDown slower waiting-for-content" ]
-            [ i [ class "mdi mdi-cloud-download" ] [] ]
+      , i
+            [ class "animated bounceInDown slower mdi mdi-cloud-download" ]
+            []
       )
     ]
 
@@ -452,8 +459,8 @@ navigation : Model -> List (Html Msg)
 navigation model =
     let
         elements =
-            case model.user of
-                Just user ->
+            case model.authorization of
+                Model.Token _ _ ->
                     pauseResumeButton model
                         ++ [ button
                                 [ onClick (NavigateCommand (Just "") Nothing)
@@ -471,7 +478,7 @@ navigation model =
                                 ]
                            ]
 
-                Nothing ->
+                Model.Unauthorized ->
                     [ button
                         [ onClick (AuthorizeUserCommand (push (ChangeEventSourceCommand model.eventStream.source)))
                         , class "mdl-button mdl-button--colored mdl-color-text--white"
@@ -524,3 +531,31 @@ pauseResumeButton model =
             , i [ class "mdi mdi-play left-spaced" ] []
             ]
         ]
+
+
+viewError : Http.Error -> List ( String, Html Msg )
+viewError error =
+    case error of
+        Http.NetworkError ->
+            [ ( "network-error"
+              , i
+                    [ class "animated rotateIn slower mdi mdi-cloud-off-outline" ]
+                    []
+              )
+            ]
+
+        Http.Timeout ->
+            [ ( "network-timeout"
+              , i
+                    [ class "animated rotateIn slower mdi mdi-cloud-alert" ]
+                    []
+              )
+            ]
+
+        _ ->
+            [ ( "other-error"
+              , i
+                    [ class "animated rotateIn slower mdi mdi-cloud-question" ]
+                    []
+              )
+            ]

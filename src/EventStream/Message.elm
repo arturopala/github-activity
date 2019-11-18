@@ -10,3 +10,4 @@ type Msg
     | ReadEventsNextPage GitHubEventSource Url
     | GitHubResponseEvents GitHub.Message.Msg
     | GitHubResponseEventsNextPage GitHub.Message.Msg
+    | ForceFlushChunksAfterTimeout

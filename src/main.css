@@ -1,14 +1,23 @@
 body {
-  background-color: aliceblue;
+  background:url(
+  data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAI0lEQVQYV2N8/+P/fwYkwIhT4Mn9Nwy6mqKMcBWCHIyMIJ0AuW8Sz4LhL+oAAAAASUVORK5CYII=
+  ) repeat;
 }
 
-.homepage {
+.homepage.mdl-layout {
+  height: 100vh;
+  align-items: center;
+  justify-content: center;
+}
+
+.homepage .mdl-layout__content {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
   min-height: 100vh;
+  flex: initial;
 }
 
 .card-login.mdl-card {
@@ -34,25 +43,46 @@ body {
 .card-login .is-current-source {
   color: green!important;
 }
+.card-login .mdl-button {
+  flex: 1;
+  text-align: left;
+}
 
-.timeline {
+.card-login .mdl-button:hover {
+  background-color: aliceblue;
+}
+
+
+.timeline.mdl-layout {
+  height: 100vh;
+}
+
+.timeline .page-content {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-start;
   align-items: center;
   align-content: center;
   margin: 10px;
+  flex: auto;
 }
 
-header.mdl-layout__header {
+.timeline .mdl-layout__content {
+  display: flex;
+  align-items: flex-start;
+}
+
+.timeline header.mdl-layout__header {
   min-height: 56px;
 }
 
-.mdl-layout__header-row {
+.timeline .mdl-layout__header-row {
   height: 56px;
+  padding-left: 60px;
 }
 
-.mdl-layout__header > .mdl-layout-icon {
+
+.timeline .mdl-layout__header .mdl-layout-icon {
   font-size: 30px;
   top: 18px;
   left: 18px;
@@ -88,6 +118,7 @@ header.mdl-layout__header {
   color: rgb(63,81,181);
   border-top-style: solid;
   border-top-width: 1px;
+  text-align: center;
 }
 .card-event-datetime {
   color: gray;
@@ -170,15 +201,15 @@ header.mdl-layout__header {
 .card-event.event-release-published {
   background-color: yellow;
 }
+.card-event > .event-release-published {
+  color: yellow;
+  background-color: black;
+}
 .card-event.event-release-published .cb-big {
   color: black;
-  text-shadow: 2px 2px 2px yellowgreen;
   font-size: 2.5rem;
   font-weight: bold;
-}
-.card-event > .event-release-published {
-  color: black;
-  background-color: yellow;
+  line-height: normal;
 }
 .card-event > .event-push {
   color: white;
@@ -200,10 +231,6 @@ header.mdl-layout__header {
 .spaced {
   padding-right: 1px;
   padding-left: 4px;
-}
-
-.mdl-layout__header-row {
-  padding-left: 60px;
 }
 
 .ch-number {
@@ -253,6 +280,9 @@ header.mdl-layout__header {
 .commit-sha {
   color: #8f93b3;
 }
+
+
+
 .waiting-for-content {
   flex: auto;
   align-self: center;
@@ -262,8 +292,14 @@ header.mdl-layout__header {
   text-align: center;
 }
 
+.waiting-for-content i.mdi {
+  flex: auto
+}
+
 .search-box {
   flex: auto;
+  background-color: aliceblue;
+  border-radius: 10px;
 }
 
 .search-label {
@@ -271,18 +307,39 @@ header.mdl-layout__header {
   align-self: flex-start;
 }
 
+.search-input-box {
+  display: flex;
+  flex-flow: row nowrap;
+}
+
 .search-input {
+  flex:auto;
   background-color: transparent;
   border: none;
-  border-bottom: 1px dotted #9e9e9e;
   border-radius: 0;
   outline: none;
   height: 3rem;
   width: 100%;
   font-size: 1.2rem;
-  margin: 0 0 8px 0;
+  margin: 0;
   padding: 0;
-  text-align: center;
+  text-align: left;
+  color: rgb(63,81,181);
+}
+
+.search-input::placeholder {
+  color: rgb(63,81,181);
+  font-size: 1rem;
+}
+
+.search-input:focus::placeholder {
+  color: transparent;
+}
+
+.search-icon {
+  flex: initial;
+  margin: 0 16px;
+  align-self: center;
 }
 
 @media screen and (max-width: 767px) {

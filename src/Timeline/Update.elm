@@ -1,6 +1,7 @@
 module Timeline.Update exposing (subscriptions, update)
 
 import EventStream.Model
+import GitHub.Model
 import List exposing ((::))
 import Mode
 import Model exposing (Model, eventStreamEventsLens, timelineActiveLens, timelineEventsLens)
@@ -55,13 +56,8 @@ updateEventsOnDisplay model =
                 model.eventStream.events
                     |> List.drop (List.length model.eventStream.events - model.preferences.numberOfEventsOnDisplay - numberOfEventsToStreamWhenStarted)
 
-            display =
-                reduced
-                    |> List.take (List.length reduced - numberOfEventsToStreamWhenStarted)
-                    |> List.reverse
-
-            queue =
-                reduced |> List.drop (List.length reduced - numberOfEventsToStreamWhenStarted)
+            ( queue, display ) =
+                pullNEvents numberOfEventsToStreamWhenStarted reduced model.timeline.events model.preferences.numberOfEventsOnDisplay
         in
         model
             |> eventStreamEventsLens.set queue
@@ -69,25 +65,40 @@ updateEventsOnDisplay model =
 
     else
         let
-            pull source target =
-                case source of
-                    head :: tail ->
-                        if List.member head target then
-                            pull tail target
-
-                        else
-                            ( tail
-                            , (head :: target)
-                                |> List.sortBy (.created_at >> posixToMillis >> negate)
-                                |> List.take model.preferences.numberOfEventsOnDisplay
-                            )
-
-                    [] ->
-                        ( source, target )
-
             ( queue, display ) =
-                pull model.eventStream.events model.timeline.events
+                pullEvent model.eventStream.events model.timeline.events model.preferences.numberOfEventsOnDisplay
         in
         model
             |> eventStreamEventsLens.set queue
             |> timelineEventsLens.set display
+
+
+pullNEvents : Int -> List GitHub.Model.GitHubEvent -> List GitHub.Model.GitHubEvent -> Int -> ( List GitHub.Model.GitHubEvent, List GitHub.Model.GitHubEvent )
+pullNEvents count source target maxTargetSize =
+    if count == 0 || List.isEmpty source then
+        ( source, target )
+
+    else
+        let
+            ( source2, target2 ) =
+                pullEvent source target maxTargetSize
+        in
+        pullNEvents (count - 1) source2 target2 maxTargetSize
+
+
+pullEvent : List GitHub.Model.GitHubEvent -> List GitHub.Model.GitHubEvent -> Int -> ( List GitHub.Model.GitHubEvent, List GitHub.Model.GitHubEvent )
+pullEvent source target maxTargetSize =
+    case source of
+        head :: tail ->
+            if List.member head target then
+                pullEvent tail target maxTargetSize
+
+            else
+                ( tail
+                , (head :: target)
+                    |> List.sortBy (.created_at >> posixToMillis >> negate)
+                    |> List.take maxTargetSize
+                )
+
+        [] ->
+            ( source, target )

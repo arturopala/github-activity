@@ -22,8 +22,8 @@ view model =
 
 showWelcome : Model -> () -> Html Msg
 showWelcome model _ =
-    section [ class "mdl-layout" ]
-        [ section [ class "homepage mdl-layout__content" ]
+    section [ class "mdl-layout homepage" ]
+        [ section [ class "mdl-layout__content" ]
             [ div [ class "card-login mdl-card mdl-shadow--2dp" ]
                 [ div [ class "mdl-card__title mdl-card--expand mdl-typography--text-center mdl-color--white" ]
                     [ h1 [ class "mdl-color-text--primary" ]
@@ -55,8 +55,8 @@ showSelectSource model user =
                 [ GitHub.Model.GitHubEventSourceUser user.login, GitHub.Model.GitHubEventSourceDefault ]
                 ++ List.map (\o -> GitHub.Model.GitHubEventSourceOrganisation o.login) model.organisations
     in
-    section [ class "mdl-layout " ]
-        [ main_ [ class "homepage mdl-layout__content" ]
+    section [ class "mdl-layout homepage" ]
+        [ main_ [ class "mdl-layout__content" ]
             [ div [ class "card-login mdl-card mdl-shadow--2dp" ]
                 ([ div [ class "mdl-card__title mdl-card--expand mdl-typography--text-center mdl-color--white" ]
                     [ h1 [ class "mdl-color-text--primary" ]
@@ -64,14 +64,25 @@ showSelectSource model user =
                         , text " Activity"
                         ]
                     ]
+                 , div [ class "mdl-card__actions mdl-color--secondary mdl-color-text--primary" ]
+                    [ div [ class "search-box mdl-color-text--primary" ]
+                        [ div [ class "search-input-box" ]
+                            [ i [ class "search-icon material-icons" ] [ text "search" ]
+                            , input
+                                [ class "search-input"
+                                , type_ "text"
+                                , pattern "[a-zA-Z0-9-]*"
+                                , id "search"
+                                , placeholder "Type to search for streams"
+                                , onInput (HomepageMsg << Homepage.Message.SearchCommand)
+                                ]
+                                []
+                            ]
+                        ]
+                    ]
                  ]
                     ++ List.map (showSourceOption model) sources
-                    ++ [ div [ class "mdl-card__actions mdl-card--border mdl-color--secondary mdl-color-text--primary" ]
-                            [ div [ class "search-box mdl-color-text--primary" ]
-                                [ div [ class "search-input-box" ] [ input [ class "search-input", type_ "text", pattern "[a-zA-Z0-9-]*", id "search", placeholder "Search for streams", onInput (HomepageMsg << Homepage.Message.SearchCommand) ] [] ]
-                                ]
-                            ]
-                       , div [ class "mdl-card__actions mdl-card--border mdl-color--primary mdl-color-text--white" ]
+                    ++ [ div [ class "mdl-card__actions mdl-card--border mdl-color--primary mdl-color-text--white" ]
                             [ button
                                 [ onClick SignOutCommand
                                 , class "mdl-button mdl-button--colored mdl-color-text--white"

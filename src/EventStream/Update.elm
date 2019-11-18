@@ -30,7 +30,7 @@ update msg auth model =
                     else
                         ( model, scheduleNextRead model )
             in
-            ( model2, cmd )
+            ( model2, Cmd.batch [ cmd, delayMessage 5 ForceFlushChunksAfterTimeout ] )
 
         ReadEventsNextPage source url ->
             ( model
@@ -75,6 +75,13 @@ update msg auth model =
             in
             handleHttpError error model2
 
+        ForceFlushChunksAfterTimeout ->
+            let
+                model2 =
+                    flushChunksToEvents model
+            in
+            ( model2, Cmd.none )
+
         _ ->
             ( model, scheduleNextRead model )
 
@@ -84,21 +91,28 @@ handleHttpError error model =
     case error of
         Http.BadStatus 304 ->
             ( model
+                |> downloadingLens.set False
             , scheduleNextRead model
             )
 
         Http.BadStatus 403 ->
-            ( eventStreamErrorLens.set (Just error) model
+            ( model
+                |> eventStreamErrorLens.set (Just error)
+                |> downloadingLens.set False
             , scheduleNextRead model
             )
 
         Http.BadBody string ->
-            ( eventStreamErrorLens.set (Just error) model
+            ( model
+                |> eventStreamErrorLens.set (Just error)
+                |> downloadingLens.set False
             , Cmd.batch [ Ports.logError string, scheduleNextRead model ]
             )
 
         _ ->
-            ( eventStreamErrorLens.set (Just error) model
+            ( model
+                |> eventStreamErrorLens.set (Just error)
+                |> downloadingLens.set False
             , scheduleNextRead model
             )
 
@@ -123,14 +137,8 @@ maybeReadEventsNextPage model response =
     let
         readEventsAfterDelay _ =
             let
-                events =
-                    List.sortBy (.created_at >> posixToMillis) (model.eventStream.chunks ++ model.eventStream.events)
-                        |> (\list -> List.drop (List.length list - model.preferences.maxNumberOfEventsInQueue) list)
-
                 model2 =
-                    model
-                        |> eventStreamEventsLens.set events
-                        |> eventStreamChunksLens.set []
+                    flushChunksToEvents model
                         |> downloadingLens.set False
             in
             ( model2, scheduleNextRead model2 )
@@ -144,6 +152,18 @@ maybeReadEventsNextPage model response =
             |> Maybe.map (ReadEventsNextPage model.eventStream.source)
             |> Maybe.map (\url -> ( model, delayMessageBasedOnApiLimits model.limits 0 url ))
             |> Maybe.withDefault (readEventsAfterDelay ())
+
+
+flushChunksToEvents : Model -> Model
+flushChunksToEvents model =
+    let
+        events =
+            List.sortBy (.created_at >> posixToMillis) (model.eventStream.chunks ++ model.eventStream.events)
+                |> (\list -> List.drop (List.length list - model.preferences.maxNumberOfEventsInQueue) list)
+    in
+    model
+        |> eventStreamEventsLens.set events
+        |> eventStreamChunksLens.set []
 
 
 delayMessageBasedOnApiLimits : GitHubApiLimits -> Int -> m -> Cmd m
