@@ -137,19 +137,22 @@ viewPullRequestEvent zone event payload =
                 _ ->
                     ""
             )
-                ++ "pull request #"
-                ++ String.fromInt payload.pull_request.number
-                ++ " "
+                ++ "pull request "
                 ++ (case payload.action of
                         "closed" ->
                             if payload.pull_request.merged then
-                                "merged"
+                                "#"
+                                    ++ String.fromInt payload.pull_request.number
+                                    ++ " "
+                                    ++ "merged"
 
                             else
                                 "rejected"
 
                         "opened" ->
-                            ""
+                            "#"
+                                ++ String.fromInt payload.pull_request.number
+                                ++ " "
 
                         _ ->
                             payload.action

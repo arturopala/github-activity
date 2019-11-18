@@ -144,27 +144,25 @@ header.mdl-layout__header {
   align-content: center!important;
 }
 .card-event > .event-pull-request-merged {
-  color: white;
-  border-left: yellow 10px solid;
-  border-right: yellow 10px solid;
-  background-color: rgb(63,81,181);
-  border-top-width: 0;
+  color: black;
+  background-color: yellow;
+  border-top-width: 1px;
 }
 .card-event.event-pull-request-merged {
   background-color: yellow;
 }
 .card-event > .event-pull-request-opened {
   color: white;
-  border-left: yellowgreen 10px solid;
-  border-right: yellowgreen 10px solid;
-  background-color: rgb(63,81,181);
+  border-left: white 12px solid;
+  border-right: white 12px solid;
+  background-color: green;
   border-top-width: 0;
 }
 .card-event > .event-pull-request-rejected {
   color: white;
-  border-left: red 10px solid;
-  border-right: red 10px solid;
-  background-color: rgb(63,81,181);
+  border-left: white 12px solid;
+  border-right: white 12px solid;
+  background-color: black;
   border-top-width: 0;
 }
 .card-event.event-release-published {
