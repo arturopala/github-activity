@@ -1,4 +1,4 @@
-module GitHub.APIv3 exposing (readCurrentUserInfo, readCurrentUserOrganisations, readGitHubEvents, readGitHubEventsNextPage, searchUsers, searchUsersByLoginAndOrganisationType)
+module GitHub.APIv3 exposing (readCurrentUserInfo, readCurrentUserOrganisations, readGitHubEvents, readGitHubEventsNextPage, searchUsers, searchUsersByLogin)
 
 import Dict exposing (Dict)
 import GitHub.Decode exposing (decodeEvents, decodeOrganisation, decodeUser, decodeUserSearchResult)
@@ -51,9 +51,9 @@ readCurrentUserOrganisations auth =
     httpGet { githubApiUrl | path = "/user/orgs" } "" auth GitHubUserOrganisationsMsg (Decode.list decodeOrganisation)
 
 
-searchUsersByLoginAndOrganisationType : String -> Authorization -> Cmd Msg
-searchUsersByLoginAndOrganisationType login auth =
-    searchUsers (login ++ "+in:login+type:org") auth
+searchUsersByLogin : String -> Authorization -> Cmd Msg
+searchUsersByLogin login auth =
+    searchUsers (login ++ "+in:login") auth
 
 
 searchUsers : String -> Authorization -> Cmd Msg

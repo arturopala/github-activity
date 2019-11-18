@@ -1,8 +1,9 @@
-module Model exposing (Authorization(..), Model, authorizationLens, downloadingLens, eventStreamChunksLens, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamLens, eventStreamSourceLens, initialModel, limitsLens, modeLens, routeLens, timelineActiveLens, timelineEventsLens, timelineLens, urlLens)
+module Model exposing (Authorization(..), Model, authorizationLens, downloadingLens, eventStreamChunksLens, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamLens, eventStreamSourceLens, homepageLens, initialModel, limitsLens, modeLens, routeLens, timelineActiveLens, timelineEventsLens, timelineLens, urlLens)
 
 import Browser.Navigation exposing (Key)
 import EventStream.Model as EventStream exposing (Model, etagLens, sourceLens)
 import GitHub.Model exposing (GitHubApiLimits, GitHubEvent)
+import Homepage.Model as Homepage
 import Http
 import Message exposing (Msg)
 import Mode exposing (Mode)
@@ -20,6 +21,7 @@ type alias Model =
     , route : Route
     , eventStream : EventStream.Model
     , timeline : Timeline.Model
+    , homepage : Homepage.Model
     , authorization : Authorization
     , user : Maybe GitHub.Model.GitHubUser
     , organisations : List GitHub.Model.GitHubOrganisation
@@ -44,6 +46,7 @@ initialModel key url =
     , route = StartRoute
     , eventStream = EventStream.initialEventStream
     , timeline = Timeline.initialTimeline
+    , homepage = Homepage.initialHomepage
     , authorization = Unauthorized
     , user = Nothing
     , organisations = []
@@ -81,6 +84,11 @@ eventStreamLens =
 timelineLens : Lens Model Timeline.Model
 timelineLens =
     Lens .timeline (\b a -> { a | timeline = b })
+
+
+homepageLens : Lens Model Homepage.Model
+homepageLens =
+    Lens .homepage (\b a -> { a | homepage = b })
 
 
 modeLens : Lens Model Mode

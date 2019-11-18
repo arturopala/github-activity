@@ -25,7 +25,7 @@ showWelcome model _ =
     section [ class "mdl-layout homepage" ]
         [ section [ class "mdl-layout__content" ]
             [ div [ class "card-login mdl-card mdl-shadow--2dp" ]
-                [ div [ class "mdl-card__title mdl-card--expand mdl-typography--text-center mdl-color--white" ]
+                [ div [ class "mdl-card__title mdl-typography--text-center mdl-color--white" ]
                     [ h1 [ class "mdl-color-text--primary" ]
                         [ span [ class "mdl-color-text--black" ] [ text "GitHub" ]
                         , text " Activity"
@@ -38,12 +38,21 @@ showWelcome model _ =
                         ]
                         [ text "Sign in with GitHub"
                         ]
-                    , div [ class "mdl-layout-spacer" ] []
-                    , i [ class "mdi mdi-github-circle" ] []
+                    , i [ class "mdi mdi-github-circle left-spaced mdi-24px" ] []
                     ]
                 ]
             ]
         ]
+
+
+toSource : GitHub.Model.GitHubUserRef -> GitHub.Model.GitHubEventSource
+toSource user =
+    case user.type_ of
+        "Organisation" ->
+            GitHub.Model.GitHubEventSourceOrganisation user.login
+
+        _ ->
+            GitHub.Model.GitHubEventSourceUser user.login
 
 
 showSelectSource : Model -> GitHub.Model.GitHubUser -> Html Msg
@@ -52,13 +61,15 @@ showSelectSource model user =
         sources =
             appendIfDistinct
                 model.eventStream.source
-                [ GitHub.Model.GitHubEventSourceUser user.login, GitHub.Model.GitHubEventSourceDefault ]
-                ++ List.map (\o -> GitHub.Model.GitHubEventSourceOrganisation o.login) model.organisations
+                ([ GitHub.Model.GitHubEventSourceUser user.login ]
+                    ++ List.map (\o -> GitHub.Model.GitHubEventSourceOrganisation o.login) model.organisations
+                    ++ [ GitHub.Model.GitHubEventSourceDefault ]
+                )
     in
     section [ class "mdl-layout homepage" ]
         [ main_ [ class "mdl-layout__content" ]
             [ div [ class "card-login mdl-card mdl-shadow--2dp" ]
-                ([ div [ class "mdl-card__title mdl-card--expand mdl-typography--text-center mdl-color--white" ]
+                ([ div [ class "mdl-card__title mdl-typography--text-center mdl-color--white" ]
                     [ h1 [ class "mdl-color-text--primary" ]
                         [ span [ class "mdl-color-text--black" ] [ text "GitHub" ]
                         , text " Activity"
@@ -73,7 +84,7 @@ showSelectSource model user =
                                 , type_ "text"
                                 , pattern "[a-zA-Z0-9-]*"
                                 , id "search"
-                                , placeholder "Type to search for streams"
+                                , placeholder "Type to search for new streams"
                                 , onInput (HomepageMsg << Homepage.Message.SearchCommand)
                                 ]
                                 []
@@ -81,16 +92,17 @@ showSelectSource model user =
                         ]
                     ]
                  ]
+                    ++ List.map showUserSearchResult (List.take 5 model.homepage.usersFound)
                     ++ List.map (showSourceOption model) sources
-                    ++ [ div [ class "mdl-card__actions mdl-card--border mdl-color--primary mdl-color-text--white" ]
+                    ++ [ div [ class "mdl-card--expand" ] []
+                       , div [ class "mdl-card__actions mdl-card--border mdl-color--primary mdl-color-text--white" ]
                             [ button
                                 [ onClick SignOutCommand
                                 , class "mdl-button mdl-button--colored mdl-color-text--white"
                                 ]
                                 [ text "Sign out"
                                 ]
-                            , div [ class "mdl-layout-spacer" ] []
-                            , i [ class "mdi mdi-logout left-spaced" ] []
+                            , i [ class "mdi mdi-logout left-spaced  mdi-24px" ] []
                             ]
                        ]
                 )
@@ -129,6 +141,13 @@ sourceLabel source =
 
         GitHub.Model.GitHubEventSourceRepository owner repo ->
             text ("Stream repo" ++ owner ++ "/" ++ repo)
+
+
+showUserSearchResult : GitHub.Model.GitHubUserRef -> Html Msg
+showUserSearchResult user =
+    div [ class "mdl-card__actions mdl-color--secondary mdl-color-text--primary" ]
+        [ span [ class "search-result" ] [ text user.login ]
+        ]
 
 
 appendIfDistinct : a -> List a -> List a

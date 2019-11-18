@@ -5,7 +5,6 @@ body {
 }
 
 .homepage.mdl-layout {
-  height: 100vh;
   align-items: center;
   justify-content: center;
 }
@@ -21,7 +20,8 @@ body {
 }
 
 .card-login.mdl-card {
-  width: 300px;
+  min-width: 340px;
+
 }
 .card-login > .mdl-card__actions {
   border-color: rgba(0, 0, 0, 0.2);
@@ -46,10 +46,6 @@ body {
 .card-login .mdl-button {
   flex: 1;
   text-align: left;
-}
-
-.card-login .mdl-button:hover {
-  background-color: aliceblue;
 }
 
 
@@ -342,6 +338,10 @@ body {
   align-self: center;
 }
 
+.search-result {
+  margin-left: 60px;
+}
+
 @media screen and (max-width: 767px) {
 
   .left-spaced {
@@ -357,8 +357,16 @@ body {
     padding: 0 4px;
   }
 
-  .mdl-navigation i.mdi {
+  .timeline .mdl-navigation i.mdi {
     font-size: 150%;
+  }
+
+  .homepage .card-login.mdl-card {
+    flex: auto;
+    width: 100%;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
   }
 
 }
