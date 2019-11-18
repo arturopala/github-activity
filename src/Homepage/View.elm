@@ -66,14 +66,7 @@ showSelectSource model user =
                     ]
                  ]
                     ++ List.map (showSourceOption model) sources
-                    ++ [ div [ class "mdl-card__actions mdl-card--border mdl-color--secondary mdl-color-text--primary" ]
-                            [ div [ class "" ]
-                                [ input [ class "", type_ "text", pattern "[a-zA-Z0-9-]*", id "search", onInput (HomepageMsg << Homepage.Message.SearchCommand) ] []
-                                , label [ class "", for "search" ] [ text "Search for user" ]
-                                , span [ class "" ] [ text "Letters, numbers and hyphen only" ]
-                                ]
-                            ]
-                       , div [ class "mdl-card__actions mdl-card--border mdl-color--primary mdl-color-text--white" ]
+                    ++ [ div [ class "mdl-card__actions mdl-card--border mdl-color--primary mdl-color-text--white" ]
                             [ button
                                 [ onClick SignOutCommand
                                 , class "mdl-button mdl-button--colored mdl-color-text--white"

@@ -1,4 +1,4 @@
-module GitHub.Decode exposing (decodeActor, decodeDateTime, decodeEvent, decodeEventByType, decodeEvents, decodeGitHubAuthor, decodeGitHubCommit, decodeOrganisation, decodePayload, decodePullRequest, decodePullRequestEventPayload, decodePushEventPayload, decodeReleaseEventPayload, decodeReleaseRef, decodeRepoLink, decodeRepository, decodeUser, decodeUserRef, decodeUserSearchResult)
+module GitHub.Decode exposing (decodeActor, decodeCommit, decodeCommitAuthor, decodeDateTime, decodeEvent, decodeEventByType, decodeEvents, decodeOrganisation, decodePayload, decodePullRequest, decodePullRequestEventPayload, decodePushEventPayload, decodeReleaseEventPayload, decodeReleaseRef, decodeRepoLink, decodeRepository, decodeUser, decodeUserRef, decodeUserSearchResult)
 
 import GitHub.Model exposing (..)
 import Iso8601 exposing (toTime)
@@ -94,6 +94,9 @@ decodePayload tag =
         "PushEvent" ->
             map GitHubPushEvent decodePushEventPayload
 
+        "IssuesEvent" ->
+            map GitHubIssuesEvent decodeIssuesEventPayload
+
         _ ->
             Decode.succeed GitHubOtherEventPayload
 
@@ -159,6 +162,7 @@ decodePullRequest =
         |> required "changed_files" int
         |> required "head" decodeReference
         |> required "base" decodeReference
+        |> required "number" int
 
 
 decodePullRequestRef : Decoder GitHubPullRequestRef
@@ -172,8 +176,8 @@ decodePullRequestRef =
         |> notrequi "body" string
         |> required "created_at" decodeDateTime
         |> notrequi "merged_at" decodeDateTime
-        |> notrequi "merged_commit_sha" string
         |> required "user" decodeUserRef
+        |> required "number" int
 
 
 decodePullRequestReview : Decoder GitHubPullRequestReview
@@ -220,21 +224,50 @@ decodePushEventPayload =
         |> required "before" string
         |> required "size" int
         |> required "distinct_size" int
-        |> required "commits" (list decodeGitHubCommit)
+        |> required "commits" (list decodeCommit)
 
 
-decodeGitHubCommit : Decoder GitHubCommit
-decodeGitHubCommit =
+decodeIssuesEventPayload : Decoder GitHubIssuesEventPayload
+decodeIssuesEventPayload =
+    Decode.succeed GitHubIssuesEventPayload
+        |> required "action" string
+        |> required "issue" decodeIssue
+
+
+decodeIssue : Decoder GitHubIssue
+decodeIssue =
+    Decode.succeed GitHubIssue
+        |> required "id" int
+        |> required "url" decodeUrl
+        |> required "html_url" decodeUrl
+        |> required "title" string
+        |> required "user" decodeUserRef
+        |> required "labels" (list decodeIssueLabel)
+        |> required "state" string
+        |> required "number" int
+
+
+decodeIssueLabel : Decoder GitHubIssueLabel
+decodeIssueLabel =
+    Decode.succeed GitHubIssueLabel
+        |> required "id" int
+        |> required "name" string
+        |> required "color" string
+        |> required "url" decodeUrl
+
+
+decodeCommit : Decoder GitHubCommit
+decodeCommit =
     Decode.succeed GitHubCommit
         |> required "sha" string
         |> required "message" string
-        |> required "author" decodeGitHubAuthor
+        |> required "author" decodeCommitAuthor
         |> required "url" decodeUrl
         |> required "distinct" bool
 
 
-decodeGitHubAuthor : Decoder GitHubAuthor
-decodeGitHubAuthor =
+decodeCommitAuthor : Decoder GitHubAuthor
+decodeCommitAuthor =
     Decode.succeed GitHubAuthor
         |> required "name" string
         |> required "email" string

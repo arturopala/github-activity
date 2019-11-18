@@ -1,4 +1,4 @@
-module GitHub.Model exposing (GitHubApiLimits, GitHubAuthor, GitHubCommit, GitHubError, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubOrganisation, GitHubPullRequest, GitHubPullRequestEventPayload, GitHubPullRequestRef, GitHubPullRequestReview, GitHubPullRequestReviewComment, GitHubPullRequestReviewCommentEventPayload, GitHubPullRequestReviewEventPayload, GitHubPushEventPayload, GitHubReference, GitHubReleaseEventPayload, GitHubReleaseRef, GitHubRepoRef, GitHubRepository, GitHubResponse, GitHubSearchResult, GitHubUser, GitHubUserRef)
+module GitHub.Model exposing (GitHubApiLimits, GitHubAuthor, GitHubCommit, GitHubError, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubIssue, GitHubIssueLabel, GitHubIssuesEventPayload, GitHubOrganisation, GitHubPullRequest, GitHubPullRequestEventPayload, GitHubPullRequestRef, GitHubPullRequestReview, GitHubPullRequestReviewComment, GitHubPullRequestReviewCommentEventPayload, GitHubPullRequestReviewEventPayload, GitHubPushEventPayload, GitHubReference, GitHubReleaseEventPayload, GitHubReleaseRef, GitHubRepoRef, GitHubRepository, GitHubResponse, GitHubSearchResult, GitHubUser, GitHubUserRef)
 
 import Dict exposing (Dict)
 import Time exposing (Posix)
@@ -99,6 +99,7 @@ type GitHubEventPayload
     | GitHubPullRequestReviewCommentEvent GitHubPullRequestReviewCommentEventPayload
     | GitHubReleaseEvent GitHubReleaseEventPayload
     | GitHubPushEvent GitHubPushEventPayload
+    | GitHubIssuesEvent GitHubIssuesEventPayload
     | GitHubOtherEventPayload
 
 
@@ -153,6 +154,7 @@ type alias GitHubPullRequest =
     , changed_files : Int
     , head : GitHubReference
     , base : GitHubReference
+    , number : Int
     }
 
 
@@ -165,8 +167,8 @@ type alias GitHubPullRequestRef =
     , body : Maybe String
     , created_at : Posix
     , merged_at : Maybe Posix
-    , merged_commit_sha : Maybe String
     , user : GitHubUserRef
+    , number : Int
     }
 
 
@@ -210,6 +212,12 @@ type alias GitHubPushEventPayload =
     , size : Int
     , distinct_size : Int
     , commits : List GitHubCommit
+    }
+
+
+type alias GitHubIssuesEventPayload =
+    { action : String
+    , issue : GitHubIssue
     }
 
 
@@ -287,4 +295,24 @@ type alias GitHubSearchResult a =
     { total_count : Int
     , incomplete_results : Bool
     , items : List a
+    }
+
+
+type alias GitHubIssue =
+    { id : Int
+    , url : Url
+    , html_url : Url
+    , title : String
+    , user : GitHubUserRef
+    , labels : List GitHubIssueLabel
+    , state : String
+    , number : Int
+    }
+
+
+type alias GitHubIssueLabel =
+    { id : Int
+    , name : String
+    , color : String
+    , url : Url
     }

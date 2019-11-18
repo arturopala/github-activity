@@ -75,6 +75,9 @@ viewEvent zone event =
         GitHubPushEvent payload ->
             viewPushEvent zone event payload
 
+        GitHubIssuesEvent payload ->
+            viewIssueEvent zone event payload
+
         _ ->
             let
                 label =
@@ -90,17 +93,16 @@ viewEvent zone event =
 
                         _ ->
                             String.dropRight 5 event.eventType
+
+                snake =
+                    String.replace " " "-" label |> String.toLower
             in
-            viewEventTemplate1 zone event [] label
+            viewEventTemplate1 zone event [] label snake
     )
 
 
-viewEventTemplate1 : Zone -> GitHubEvent -> List (Html Msg) -> String -> Html Msg
-viewEventTemplate1 zone event content label =
-    let
-        snake =
-            String.replace " " "-" (String.toLower label)
-    in
+viewEventTemplate1 : Zone -> GitHubEvent -> List (Html Msg) -> String -> String -> Html Msg
+viewEventTemplate1 zone event content label snake =
     section
         [ classList [ ( "card-event mdl-card mdl-shadow--2dp", True ), ( "event-" ++ snake, True ) ] ]
         [ div
@@ -128,7 +130,33 @@ viewPullRequestEvent zone event payload =
             payload.pull_request.head.ref
 
         label =
-            "Pull Request "
+            (case payload.action of
+                "opened" ->
+                    "new "
+
+                _ ->
+                    ""
+            )
+                ++ "pull request #"
+                ++ String.fromInt payload.pull_request.number
+                ++ " "
+                ++ (case payload.action of
+                        "closed" ->
+                            if payload.pull_request.merged then
+                                "merged"
+
+                            else
+                                "rejected"
+
+                        "opened" ->
+                            ""
+
+                        _ ->
+                            payload.action
+                   )
+
+        snake =
+            "pull-request-"
                 ++ (case payload.action of
                         "closed" ->
                             if payload.pull_request.merged then
@@ -143,7 +171,8 @@ viewPullRequestEvent zone event payload =
 
         content =
             [ div [ class "card-event-content-header" ]
-                [ span [ class "ch-commits", title "number of commits" ] [ i [ class "mdi mdi-source-commit spaced" ] [], text (String.fromInt payload.pull_request.commits) ]
+                [ span [ class "ch-number" ] [ text "#", text (String.fromInt payload.pull_request.number) ]
+                , span [ class "ch-commits", title "number of commits" ] [ i [ class "mdi mdi-source-commit spaced" ] [], text (String.fromInt payload.pull_request.commits) ]
                 , span [ class "ch-files", title "number of files changed" ] [ i [ class "mdi mdi-file-code-outline spaced" ] [], text (String.fromInt payload.pull_request.changed_files) ]
                 , span [ class "ch-added", title "number of additions" ] [ i [ class "mdi mdi-plus-box-outline spaced" ] [], text (String.fromInt payload.pull_request.additions) ]
                 , span [ class "ch-deleted", title "number of deletions" ] [ i [ class "mdi mdi-minus-box-outline spaced" ] [], text (String.fromInt payload.pull_request.deletions) ]
@@ -186,30 +215,58 @@ viewPullRequestEvent zone event payload =
                 ]
             ]
     in
-    viewEventTemplate1 zone event content label
+    viewEventTemplate1 zone event content label snake
 
 
 viewPullRequestReviewEvent : Zone -> GitHubEvent -> GitHubPullRequestReviewEventPayload -> Html Msg
 viewPullRequestReviewEvent zone event payload =
     let
         label =
-            "Review " ++ payload.action
+            "Review of #"
+                ++ String.fromInt payload.pull_request.number
+                ++ " "
+                ++ payload.action
+
+        snake =
+            "review-" ++ payload.action
 
         content =
-            [ div [] [] ]
+            [ div [ class "card-event-content-header" ]
+                [ span [ class "ch-number" ] [ text "#", text (String.fromInt payload.pull_request.number) ]
+                ]
+            , div [ class "card-event-content-body" ]
+                [ span [ class "cb-title" ]
+                    [ text payload.pull_request.title
+                    ]
+                ]
+            ]
     in
-    viewEventTemplate1 zone event content label
+    viewEventTemplate1 zone event content label snake
 
 
 viewPullRequestReviewCommentEvent : Zone -> GitHubEvent -> GitHubPullRequestReviewCommentEventPayload -> Html Msg
 viewPullRequestReviewCommentEvent zone event payload =
     let
         label =
-            "Review Comment " ++ payload.action
+            case payload.action of
+                "created" ->
+                    "pr #" ++ String.fromInt payload.pull_request.number ++ " commented"
+
+                _ ->
+                    "Review Comment " ++ payload.action
+
+        snake =
+            "review-comment-" ++ payload.action
 
         content =
-            [ div [ class "card-event-content-header pull-request-ref" ]
-                [ text payload.pull_request.title
+            [ div [ class "card-event-content-header" ]
+                [ span [ class "ch-number" ]
+                    [ text "#"
+                    , text (String.fromInt payload.pull_request.number)
+                    , span [ class "pull-request-ref" ]
+                        [ text payload.pull_request.title
+                        ]
+                    ]
                 ]
             , div [ class "card-event-content-body" ]
                 (payload.comment.body
@@ -222,28 +279,34 @@ viewPullRequestReviewCommentEvent zone event payload =
                 )
             ]
     in
-    viewEventTemplate1 zone event content label
+    viewEventTemplate1 zone event content label snake
 
 
 viewReleaseEvent : Zone -> GitHubEvent -> GitHubReleaseEventPayload -> Html Msg
 viewReleaseEvent zone event payload =
     let
         label =
-            "Release " ++ payload.action
+            "release " ++ payload.action
+
+        snake =
+            "release-" ++ payload.action
 
         content =
             [ div [ class "card-event-content-body card-event-content-body__center" ]
                 [ div [ class "cb-big" ] [ text payload.release.tag_name ] ]
             ]
     in
-    viewEventTemplate1 zone event content label
+    viewEventTemplate1 zone event content label snake
 
 
 viewPushEvent : Zone -> GitHubEvent -> GitHubPushEventPayload -> Html Msg
 viewPushEvent zone event payload =
     let
         label =
-            "Push"
+            "push"
+
+        snake =
+            "push"
 
         content =
             [ div [ class "card-event-content-header" ]
@@ -259,7 +322,35 @@ viewPushEvent zone event payload =
                 )
             ]
     in
-    viewEventTemplate1 zone event content label
+    viewEventTemplate1 zone event content label snake
+
+
+viewIssueEvent : Zone -> GitHubEvent -> GitHubIssuesEventPayload -> Html Msg
+viewIssueEvent zone event payload =
+    let
+        label =
+            "issue #" ++ String.fromInt payload.issue.number ++ " " ++ payload.action
+
+        snake =
+            "issue-" ++ payload.action
+
+        content =
+            [ div [ class "card-event-content-header" ]
+                ([ span [ class "ch-number" ]
+                    [ text "#"
+                    , text (String.fromInt payload.issue.number)
+                    ]
+                 ]
+                    ++ (payload.issue.labels |> List.map (\l -> span [ class "ch-label spaced", style "color" ("#" ++ l.color) ] [ text (String.replace "itype:" "" l.name) ]))
+                )
+            , div [ class "card-event-content-body" ]
+                [ span [ class "cb-title" ]
+                    [ text payload.issue.title
+                    ]
+                ]
+            ]
+    in
+    viewEventTemplate1 zone event content label snake
 
 
 formatDate : Zone -> Posix -> List (Html Msg)

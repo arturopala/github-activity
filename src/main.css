@@ -1,3 +1,7 @@
+body {
+  background-color: aliceblue;
+}
+
 .homepage {
   display: flex;
   flex-direction: column;
@@ -205,6 +209,10 @@ header.mdl-layout__header {
   padding-left: 60px;
 }
 
+.ch-number {
+  color: darkviolet;
+}
+
 .ch-commits {
   color: blue;
 }
@@ -243,6 +251,7 @@ header.mdl-layout__header {
 .pull-request-ref {
   color: #8f93b3;
   font-size:0.8rem;
+  padding-left: 5px;
 }
 .commit-sha {
   color: #8f93b3;
