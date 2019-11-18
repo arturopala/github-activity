@@ -144,18 +144,20 @@ header.mdl-layout__header {
   align-content: center!important;
 }
 .card-event > .event-pull-request-merged {
-  color: black;
-  background-color: yellow;
+  color: greenyellow;
+  border-left: greenyellow 12px solid;
+  border-right: greenyellow 12px solid;
+  background-color: black;
   border-top-width: 1px;
 }
 .card-event.event-pull-request-merged {
-  background-color: yellow;
+  background-color: greenyellow;
 }
 .card-event > .event-pull-request-opened {
-  color: white;
+  color: black;
   border-left: white 12px solid;
   border-right: white 12px solid;
-  background-color: green;
+  background-color: greenyellow;
   border-top-width: 0;
 }
 .card-event > .event-pull-request-rejected {
@@ -166,20 +168,17 @@ header.mdl-layout__header {
   border-top-width: 0;
 }
 .card-event.event-release-published {
-  background-color: greenyellow;
+  background-color: yellow;
 }
 .card-event.event-release-published .cb-big {
-  color: darkgreen;
-  text-shadow: 5px 5px 8px yellowgreen;
+  color: black;
+  text-shadow: 2px 2px 2px yellowgreen;
   font-size: 2.5rem;
   font-weight: bold;
 }
 .card-event > .event-release-published {
-  color: white;
-  background: url(
-    data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAJ0lEQVQYV2NUyFP9/yDuJQMMMDKc4fsP5zEwMMAFFBaJM4BUYqgAAN7nDGm+bho5AAAAAElFTkSuQmCC
-  ) repeat;
-  border-top-color: green;
+  color: black;
+  background-color: yellow;
 }
 .card-event > .event-push {
   color: white;
@@ -260,6 +259,29 @@ header.mdl-layout__header {
   font-size: 300px;
   color: #ced3f4;
   line-height: normal;
+  text-align: center;
+}
+
+.search-box {
+  flex: auto;
+}
+
+.search-label {
+  font-size: 0.8rem;
+  align-self: flex-start;
+}
+
+.search-input {
+  background-color: transparent;
+  border: none;
+  border-bottom: 1px dotted #9e9e9e;
+  border-radius: 0;
+  outline: none;
+  height: 3rem;
+  width: 100%;
+  font-size: 1.2rem;
+  margin: 0 0 8px 0;
+  padding: 0;
   text-align: center;
 }
 

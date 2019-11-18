@@ -66,7 +66,12 @@ showSelectSource model user =
                     ]
                  ]
                     ++ List.map (showSourceOption model) sources
-                    ++ [ div [ class "mdl-card__actions mdl-card--border mdl-color--primary mdl-color-text--white" ]
+                    ++ [ div [ class "mdl-card__actions mdl-card--border mdl-color--secondary mdl-color-text--primary" ]
+                            [ div [ class "search-box mdl-color-text--primary" ]
+                                [ div [ class "search-input-box" ] [ input [ class "search-input", type_ "text", pattern "[a-zA-Z0-9-]*", id "search", placeholder "Search for streams", onInput (HomepageMsg << Homepage.Message.SearchCommand) ] [] ]
+                                ]
+                            ]
+                       , div [ class "mdl-card__actions mdl-card--border mdl-color--primary mdl-color-text--white" ]
                             [ button
                                 [ onClick SignOutCommand
                                 , class "mdl-button mdl-button--colored mdl-color-text--white"
