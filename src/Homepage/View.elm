@@ -37,8 +37,8 @@ showWelcome model _ =
                         , class "mdl-button mdl-button--colored mdl-color-text--white"
                         ]
                         [ text "Sign in with GitHub"
+                        , i [ class "mdi mdi-github-circle float-right mdi-24px" ] []
                         ]
-                    , i [ class "mdi mdi-github-circle left-spaced mdi-24px" ] []
                     ]
                 ]
             ]
@@ -101,8 +101,8 @@ showSelectSource model user =
                                 , class "mdl-button mdl-button--colored mdl-color-text--white"
                                 ]
                                 [ text "Sign out"
+                                , i [ class "mdi mdi-logout float-right  mdi-24px" ] []
                                 ]
-                            , i [ class "mdi mdi-logout left-spaced  mdi-24px" ] []
                             ]
                        ]
                 )
