@@ -478,7 +478,7 @@ navigation model =
                 Token _ _ ->
                     pauseResumeButton model
                         ++ [ button
-                                [ onClick (NavigateCommand (Just "") Nothing)
+                                [ onClick (NavigateCommand Nothing Nothing)
                                 , class "mdl-button mdl-button--colored mdl-color-text--white"
                                 ]
                                 [ span [ class "button-text" ] [ text "source" ]

@@ -1,4 +1,4 @@
-module Util exposing (delayMessage, delayMessageUntil, modifyModel, push, wrapCmd, wrapModel, wrapMsg)
+module Util exposing (appendDistinctToList, appendIfDistinct, delayMessage, delayMessageUntil, modifyModel, push, removeFromList, wrapCmd, wrapModel, wrapMsg)
 
 import Html exposing (Html)
 import Monocle.Lens exposing (Lens)
@@ -55,3 +55,27 @@ delayMessageUntil timestamp msg =
         |> Task.map toFloat
         |> Task.andThen Process.sleep
         |> Task.perform (\_ -> msg)
+
+
+appendDistinctToList : a -> List a -> List a
+appendDistinctToList a list =
+    case list of
+        [] ->
+            a :: []
+
+        x :: xs ->
+            if a == x then
+                list
+
+            else
+                x :: appendDistinctToList a xs
+
+
+appendIfDistinct : a -> Lens b (List a) -> b -> b
+appendIfDistinct a lens b =
+    lens.get b |> appendDistinctToList a |> (\l -> lens.set l b)
+
+
+removeFromList : a -> Lens b (List a) -> b -> b
+removeFromList a lens b =
+    lens.get b |> List.filter ((/=) a) |> (\l -> lens.set l b)

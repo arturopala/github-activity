@@ -47,14 +47,12 @@ update msg model =
                     let
                         model2 =
                             model
-                                |> appendIfDistinct source (Lens.compose homepageLens sourceHistoryLens)
                                 |> resultsLens.set []
                     in
                     ( model2
                     , Cmd.batch
                         [ push (Message.ChangeEventSourceCommand source)
                         , push (Message.HomepageMsg <| Homepage.Message.UserSearchMsg <| Components.UserSearch.Clear)
-                        , LocalStorage.saveToLocalStorage model2
                         ]
                     )
 
@@ -62,7 +60,7 @@ update msg model =
                     let
                         model2 =
                             model
-                                |> removeFromList source (Lens.compose homepageLens sourceHistoryLens)
+                                |> Util.removeFromList source (Lens.compose homepageLens sourceHistoryLens)
                     in
                     ( model2
                     , LocalStorage.saveToLocalStorage model2
@@ -80,27 +78,3 @@ homepageSearchLens =
 resultsLens : Lens Model (List GitHub.Model.GitHubUserRef)
 resultsLens =
     Lens.compose homepageSearchLens Components.UserSearch.resultsLens
-
-
-appendDistinctToList : a -> List a -> List a
-appendDistinctToList a list =
-    case list of
-        [] ->
-            a :: []
-
-        x :: xs ->
-            if a == x then
-                list
-
-            else
-                x :: appendDistinctToList a xs
-
-
-appendIfDistinct : a -> Lens b (List a) -> b -> b
-appendIfDistinct a lens b =
-    lens.get b |> appendDistinctToList a |> (\l -> lens.set l b)
-
-
-removeFromList : a -> Lens b (List a) -> b -> b
-removeFromList a lens b =
-    lens.get b |> List.filter ((/=) a) |> (\l -> lens.set l b)

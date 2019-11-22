@@ -9,12 +9,14 @@ import GitHub.Authorization exposing (Authorization(..))
 import GitHub.Message
 import GitHub.Model
 import GitHub.OAuthProxy exposing (requestAccessToken)
+import Homepage.Model exposing (sourceHistoryLens)
 import Homepage.Update
 import Homepage.View
 import LocalStorage
 import Message exposing (Msg(..))
 import Mode exposing (Mode(..))
 import Model exposing (..)
+import Monocle.Lens as Lens
 import Routing exposing (Route(..), modifyUrlGivenSource)
 import Task
 import Time
@@ -93,11 +95,12 @@ route r model =
                     model
                         |> resetEventStreamIfSourceChanged source
                         |> modeLens.set Mode.Timeline
+                        |> Util.appendIfDistinct source (Lens.compose homepageLens sourceHistoryLens)
             in
             ( model2
             , Cmd.batch
-                [ LocalStorage.saveToLocalStorage model2
-                , push (EventStreamMsg EventStream.Message.ReadEvents)
+                [ push (EventStreamMsg EventStream.Message.ReadEvents)
+                , LocalStorage.saveToLocalStorage model2
                 ]
             )
 
