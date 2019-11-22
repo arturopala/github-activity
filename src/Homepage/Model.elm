@@ -1,19 +1,28 @@
-module Homepage.Model exposing (Model, initialHomepage, usersFoundLens)
+module Homepage.Model exposing (Model, initialHomepage, searchLens, sourceHistoryLens)
 
+import Components.UserSearch
 import GitHub.Model
 import Monocle.Lens exposing (Lens)
 
 
 type alias Model =
-    { usersFound : List GitHub.Model.GitHubUserRef
+    { search : Components.UserSearch.Model
+    , sourceHistory : List GitHub.Model.GitHubEventSource
     }
 
 
 initialHomepage : Model
 initialHomepage =
-    Model []
+    { search = Components.UserSearch.init
+    , sourceHistory = []
+    }
 
 
-usersFoundLens : Lens Model (List GitHub.Model.GitHubUserRef)
-usersFoundLens =
-    Lens .usersFound (\b a -> { a | usersFound = b })
+searchLens : Lens Model Components.UserSearch.Model
+searchLens =
+    Lens .search (\b a -> { a | search = b })
+
+
+sourceHistoryLens : Lens Model (List GitHub.Model.GitHubEventSource)
+sourceHistoryLens =
+    Lens .sourceHistory (\b a -> { a | sourceHistory = b })

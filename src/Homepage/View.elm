@@ -1,23 +1,26 @@
 module Homepage.View exposing (view)
 
+import Components.UserSearch
+import GitHub.Authorization exposing (Authorization(..))
 import GitHub.Model
 import Homepage.Message
-import Html exposing (Html, button, div, h1, i, input, label, main_, section, span, text)
+import Html exposing (Html, button, div, h1, i, main_, section, span, text)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick, onInput)
+import Html.Events exposing (onClick)
 import Html.Lazy
-import Message exposing (..)
+import Message exposing (Msg)
 import Model exposing (Model)
+import View
 
 
 view : Model -> Html Msg
 view model =
-    case model.user of
-        Nothing ->
+    case model.authorization of
+        Unauthorized ->
             Html.Lazy.lazy (showWelcome model) ()
 
-        Just user ->
-            Html.Lazy.lazy (showSelectSource model) user
+        Token token scope ->
+            Html.Lazy.lazy (showSelectSource model) model.user
 
 
 showWelcome : Model -> () -> Html Msg
@@ -33,7 +36,7 @@ showWelcome model _ =
                     ]
                 , div [ class "mdl-card__actions mdl-card--border mdl-color--primary mdl-color-text--white" ]
                     [ button
-                        [ onClick (AuthorizeUserCommand Cmd.none)
+                        [ onClick (Message.AuthorizeUserCommand Cmd.none)
                         , class "mdl-button mdl-button--colored mdl-color-text--white"
                         ]
                         [ text "Sign in with GitHub"
@@ -45,26 +48,25 @@ showWelcome model _ =
         ]
 
 
-toSource : GitHub.Model.GitHubUserRef -> GitHub.Model.GitHubEventSource
-toSource user =
-    case user.type_ of
-        "Organisation" ->
-            GitHub.Model.GitHubEventSourceOrganisation user.login
-
-        _ ->
-            GitHub.Model.GitHubEventSourceUser user.login
-
-
-showSelectSource : Model -> GitHub.Model.GitHubUser -> Html Msg
-showSelectSource model user =
+showSelectSource : Model -> Maybe GitHub.Model.GitHubUser -> Html Msg
+showSelectSource model maybeUser =
     let
+        currentUserSourceList =
+            case maybeUser of
+                Just user ->
+                    [ GitHub.Model.GitHubEventSourceUser user.login ]
+
+                Nothing ->
+                    []
+
         sources =
-            appendIfDistinct
-                model.eventStream.source
-                ([ GitHub.Model.GitHubEventSourceUser user.login ]
-                    ++ List.map (\o -> GitHub.Model.GitHubEventSourceOrganisation o.login) model.organisations
-                    ++ [ GitHub.Model.GitHubEventSourceDefault ]
-                )
+            List.reverse <|
+                mergeListsDistinct
+                    (currentUserSourceList
+                        ++ List.map (\o -> GitHub.Model.GitHubEventSourceOrganisation o.login) model.organisations
+                        ++ [ GitHub.Model.GitHubEventSourceDefault ]
+                    )
+                    model.homepage.sourceHistory
     in
     section [ class "mdl-layout homepage" ]
         [ main_ [ class "mdl-layout__content" ]
@@ -76,28 +78,19 @@ showSelectSource model user =
                         ]
                     ]
                  , div [ class "mdl-card__actions mdl-color--secondary mdl-color-text--primary" ]
-                    [ div [ class "search-box mdl-color-text--primary" ]
-                        [ div [ class "search-input-box" ]
-                            [ i [ class "search-icon material-icons" ] [ text "search" ]
-                            , input
-                                [ class "search-input"
-                                , type_ "text"
-                                , pattern "[a-zA-Z0-9-]*"
-                                , id "search"
-                                , placeholder "Type to search for new streams"
-                                , onInput (HomepageMsg << Homepage.Message.SearchCommand)
-                                ]
-                                []
-                            ]
-                        ]
+                    [ Components.UserSearch.view model.homepage.search
+                        |> Html.map (Message.HomepageMsg << Homepage.Message.UserSearchMsg)
                     ]
+                 , div
+                    [ class "mdl-card__actions mdl-color--secondary mdl-color-text--primary search-result"
+                    ]
+                    (List.map showUserSearchResult (List.take 5 model.homepage.search.results))
+                 , div [ class "mdl-card--expand" ] []
                  ]
-                    ++ List.map showUserSearchResult (List.take 5 model.homepage.usersFound)
                     ++ List.map (showSourceOption model) sources
-                    ++ [ div [ class "mdl-card--expand" ] []
-                       , div [ class "mdl-card__actions mdl-card--border mdl-color--primary mdl-color-text--white" ]
+                    ++ [ div [ class "mdl-card__actions mdl-card--border mdl-color--primary mdl-color-text--white" ]
                             [ button
-                                [ onClick SignOutCommand
+                                [ onClick Message.SignOutCommand
                                 , class "mdl-button mdl-button--colored mdl-color-text--white"
                                 ]
                                 [ text "Sign out"
@@ -112,9 +105,34 @@ showSelectSource model user =
 
 showSourceOption : Model -> GitHub.Model.GitHubEventSource -> Html Msg
 showSourceOption model source =
+    let
+        prefix =
+            if source == model.eventStream.source then
+                "continue with "
+
+            else
+                "stream "
+
+        removable =
+            source
+                /= GitHub.Model.GitHubEventSourceDefault
+                && source
+                /= (model.user |> Maybe.map (\u -> GitHub.Model.GitHubEventSourceUser u.login) |> Maybe.withDefault GitHub.Model.GitHubEventSourceDefault)
+
+        removeButton =
+            if not removable then
+                span [] []
+
+            else
+                button
+                    [ class "mdl-button source-remove-button"
+                    , onClick (Message.HomepageMsg <| Homepage.Message.RemoveSourceCommand source)
+                    ]
+                    [ i [ class "material-icons md-18" ] [ text "clear" ] ]
+    in
     div [ class "mdl-card__actions mdl-card--border mdl-color--secondary mdl-color-text--primary" ]
         [ button
-            [ onClick (ChangeEventSourceCommand source)
+            [ onClick (Message.ChangeEventSourceCommand source)
             , classList
                 [ ( "mdl-button", True )
                 , ( "mdl-button--colored", True )
@@ -122,36 +140,30 @@ showSourceOption model source =
                 , ( "is-current-source", model.eventStream.source == source )
                 ]
             ]
-            [ sourceLabel source
+            [ text (prefix ++ View.sourceName source)
             ]
+        , removeButton
         ]
-
-
-sourceLabel : GitHub.Model.GitHubEventSource -> Html Msg
-sourceLabel source =
-    case source of
-        GitHub.Model.GitHubEventSourceDefault ->
-            text "Stream all public GitHub"
-
-        GitHub.Model.GitHubEventSourceUser user ->
-            text ("Stream user " ++ user)
-
-        GitHub.Model.GitHubEventSourceOrganisation org ->
-            text ("Stream org " ++ org)
-
-        GitHub.Model.GitHubEventSourceRepository owner repo ->
-            text ("Stream repo" ++ owner ++ "/" ++ repo)
 
 
 showUserSearchResult : GitHub.Model.GitHubUserRef -> Html Msg
 showUserSearchResult user =
-    div [ class "mdl-card__actions mdl-color--secondary mdl-color-text--primary" ]
-        [ span [ class "search-result" ] [ text user.login ]
-        ]
+    div [ onClick (Message.HomepageMsg <| Homepage.Message.SourceSelectedEvent (user |> toSource)) ]
+        [ text user.login ]
 
 
-appendIfDistinct : a -> List a -> List a
-appendIfDistinct a list =
+toSource : GitHub.Model.GitHubUserRef -> GitHub.Model.GitHubEventSource
+toSource user =
+    case user.type_ of
+        "Organization" ->
+            GitHub.Model.GitHubEventSourceOrganisation user.login
+
+        _ ->
+            GitHub.Model.GitHubEventSourceUser user.login
+
+
+appendDistinctToList : a -> List a -> List a
+appendDistinctToList a list =
     case list of
         [] ->
             a :: []
@@ -161,4 +173,9 @@ appendIfDistinct a list =
                 list
 
             else
-                x :: appendIfDistinct a xs
+                x :: appendDistinctToList a xs
+
+
+mergeListsDistinct : List a -> List a -> List a
+mergeListsDistinct a b =
+    b |> List.foldl appendDistinctToList (List.reverse a)

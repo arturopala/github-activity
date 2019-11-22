@@ -1,12 +1,12 @@
 module GitHub.APIv3 exposing (readCurrentUserInfo, readCurrentUserOrganisations, readGitHubEvents, readGitHubEventsNextPage, searchUsers, searchUsersByLogin)
 
 import Dict exposing (Dict)
+import GitHub.Authorization exposing (Authorization(..))
 import GitHub.Decode exposing (decodeEvents, decodeOrganisation, decodeUser, decodeUserSearchResult)
 import GitHub.Message exposing (Msg(..))
 import GitHub.Model exposing (..)
 import Http
 import Json.Decode as Decode exposing (Decoder, decodeString, errorToString)
-import Model exposing (Authorization(..))
 import Time exposing (Posix)
 import Url exposing (Url)
 

@@ -5,6 +5,7 @@ import Browser.Navigation as Nav
 import EventStream.Message
 import EventStream.Update exposing (resetEventStreamIfSourceChanged)
 import GitHub.APIv3 exposing (readCurrentUserInfo, readCurrentUserOrganisations)
+import GitHub.Authorization exposing (Authorization(..))
 import GitHub.Message
 import GitHub.Model
 import GitHub.OAuthProxy exposing (requestAccessToken)
@@ -37,8 +38,11 @@ main =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Timeline.Update.subscriptions model
-        |> Sub.map TimelineMsg
+    Sub.batch
+        [ Homepage.Update.subscriptions model
+        , Timeline.Update.subscriptions model
+            |> Sub.map TimelineMsg
+        ]
 
 
 init : Maybe String -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -66,7 +70,7 @@ init flags url key =
                             Cmd.none
 
                         Nothing ->
-                            readCurrentUserInfo (Token token scope) |> Cmd.map gitHubApiResponseAsMsg
+                            readCurrentUserInfo model.authorization |> Cmd.map gitHubApiResponseAsMsg
 
                 Unauthorized ->
                     Cmd.none
@@ -92,7 +96,7 @@ route r model =
             in
             ( model2
             , Cmd.batch
-                [ LocalStorage.extractAndSaveState model2
+                [ LocalStorage.saveToLocalStorage model2
                 , push (EventStreamMsg EventStream.Message.ReadEvents)
                 ]
             )
@@ -149,10 +153,13 @@ update m model =
             in
             ( model2
             , Cmd.batch
-                [ LocalStorage.extractAndSaveState model2
+                [ LocalStorage.saveToLocalStorage model2
                 , push (NavigateCommand Nothing Nothing)
                 ]
             )
+
+        FullScreenSwitchEvent ->
+            ( { model | fullscreen = not model.fullscreen }, Cmd.none )
 
         GotTimeZoneEvent zone ->
             ( { model | zone = zone }, Cmd.none )
@@ -162,14 +169,17 @@ update m model =
                 url =
                     model.url
 
+                authorization =
+                    Token token scope
+
                 model2 =
-                    { model | authorization = Token token scope }
+                    { model | authorization = authorization }
             in
             ( model2
             , Cmd.batch
-                [ LocalStorage.extractAndSaveState model2
+                [ LocalStorage.saveToLocalStorage model2
                 , pushUrl model { url | query = Nothing }
-                , readCurrentUserInfo (Token token scope) |> Cmd.map gitHubApiResponseAsMsg
+                , readCurrentUserInfo authorization |> Cmd.map gitHubApiResponseAsMsg
                 , model.doAfterAuthorized |> Maybe.withDefault Cmd.none
                 ]
             )
@@ -199,9 +209,8 @@ update m model =
             Timeline.Update.update msg model
                 |> wrapCmd TimelineMsg
 
-        HomepageMsg msg ->
-            Homepage.Update.update msg model
-                |> wrapCmd HomepageMsg
+        HomepageMsg _ ->
+            Homepage.Update.update m model
 
         NoOp ->
             ( model, Cmd.none )

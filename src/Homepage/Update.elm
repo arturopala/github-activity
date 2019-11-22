@@ -1,49 +1,106 @@
 module Homepage.Update exposing (subscriptions, update)
 
-import GitHub.APIv3
-import GitHub.Message
+import Components.UserSearch
 import GitHub.Model
-import Homepage.Message exposing (Msg(..))
-import Homepage.Model exposing (usersFoundLens)
-import Model exposing (Model)
+import Homepage.Message
+import Homepage.Model exposing (sourceHistoryLens)
+import LocalStorage
+import Message exposing (Msg)
+import Model exposing (Model, homepageLens)
 import Monocle.Lens as Lens exposing (Lens)
+import Util exposing (push, wrapCmd, wrapModel)
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    Sub.batch
+        [ Components.UserSearch.subscriptions model.homepage.search
+            |> Sub.map (Message.HomepageMsg << Homepage.Message.UserSearchMsg)
+        ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        SearchCommand input ->
-            if String.length input > 3 then
-                ( model
-                , GitHub.APIv3.searchUsersByLogin input model.authorization
-                    |> Cmd.map gitHubApiResponseAsMsg
-                )
+        Message.HomepageMsg msg2 ->
+            case msg2 of
+                Homepage.Message.UserSearchMsg (Components.UserSearch.HttpFetch cmd) ->
+                    ( model
+                    , model.authorization
+                        |> cmd
+                        |> Cmd.map (Message.HomepageMsg << Homepage.Message.UserSearchMsg)
+                    )
 
-            else
-                ( model |> homepageUsersFoundLens.set [], Cmd.none )
+                Homepage.Message.UserSearchMsg msg3 ->
+                    let
+                        ( model2, cmd ) =
+                            Components.UserSearch.update msg3 model.homepage.search
+                                |> wrapCmd (Message.HomepageMsg << Homepage.Message.UserSearchMsg)
+                                |> wrapModel homepageSearchLens model
+                    in
+                    ( model2, cmd )
 
-        UserSearchResultEvent users ->
-            ( model |> homepageUsersFoundLens.set users, Cmd.none )
+                Homepage.Message.NoOp ->
+                    ( model, Cmd.none )
 
-        NoOp ->
+                Homepage.Message.SourceSelectedEvent source ->
+                    let
+                        model2 =
+                            model
+                                |> appendIfDistinct source (Lens.compose homepageLens sourceHistoryLens)
+                                |> resultsLens.set []
+                    in
+                    ( model2
+                    , Cmd.batch
+                        [ push (Message.ChangeEventSourceCommand source)
+                        , push (Message.HomepageMsg <| Homepage.Message.UserSearchMsg <| Components.UserSearch.Clear)
+                        , LocalStorage.saveToLocalStorage model2
+                        ]
+                    )
+
+                Homepage.Message.RemoveSourceCommand source ->
+                    let
+                        model2 =
+                            model
+                                |> removeFromList source (Lens.compose homepageLens sourceHistoryLens)
+                    in
+                    ( model2
+                    , LocalStorage.saveToLocalStorage model2
+                    )
+
+        _ ->
             ( model, Cmd.none )
 
 
-gitHubApiResponseAsMsg : GitHub.Message.Msg -> Msg
-gitHubApiResponseAsMsg msg =
-    case msg of
-        GitHub.Message.GitHubUserSearchMsg (Ok response) ->
-            UserSearchResultEvent response.content.items
-
-        _ ->
-            NoOp
+homepageSearchLens : Lens Model Components.UserSearch.Model
+homepageSearchLens =
+    Lens.compose Model.homepageLens Homepage.Model.searchLens
 
 
-homepageUsersFoundLens : Lens Model (List GitHub.Model.GitHubUserRef)
-homepageUsersFoundLens =
-    Lens.compose Model.homepageLens usersFoundLens
+resultsLens : Lens Model (List GitHub.Model.GitHubUserRef)
+resultsLens =
+    Lens.compose homepageSearchLens Components.UserSearch.resultsLens
+
+
+appendDistinctToList : a -> List a -> List a
+appendDistinctToList a list =
+    case list of
+        [] ->
+            a :: []
+
+        x :: xs ->
+            if a == x then
+                list
+
+            else
+                x :: appendDistinctToList a xs
+
+
+appendIfDistinct : a -> Lens b (List a) -> b -> b
+appendIfDistinct a lens b =
+    lens.get b |> appendDistinctToList a |> (\l -> lens.set l b)
+
+
+removeFromList : a -> Lens b (List a) -> b -> b
+removeFromList a lens b =
+    lens.get b |> List.filter ((/=) a) |> (\l -> lens.set l b)

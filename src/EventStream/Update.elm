@@ -5,10 +5,11 @@ import Dict
 import EventStream.Message exposing (..)
 import EventStream.Model exposing (chunksLens, errorLens)
 import GitHub.APIv3 exposing (readGitHubEvents, readGitHubEventsNextPage)
+import GitHub.Authorization exposing (Authorization)
 import GitHub.Message
 import GitHub.Model exposing (GitHubApiLimits, GitHubEvent, GitHubEventSource(..), GitHubEventsChunk, GitHubResponse)
 import Http
-import Model exposing (Authorization, Model, downloadingLens, eventStreamChunksLens, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamSourceLens, limitsLens, timelineEventsLens)
+import Model exposing (Model, downloadingLens, eventStreamChunksLens, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamSourceLens, limitsLens, timelineEventsLens)
 import Ports
 import Time exposing (posixToMillis)
 import Url

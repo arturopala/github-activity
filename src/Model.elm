@@ -1,7 +1,8 @@
-module Model exposing (Authorization(..), Model, authorizationLens, downloadingLens, eventStreamChunksLens, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamLens, eventStreamSourceLens, homepageLens, initialModel, limitsLens, modeLens, routeLens, timelineActiveLens, timelineEventsLens, timelineLens, urlLens)
+module Model exposing (Model, authorizationLens, downloadingLens, eventStreamChunksLens, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamLens, eventStreamSourceLens, homepageLens, homepageSourceHistoryLens, initialModel, limitsLens, modeLens, routeLens, timelineActiveLens, timelineEventsLens, timelineLens, urlLens)
 
 import Browser.Navigation exposing (Key)
 import EventStream.Model as EventStream exposing (Model, etagLens, sourceLens)
+import GitHub.Authorization exposing (Authorization)
 import GitHub.Model exposing (GitHubApiLimits, GitHubEvent)
 import Homepage.Model as Homepage
 import Http
@@ -31,6 +32,7 @@ type alias Model =
     , zone : Zone
     , doAfterAuthorized : Maybe (Cmd Msg)
     , downloading : Bool
+    , fullscreen : Bool
     }
 
 
@@ -47,7 +49,7 @@ initialModel key url =
     , eventStream = EventStream.initialEventStream
     , timeline = Timeline.initialTimeline
     , homepage = Homepage.initialHomepage
-    , authorization = Unauthorized
+    , authorization = GitHub.Authorization.Unauthorized
     , user = Nothing
     , organisations = []
     , preferences =
@@ -61,12 +63,8 @@ initialModel key url =
     , zone = Time.utc
     , doAfterAuthorized = Nothing
     , downloading = False
+    , fullscreen = False
     }
-
-
-type Authorization
-    = Unauthorized
-    | Token String String
 
 
 type alias Preferences =
@@ -119,6 +117,11 @@ downloadingLens =
 authorizationLens : Lens Model Authorization
 authorizationLens =
     Lens .authorization (\b a -> { a | authorization = b })
+
+
+homepageSourceHistoryLens : Lens Model (List GitHub.Model.GitHubEventSource)
+homepageSourceHistoryLens =
+    compose homepageLens Homepage.sourceHistoryLens
 
 
 eventStreamSourceLens : Lens Model GitHub.Model.GitHubEventSource

@@ -1,61 +1,76 @@
 module Timeline.View exposing (view)
 
 import DateFormat
+import GitHub.Authorization exposing (Authorization(..))
 import GitHub.Model exposing (..)
 import Html exposing (Html, button, div, header, i, main_, nav, section, span, text)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
+import Html.Events exposing (on, onClick)
 import Html.Keyed exposing (node)
 import Http
+import Json.Decode as Decode
 import Message exposing (Msg(..))
 import Model exposing (Model)
 import Time exposing (..)
 import Timeline.Message
 import Util exposing (push)
+import View
 
 
 view : Model -> Html Msg
 view model =
     section [ class "mdl-layout mdl-layout--fixed-header timeline" ]
-        [ header [ class "mdl-layout__header" ]
+        [ viewHeader model
+        , viewContent model
+        ]
+
+
+viewHeader : Model -> Html Msg
+viewHeader model =
+    if model.fullscreen then
+        span [] []
+
+    else
+        header [ class "mdl-layout__header" ]
             [ div [ class "mdl-layout-icon" ]
                 [ i [ classList [ ( "mdi", True ), ( "mdi-github-circle", True ), ( "mdi-spin", model.downloading ) ] ] [] ]
             , div [ class "mdl-layout__header-row" ]
                 ([ span [ class "mdl-layout__title" ]
-                    [ text "GitHub Activity" ]
+                    [ text "GitHub Activity"
+                    , span [ class "title-source" ] [ text (" of " ++ View.sourceName model.eventStream.source) ]
+                    ]
                  , div [ class "mdl-layout-spacer" ] []
                  ]
                     ++ navigation model
                 )
             ]
-        , main_
-            [ class "mdl-layout__content" ]
-            [ node "div"
-                [ classList [ ( "page-content", True ), ( "waiting-for-content", List.isEmpty model.timeline.events ) ] ]
-                (case model.timeline.events of
-                    [] ->
-                        case model.eventStream.error of
-                            Just error ->
-                                viewError error
 
-                            Nothing ->
+
+viewContent : Model -> Html Msg
+viewContent model =
+    main_
+        [ class "mdl-layout__content"
+        , on "fullscreenchange" (Decode.succeed FullScreenSwitchEvent)
+        ]
+        [ node "div"
+            [ classList [ ( "page-content", True ), ( "waiting-for-content", List.isEmpty model.timeline.events ) ] ]
+            (case model.timeline.events of
+                [] ->
+                    case model.eventStream.error of
+                        Just error ->
+                            viewError error
+
+                        Nothing ->
+                            if model.downloading then
                                 viewSpinner model
 
-                    events ->
-                        viewEvents model.zone events
-                )
-            ]
+                            else
+                                viewEmpty model
+
+                events ->
+                    viewEvents model.zone events
+            )
         ]
-
-
-viewSpinner : Model -> List ( String, Html Msg )
-viewSpinner model =
-    [ ( "spinner"
-      , i
-            [ class "animated bounceInDown slower mdi mdi-cloud-download" ]
-            []
-      )
-    ]
 
 
 viewEvents : Zone -> List GitHubEvent -> List ( String, Html Msg )
@@ -460,31 +475,31 @@ navigation model =
     let
         elements =
             case model.authorization of
-                Model.Token _ _ ->
+                Token _ _ ->
                     pauseResumeButton model
                         ++ [ button
                                 [ onClick (NavigateCommand (Just "") Nothing)
                                 , class "mdl-button mdl-button--colored mdl-color-text--white"
                                 ]
-                                [ span [ class "button-text" ] [ text (sourceName model.eventStream.source) ]
-                                , i [ class "mdi mdi-power-plug left-spaced" ] []
+                                [ span [ class "button-text" ] [ text "source" ]
+                                , i [ class "mdi mdi-power-plug" ] []
                                 ]
                            , button
                                 [ onClick SignOutCommand
                                 , class "mdl-button mdl-button--colored mdl-color-text--white"
                                 ]
                                 [ span [ class "button-text" ] [ text "Sign out" ]
-                                , i [ class "mdi mdi-logout left-spaced" ] []
+                                , i [ class "mdi mdi-logout" ] []
                                 ]
                            ]
 
-                Model.Unauthorized ->
+                Unauthorized ->
                     [ button
                         [ onClick (AuthorizeUserCommand (push (ChangeEventSourceCommand model.eventStream.source)))
                         , class "mdl-button mdl-button--colored mdl-color-text--white"
                         ]
                         [ span [ class "button-text" ] [ text "Sign in" ]
-                        , i [ class "mdi mdi-github-circle left-spaced" ] []
+                        , i [ class "mdi mdi-github-circle" ] []
                         ]
                     ]
     in
@@ -492,22 +507,6 @@ navigation model =
         [ class "mdl-navigation" ]
         elements
     ]
-
-
-sourceName : GitHubEventSource -> String
-sourceName source =
-    case source of
-        GitHubEventSourceDefault ->
-            "all github"
-
-        GitHubEventSourceUser user ->
-            "user: " ++ user
-
-        GitHubEventSourceOrganisation org ->
-            "org: " ++ org
-
-        GitHubEventSourceRepository owner repo ->
-            "repo: " ++ owner ++ "/" ++ repo
 
 
 pauseResumeButton : Model -> List (Html Msg)
@@ -518,7 +517,7 @@ pauseResumeButton model =
             , class "mdl-button mdl-button--colored mdl-color-text--white"
             ]
             [ span [ class "button-text" ] [ text "Pause" ]
-            , i [ class "mdi mdi-pause left-spaced" ] []
+            , i [ class "mdi mdi-pause" ] []
             ]
         ]
 
@@ -528,9 +527,35 @@ pauseResumeButton model =
             , class "mdl-button mdl-button--colored mdl-color-text--white"
             ]
             [ span [ class "button-text" ] [ text "Play" ]
-            , i [ class "mdi mdi-play left-spaced" ] []
+            , i [ class "mdi mdi-play" ] []
             ]
         ]
+
+
+viewSpinner : Model -> List ( String, Html Msg )
+viewSpinner model =
+    [ ( "spinner"
+      , span []
+            [ i
+                [ class "animated bounceInDown slower mdi mdi-cloud-download" ]
+                []
+            , span [] [ text "waiting" ]
+            ]
+      )
+    ]
+
+
+viewEmpty : Model -> List ( String, Html Msg )
+viewEmpty model =
+    [ ( "empty"
+      , span []
+            [ i
+                [ class "animated fadeIn slower mdi mdi-package-variant" ]
+                []
+            , span [] [ text "no events" ]
+            ]
+      )
+    ]
 
 
 viewError : Http.Error -> List ( String, Html Msg )
@@ -538,24 +563,44 @@ viewError error =
     case error of
         Http.NetworkError ->
             [ ( "network-error"
-              , i
-                    [ class "animated rotateIn slower mdi mdi-cloud-off-outline" ]
-                    []
+              , span []
+                    [ i
+                        [ class "animated rotateIn slower mdi mdi-cloud-off-outline" ]
+                        []
+                    , span [] [ text "no network" ]
+                    ]
               )
             ]
 
         Http.Timeout ->
             [ ( "network-timeout"
-              , i
-                    [ class "animated rotateIn slower mdi mdi-cloud-alert" ]
-                    []
+              , span []
+                    [ i
+                        [ class "animated rotateIn slower mdi mdi-cloud-alert" ]
+                        []
+                    , span [] [ text "network timeout" ]
+                    ]
+              )
+            ]
+
+        Http.BadStatus status ->
+            [ ( "bad-status" ++ String.fromInt status
+              , span []
+                    [ i
+                        [ class "animated rotateIn slower mdi mdi-cloud-question" ]
+                        []
+                    , span [] [ text (String.fromInt status) ]
+                    ]
               )
             ]
 
         _ ->
             [ ( "other-error"
-              , i
-                    [ class "animated rotateIn slower mdi mdi-cloud-question" ]
-                    []
+              , span []
+                    [ i
+                        [ class "animated rotateIn slower mdi mdi-cloud-question" ]
+                        []
+                    , span [] [ text "errors" ]
+                    ]
               )
             ]

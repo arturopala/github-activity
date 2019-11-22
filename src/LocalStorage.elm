@@ -1,5 +1,6 @@
-module LocalStorage exposing (decodeAndOverlayState, extractAndSaveState)
+module LocalStorage exposing (decodeAndOverlayState, saveToLocalStorage)
 
+import GitHub.Authorization exposing (Authorization(..))
 import GitHub.Model
 import Json.Decode as Decode
 import Json.Decode.Pipeline exposing (optional, required)
@@ -10,13 +11,14 @@ import Ports exposing (..)
 
 
 type alias LocalState =
-    { authorization : Model.Authorization
+    { authorization : Authorization
     , source : GitHub.Model.GitHubEventSource
+    , sourceHistory : List GitHub.Model.GitHubEventSource
     }
 
 
-extractAndSaveState : Model -> Cmd Msg
-extractAndSaveState model =
+saveToLocalStorage : Model -> Cmd Msg
+saveToLocalStorage model =
     model
         |> toLocalState
         |> encodeAsJson
@@ -34,7 +36,10 @@ decodeAndOverlayState maybeState model =
 
 toLocalState : Model -> LocalState
 toLocalState model =
-    LocalState model.authorization model.eventStream.source
+    { authorization = model.authorization
+    , source = model.eventStream.source
+    , sourceHistory = model.homepage.sourceHistory
+    }
 
 
 fromLocalState : Model -> LocalState -> Model
@@ -42,6 +47,7 @@ fromLocalState model state =
     model
         |> Model.authorizationLens.set state.authorization
         |> Model.eventStreamSourceLens.set state.source
+        |> Model.homepageSourceHistoryLens.set state.sourceHistory
 
 
 encodeAsJson : LocalState -> Encode.Value
@@ -49,31 +55,33 @@ encodeAsJson state =
     Encode.object
         [ ( "authorization", encodeAuthorization state.authorization )
         , ( "source", encodeSource state.source )
+        , ( "sourceHistory", Encode.list encodeSource state.sourceHistory )
         ]
 
 
 decodeLocalState : Decode.Decoder LocalState
 decodeLocalState =
     Decode.succeed LocalState
-        |> optional "authorization" decodeAuthorization Model.Unauthorized
+        |> optional "authorization" decodeAuthorization Unauthorized
         |> optional "source" decodeSource GitHub.Model.GitHubEventSourceDefault
+        |> optional "sourceHistory" (Decode.list decodeSource) []
 
 
-encodeAuthorization : Model.Authorization -> Encode.Value
+encodeAuthorization : Authorization -> Encode.Value
 encodeAuthorization authorization =
     case authorization of
-        Model.Unauthorized ->
+        Unauthorized ->
             Encode.null
 
-        Model.Token token scope ->
+        Token token scope ->
             Encode.object [ ( "token", Encode.string token ), ( "scope", Encode.string scope ) ]
 
 
-decodeAuthorization : Decode.Decoder Model.Authorization
+decodeAuthorization : Decode.Decoder Authorization
 decodeAuthorization =
     Decode.oneOf
-        [ Decode.null Model.Unauthorized
-        , Decode.succeed Model.Token
+        [ Decode.null Unauthorized
+        , Decode.succeed Token
             |> required "token" Decode.string
             |> required "scope" Decode.string
         ]
