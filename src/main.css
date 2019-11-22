@@ -147,6 +147,23 @@ body {
     align-self: center;
 }
 
+.search-icon-searching {
+    animation-name: spin;
+    animation-duration: 1000ms;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+    animation-direction: alternate;
+}
+
+@keyframes spin {
+    from {
+        transform:rotate(0deg);
+    }
+    to {
+        transform:rotate(360deg);
+    }
+}
+
 .card-login .search-result {
     flex-flow: column nowrap;
     align-items: stretch;

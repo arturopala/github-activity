@@ -1,6 +1,8 @@
-module Util exposing (appendDistinctToList, appendIfDistinct, delayMessage, delayMessageUntil, modifyModel, push, removeFromList, wrapCmd, wrapModel, wrapMsg)
+module Util exposing (appendDistinctToList, appendIfDistinct, delayMessage, delayMessageUntil, isEnterKey, isEscapeKey, mergeListsDistinct, modifyModel, onKeyUp, push, removeFromList, wrapCmd, wrapModel, wrapMsg)
 
 import Html exposing (Html)
+import Html.Events exposing (keyCode, on)
+import Json.Decode
 import Monocle.Lens exposing (Lens)
 import Process
 import Task
@@ -71,6 +73,11 @@ appendDistinctToList a list =
                 x :: appendDistinctToList a xs
 
 
+mergeListsDistinct : List a -> List a -> List a
+mergeListsDistinct a b =
+    b |> List.foldl appendDistinctToList (List.reverse a)
+
+
 appendIfDistinct : a -> Lens b (List a) -> b -> b
 appendIfDistinct a lens b =
     lens.get b |> appendDistinctToList a |> (\l -> lens.set l b)
@@ -79,3 +86,23 @@ appendIfDistinct a lens b =
 removeFromList : a -> Lens b (List a) -> b -> b
 removeFromList a lens b =
     lens.get b |> List.filter ((/=) a) |> (\l -> lens.set l b)
+
+
+onKeyUp : (String -> msg) -> Html.Attribute msg
+onKeyUp tagger =
+    on "keyup" (Json.Decode.map tagger keyDecoder)
+
+
+keyDecoder : Json.Decode.Decoder String
+keyDecoder =
+    Json.Decode.field "key" Json.Decode.string
+
+
+isEscapeKey : String -> Bool
+isEscapeKey key =
+    List.member key [ "Escape", "Cancel", "Clear" ]
+
+
+isEnterKey : String -> Bool
+isEnterKey key =
+    List.member key [ "Enter", "Accept", "Execute" ]

@@ -9,13 +9,14 @@ import Html.Attributes exposing (class, classList, id, pattern, placeholder, typ
 import Html.Events exposing (onBlur, onFocus, onInput)
 import Monocle.Lens exposing (Lens)
 import Time
-import Util exposing (push)
+import Util exposing (onKeyUp, push)
 
 
 type Msg
     = InputEvent String
-    | FocusEvent
     | BlurEvent
+    | KeyEvent String
+    | FocusEvent
     | TickEvent
     | UserSearchResultEvent (List GitHub.Model.GitHubUserRef)
     | HttpFetch (Authorization -> Cmd Msg)
@@ -45,7 +46,7 @@ init =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     if model.active then
-        Time.every 1000 (\_ -> TickEvent)
+        Time.every 3000 (\_ -> TickEvent)
 
     else
         Sub.none
@@ -63,32 +64,22 @@ update msg model =
         BlurEvent ->
             ( { model | active = False }, Cmd.none )
 
-        TickEvent ->
-            if not model.searching && model.input /= model.lastQuery then
-                if String.length model.input > 2 then
-                    ( model
-                        |> lastQueryLens.set model.input
-                        |> resultsLens.set []
-                        |> searchingLens.set True
-                    , push <|
-                        HttpFetch
-                            (\t ->
-                                GitHub.APIv3.searchUsersByLogin model.input t
-                                    |> Cmd.map gitHubApiResponseAsMsg
-                            )
-                    )
+        KeyEvent key ->
+            if Util.isEscapeKey key then
+                ( init, Cmd.none )
 
-                else
-                    ( model
-                        |> resultsLens.set []
-                        |> lastQueryLens.set ""
-                    , Cmd.none
-                    )
+            else if Util.isEnterKey key then
+                searchUser model
 
             else
-                ( model
-                , Cmd.none
-                )
+                ( model, Cmd.none )
+
+        TickEvent ->
+            if not model.searching && model.input /= model.lastQuery then
+                searchUser model
+
+            else
+                ( model, Cmd.none )
 
         UserSearchResultEvent users ->
             ( model
@@ -105,6 +96,29 @@ update msg model =
 
         NoOp ->
             ( model, Cmd.none )
+
+
+searchUser : Model -> ( Model, Cmd Msg )
+searchUser model =
+    if String.length model.input > 2 then
+        ( model
+            |> lastQueryLens.set model.input
+            |> resultsLens.set []
+            |> searchingLens.set True
+        , push <|
+            HttpFetch
+                (\t ->
+                    GitHub.APIv3.searchUsersByLogin model.input t
+                        |> Cmd.map gitHubApiResponseAsMsg
+                )
+        )
+
+    else
+        ( model
+            |> resultsLens.set []
+            |> lastQueryLens.set ""
+        , Cmd.none
+        )
 
 
 gitHubApiResponseAsMsg : GitHub.Message.Msg -> Msg
@@ -125,7 +139,7 @@ view model =
                 [ classList
                     [ ( "search-icon", True )
                     , ( "material-icons", True )
-                    , ( "", model.searching )
+                    , ( "search-icon-searching", model.searching )
                     ]
                 ]
                 [ text "search" ]
@@ -138,6 +152,7 @@ view model =
                 , onFocus FocusEvent
                 , onBlur BlurEvent
                 , onInput InputEvent
+                , onKeyUp KeyEvent
                 ]
                 []
             ]

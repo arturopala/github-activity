@@ -48,6 +48,7 @@ update msg auth model =
                 model2 =
                     updateChunks response model
                         |> eventStreamEtagLens.set response.etag
+                        |> eventStreamErrorLens.set Nothing
             in
             maybeReadEventsNextPage model2 response
 
@@ -55,6 +56,7 @@ update msg auth model =
             let
                 model2 =
                     updateChunks response model
+                        |> eventStreamErrorLens.set Nothing
             in
             maybeReadEventsNextPage model2 response
 
@@ -93,6 +95,7 @@ handleHttpError error model =
         Http.BadStatus 304 ->
             ( model
                 |> downloadingLens.set False
+                |> eventStreamErrorLens.set Nothing
             , scheduleNextRead model
             )
 

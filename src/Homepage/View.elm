@@ -10,6 +10,7 @@ import Html.Events exposing (onClick)
 import Html.Lazy
 import Message exposing (Msg)
 import Model exposing (Model)
+import Util
 import View
 
 
@@ -61,7 +62,7 @@ showSelectSource model maybeUser =
 
         sources =
             List.reverse <|
-                mergeListsDistinct
+                Util.mergeListsDistinct
                     (currentUserSourceList
                         ++ List.map (\o -> GitHub.Model.GitHubEventSourceOrganisation o.login) model.organisations
                         ++ [ GitHub.Model.GitHubEventSourceDefault ]
@@ -160,22 +161,3 @@ toSource user =
 
         _ ->
             GitHub.Model.GitHubEventSourceUser user.login
-
-
-appendDistinctToList : a -> List a -> List a
-appendDistinctToList a list =
-    case list of
-        [] ->
-            a :: []
-
-        x :: xs ->
-            if a == x then
-                list
-
-            else
-                x :: appendDistinctToList a xs
-
-
-mergeListsDistinct : List a -> List a -> List a
-mergeListsDistinct a b =
-    b |> List.foldl appendDistinctToList (List.reverse a)
