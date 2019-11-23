@@ -100,6 +100,9 @@ decodePayload tag =
         "IssueCommentEvent" ->
             map GitHubIssueCommentEvent decodeIssueCommentEventPayload
 
+        "CreateEvent" ->
+            map GitHubCreateEvent decodeCreateEventPayload
+
         _ ->
             Decode.succeed GitHubOtherEventPayload
 
@@ -364,6 +367,16 @@ decodeReference =
         |> required "sha" string
         |> required "user" decodeUserRef
         |> required "repo" decodeRepository
+
+
+decodeCreateEventPayload : Decoder GitHubCreateEventPayload
+decodeCreateEventPayload =
+    Decode.succeed GitHubCreateEventPayload
+        |> required "ref_type" string
+        |> required "ref" string
+        |> required "master_branch" string
+        |> notrequi "description" string
+        |> required "pusher_type" string
 
 
 dummyUrl : Url.Url

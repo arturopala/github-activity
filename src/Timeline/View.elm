@@ -103,6 +103,9 @@ viewEvent zone event =
         GitHubIssueCommentEvent payload ->
             viewIssueCommentEvent zone event payload
 
+        GitHubCreateEvent payload ->
+            viewCreateEvent zone event payload
+
         _ ->
             let
                 label =
@@ -439,6 +442,23 @@ viewIssueCommentEvent zone event payload =
                         )
                     |> Maybe.withDefault []
                 )
+            ]
+    in
+    viewEventTemplate1 zone event content label subtype
+
+
+viewCreateEvent : Zone -> GitHubEvent -> GitHubCreateEventPayload -> Html Msg
+viewCreateEvent zone event payload =
+    let
+        label =
+            "create " ++ payload.ref_type
+
+        subtype =
+            payload.ref_type
+
+        content =
+            [ div [ class "card-event-content-body card-event-content-body__center" ]
+                [ div [ class "cb-big" ] [ text payload.ref ] ]
             ]
     in
     viewEventTemplate1 zone event content label subtype

@@ -429,11 +429,25 @@ body {
     border-top-width: 0;
 }
 
-.card-event.event-create .card-event-label {
+.card-event.events-create .card-event-label {
     color: green;
 }
 
-.card-event.event-delete .card-event-label {
+.card-event.event-create-tag .cb-big {
+    color: green;
+    font-size: 2.5rem;
+    font-weight: bold;
+    line-height: normal;
+}
+
+.card-event.event-create-branch .cb-big {
+    color: green;
+    font-size: 1.5rem;
+    font-weight: bold;
+    line-height: normal;
+}
+
+.card-event.events-delete .card-event-label {
     color: red;
 }
 
@@ -476,7 +490,8 @@ body {
     color: white;
     border-radius: 5px;
     padding: 0 5px;
-    margin: 0 5px;
+    margin: 1px 5px;
+    display: inline-block;
 }
 
 .cb-msg {
