@@ -106,6 +106,9 @@ viewEvent zone event =
         GitHubCreateEvent payload ->
             viewCreateEvent zone event payload
 
+        GitHubDeleteEvent payload ->
+            viewDeleteEvent zone event payload
+
         _ ->
             let
                 label =
@@ -452,6 +455,23 @@ viewCreateEvent zone event payload =
     let
         label =
             "create " ++ payload.ref_type
+
+        subtype =
+            payload.ref_type
+
+        content =
+            [ div [ class "card-event-content-body card-event-content-body__center" ]
+                [ div [ class "cb-big" ] [ text payload.ref ] ]
+            ]
+    in
+    viewEventTemplate1 zone event content label subtype
+
+
+viewDeleteEvent : Zone -> GitHubEvent -> GitHubDeleteEventPayload -> Html Msg
+viewDeleteEvent zone event payload =
+    let
+        label =
+            "delete " ++ payload.ref_type
 
         subtype =
             payload.ref_type

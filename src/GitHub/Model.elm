@@ -1,4 +1,4 @@
-module GitHub.Model exposing (GitHubApiLimits, GitHubAuthor, GitHubCommit, GitHubCreateEventPayload, GitHubError, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubIssue, GitHubIssueComment, GitHubIssueCommentEventPayload, GitHubIssueLabel, GitHubIssuesEventPayload, GitHubOrganisation, GitHubPullRequest, GitHubPullRequestEventPayload, GitHubPullRequestRef, GitHubPullRequestReview, GitHubPullRequestReviewComment, GitHubPullRequestReviewCommentEventPayload, GitHubPullRequestReviewEventPayload, GitHubPushEventPayload, GitHubReference, GitHubReleaseEventPayload, GitHubReleaseRef, GitHubRepoRef, GitHubRepository, GitHubResponse, GitHubSearchResult, GitHubUser, GitHubUserRef)
+module GitHub.Model exposing (GitHubApiLimits, GitHubAuthor, GitHubCommit, GitHubCreateEventPayload, GitHubDeleteEventPayload, GitHubError, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubIssue, GitHubIssueComment, GitHubIssueCommentEventPayload, GitHubIssueLabel, GitHubIssuesEventPayload, GitHubOrganisation, GitHubPullRequest, GitHubPullRequestEventPayload, GitHubPullRequestRef, GitHubPullRequestReview, GitHubPullRequestReviewComment, GitHubPullRequestReviewCommentEventPayload, GitHubPullRequestReviewEventPayload, GitHubPushEventPayload, GitHubReference, GitHubReleaseEventPayload, GitHubReleaseRef, GitHubRepoRef, GitHubRepository, GitHubResponse, GitHubSearchResult, GitHubUser, GitHubUserRef)
 
 import Dict exposing (Dict)
 import Time exposing (Posix)
@@ -102,6 +102,7 @@ type GitHubEventPayload
     | GitHubIssuesEvent GitHubIssuesEventPayload
     | GitHubIssueCommentEvent GitHubIssueCommentEventPayload
     | GitHubCreateEvent GitHubCreateEventPayload
+    | GitHubDeleteEvent GitHubDeleteEventPayload
     | GitHubOtherEventPayload
 
 
@@ -236,6 +237,13 @@ type alias GitHubCreateEventPayload =
     , ref : String
     , master_branch : String
     , description : Maybe String
+    , pusher_type : String
+    }
+
+
+type alias GitHubDeleteEventPayload =
+    { ref_type : String
+    , ref : String
     , pusher_type : String
     }
 

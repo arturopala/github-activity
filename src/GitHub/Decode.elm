@@ -103,6 +103,9 @@ decodePayload tag =
         "CreateEvent" ->
             map GitHubCreateEvent decodeCreateEventPayload
 
+        "DeleteEvent" ->
+            map GitHubDeleteEvent decodeDeleteEventPayload
+
         _ ->
             Decode.succeed GitHubOtherEventPayload
 
@@ -376,6 +379,14 @@ decodeCreateEventPayload =
         |> required "ref" string
         |> required "master_branch" string
         |> notrequi "description" string
+        |> required "pusher_type" string
+
+
+decodeDeleteEventPayload : Decoder GitHubDeleteEventPayload
+decodeDeleteEventPayload =
+    Decode.succeed GitHubDeleteEventPayload
+        |> required "ref_type" string
+        |> required "ref" string
         |> required "pusher_type" string
 
 
