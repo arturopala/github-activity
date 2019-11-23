@@ -112,6 +112,9 @@ viewEvent zone event =
         GitHubForkEvent payload ->
             viewForkEvent zone event payload
 
+        GitHubWatchEvent ->
+            viewWatchEvent zone event
+
         _ ->
             let
                 label =
@@ -125,12 +128,12 @@ viewEvent zone event =
                 subtype =
                     ""
             in
-            viewEventTemplate1 zone event [] label subtype
+            viewEventTemplate zone event [] label subtype
     )
 
 
-viewEventTemplate1 : Zone -> GitHubEvent -> List (Html Msg) -> String -> String -> Html Msg
-viewEventTemplate1 zone event content label subtype =
+viewEventTemplate : Zone -> GitHubEvent -> List (Html Msg) -> String -> String -> Html Msg
+viewEventTemplate zone event content label subtype =
     section
         [ classList
             [ ( "card-event mdl-card mdl-shadow--2dp", True )
@@ -159,6 +162,37 @@ viewEventTemplate1 zone event content label subtype =
             ]
         , div [ class "mdl-card__actions card-event-label" ]
             [ span [ class "card-event-type" ] [ text (String.toLower label) ]
+            ]
+        ]
+
+
+viewEventTemplateNoLabel : Zone -> GitHubEvent -> List (Html Msg) -> String -> Html Msg
+viewEventTemplateNoLabel zone event content subtype =
+    section
+        [ classList
+            [ ( "card-event mdl-card mdl-shadow--2dp", True )
+            , ( "events-group-" ++ eventGroupName event, True )
+            , ( "events-" ++ eventTypeName event, True )
+            , ( "event-"
+                    ++ eventTypeName event
+                    ++ (if String.isEmpty subtype then
+                            ""
+
+                        else
+                            "-" ++ subtype
+                       )
+              , True
+              )
+            ]
+        ]
+        [ div
+            [ class "mdl-card__supporting-text mdl-card--expand"
+            , style "background-image" ("url('" ++ event.actor.avatar_url ++ "')")
+            ]
+            [ div [ class "card-event-actor" ] [ text event.actor.display_login ]
+            , div [ class "card-event-datetime" ] (formatDate zone event.created_at)
+            , div [ class "card-event-repo" ] [ text (String.replace "/" " / " event.repo.name) ]
+            , div [ class "card-event-content" ] content
             ]
         ]
 
@@ -259,7 +293,7 @@ viewPullRequestEvent zone event payload =
                 ]
             ]
     in
-    viewEventTemplate1 zone event content label subtype
+    viewEventTemplate zone event content label subtype
 
 
 viewPullRequestReviewEvent : Zone -> GitHubEvent -> GitHubPullRequestReviewEventPayload -> Html Msg
@@ -285,7 +319,7 @@ viewPullRequestReviewEvent zone event payload =
                 ]
             ]
     in
-    viewEventTemplate1 zone event content label subtype
+    viewEventTemplate zone event content label subtype
 
 
 viewPullRequestReviewCommentEvent : Zone -> GitHubEvent -> GitHubPullRequestReviewCommentEventPayload -> Html Msg
@@ -323,7 +357,7 @@ viewPullRequestReviewCommentEvent zone event payload =
                 )
             ]
     in
-    viewEventTemplate1 zone event content label subtype
+    viewEventTemplate zone event content label subtype
 
 
 viewReleaseEvent : Zone -> GitHubEvent -> GitHubReleaseEventPayload -> Html Msg
@@ -340,7 +374,7 @@ viewReleaseEvent zone event payload =
                 [ div [ class "cb-big" ] [ text payload.release.tag_name ] ]
             ]
     in
-    viewEventTemplate1 zone event content label subtype
+    viewEventTemplate zone event content label subtype
 
 
 viewPushEvent : Zone -> GitHubEvent -> GitHubPushEventPayload -> Html Msg
@@ -366,7 +400,7 @@ viewPushEvent zone event payload =
                 )
             ]
     in
-    viewEventTemplate1 zone event content label subtype
+    viewEventTemplate zone event content label subtype
 
 
 viewIssuesEvent : Zone -> GitHubEvent -> GitHubIssuesEventPayload -> Html Msg
@@ -409,7 +443,7 @@ viewIssuesEvent zone event payload =
                 ]
             ]
     in
-    viewEventTemplate1 zone event content label subtype
+    viewEventTemplate zone event content label subtype
 
 
 viewIssueCommentEvent : Zone -> GitHubEvent -> GitHubIssueCommentEventPayload -> Html Msg
@@ -450,7 +484,7 @@ viewIssueCommentEvent zone event payload =
                 )
             ]
     in
-    viewEventTemplate1 zone event content label subtype
+    viewEventTemplate zone event content label subtype
 
 
 viewCreateEvent : Zone -> GitHubEvent -> GitHubCreateEventPayload -> Html Msg
@@ -467,7 +501,7 @@ viewCreateEvent zone event payload =
                 [ div [ class "cb-big" ] [ text payload.ref ] ]
             ]
     in
-    viewEventTemplate1 zone event content label subtype
+    viewEventTemplate zone event content label subtype
 
 
 viewDeleteEvent : Zone -> GitHubEvent -> GitHubDeleteEventPayload -> Html Msg
@@ -484,7 +518,7 @@ viewDeleteEvent zone event payload =
                 [ div [ class "cb-big" ] [ text payload.ref ] ]
             ]
     in
-    viewEventTemplate1 zone event content label subtype
+    viewEventTemplate zone event content label subtype
 
 
 viewForkEvent : Zone -> GitHubEvent -> GitHubForkEventPayload -> Html Msg
@@ -501,7 +535,20 @@ viewForkEvent zone event payload =
                 [ div [ class "cb-big" ] [ text (payload.forkee.owner.login ++ " / " ++ payload.forkee.name) ] ]
             ]
     in
-    viewEventTemplate1 zone event content label subtype
+    viewEventTemplate zone event content label subtype
+
+
+viewWatchEvent : Zone -> GitHubEvent -> Html Msg
+viewWatchEvent zone event =
+    let
+        subtype =
+            ""
+
+        content =
+            [ i [ class "material-icons" ] [ text "stars" ]
+            ]
+    in
+    viewEventTemplateNoLabel zone event content subtype
 
 
 formatDate : Zone -> Posix -> List (Html Msg)

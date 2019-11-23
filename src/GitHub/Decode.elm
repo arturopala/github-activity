@@ -109,8 +109,11 @@ decodePayload tag =
         "ForkEvent" ->
             map GitHubForkEvent decodeForkEventPayload
 
+        "WatchEvent" ->
+            Decode.succeed GitHubWatchEvent
+
         _ ->
-            Decode.succeed GitHubOtherEventPayload
+            Decode.succeed GitHubOtherEvent
 
 
 decodeDateTime : Decoder Posix

@@ -104,7 +104,8 @@ type GitHubEventPayload
     | GitHubCreateEvent GitHubCreateEventPayload
     | GitHubDeleteEvent GitHubDeleteEventPayload
     | GitHubForkEvent GitHubForkEventPayload
-    | GitHubOtherEventPayload
+    | GitHubWatchEvent
+    | GitHubOtherEvent
 
 
 type alias GitHubPullRequestEventPayload =

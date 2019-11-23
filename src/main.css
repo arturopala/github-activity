@@ -474,6 +474,21 @@ body {
     line-height: normal;
 }
 
+.card-event.event-watch .card-event-content {
+    align-items: center;
+    justify-content: center;
+}
+
+.card-event.event-watch {
+    background-color: aliceblue;
+}
+
+.card-event.event-watch .card-event-content i {
+    font-size: 5rem;
+    color: #3F51B5;
+    text-shadow: 0 0 20px white, 0 4px 2px gray;
+}
+
 .left-spaced {
     padding-left: 1rem;
 }
