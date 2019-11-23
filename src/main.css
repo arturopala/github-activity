@@ -467,6 +467,13 @@ body {
     text-decoration: line-through;
 }
 
+.card-event.event-fork .cb-big {
+    color: #3F51B5;
+    font-size: 1.5rem;
+    font-weight: bold;
+    line-height: normal;
+}
+
 .left-spaced {
     padding-left: 1rem;
 }

@@ -109,6 +109,9 @@ viewEvent zone event =
         GitHubDeleteEvent payload ->
             viewDeleteEvent zone event payload
 
+        GitHubForkEvent payload ->
+            viewForkEvent zone event payload
+
         _ ->
             let
                 label =
@@ -479,6 +482,23 @@ viewDeleteEvent zone event payload =
         content =
             [ div [ class "card-event-content-body card-event-content-body__center" ]
                 [ div [ class "cb-big" ] [ text payload.ref ] ]
+            ]
+    in
+    viewEventTemplate1 zone event content label subtype
+
+
+viewForkEvent : Zone -> GitHubEvent -> GitHubForkEventPayload -> Html Msg
+viewForkEvent zone event payload =
+    let
+        label =
+            "fork"
+
+        subtype =
+            ""
+
+        content =
+            [ div [ class "card-event-content-body card-event-content-body__center" ]
+                [ div [ class "cb-big" ] [ text (payload.forkee.owner.login ++ " / " ++ payload.forkee.name) ] ]
             ]
     in
     viewEventTemplate1 zone event content label subtype

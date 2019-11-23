@@ -106,6 +106,9 @@ decodePayload tag =
         "DeleteEvent" ->
             map GitHubDeleteEvent decodeDeleteEventPayload
 
+        "ForkEvent" ->
+            map GitHubForkEvent decodeForkEventPayload
+
         _ ->
             Decode.succeed GitHubOtherEventPayload
 
@@ -388,6 +391,12 @@ decodeDeleteEventPayload =
         |> required "ref_type" string
         |> required "ref" string
         |> required "pusher_type" string
+
+
+decodeForkEventPayload : Decoder GitHubForkEventPayload
+decodeForkEventPayload =
+    Decode.succeed GitHubForkEventPayload
+        |> required "forkee" decodeRepository
 
 
 dummyUrl : Url.Url

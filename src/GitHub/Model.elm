@@ -1,4 +1,4 @@
-module GitHub.Model exposing (GitHubApiLimits, GitHubAuthor, GitHubCommit, GitHubCreateEventPayload, GitHubDeleteEventPayload, GitHubError, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubIssue, GitHubIssueComment, GitHubIssueCommentEventPayload, GitHubIssueLabel, GitHubIssuesEventPayload, GitHubOrganisation, GitHubPullRequest, GitHubPullRequestEventPayload, GitHubPullRequestRef, GitHubPullRequestReview, GitHubPullRequestReviewComment, GitHubPullRequestReviewCommentEventPayload, GitHubPullRequestReviewEventPayload, GitHubPushEventPayload, GitHubReference, GitHubReleaseEventPayload, GitHubReleaseRef, GitHubRepoRef, GitHubRepository, GitHubResponse, GitHubSearchResult, GitHubUser, GitHubUserRef)
+module GitHub.Model exposing (GitHubApiLimits, GitHubAuthor, GitHubCommit, GitHubCreateEventPayload, GitHubDeleteEventPayload, GitHubError, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubForkEventPayload, GitHubIssue, GitHubIssueComment, GitHubIssueCommentEventPayload, GitHubIssueLabel, GitHubIssuesEventPayload, GitHubOrganisation, GitHubPullRequest, GitHubPullRequestEventPayload, GitHubPullRequestRef, GitHubPullRequestReview, GitHubPullRequestReviewComment, GitHubPullRequestReviewCommentEventPayload, GitHubPullRequestReviewEventPayload, GitHubPushEventPayload, GitHubReference, GitHubReleaseEventPayload, GitHubReleaseRef, GitHubRepoRef, GitHubRepository, GitHubResponse, GitHubSearchResult, GitHubUser, GitHubUserRef)
 
 import Dict exposing (Dict)
 import Time exposing (Posix)
@@ -103,6 +103,7 @@ type GitHubEventPayload
     | GitHubIssueCommentEvent GitHubIssueCommentEventPayload
     | GitHubCreateEvent GitHubCreateEventPayload
     | GitHubDeleteEvent GitHubDeleteEventPayload
+    | GitHubForkEvent GitHubForkEventPayload
     | GitHubOtherEventPayload
 
 
@@ -245,6 +246,11 @@ type alias GitHubDeleteEventPayload =
     { ref_type : String
     , ref : String
     , pusher_type : String
+    }
+
+
+type alias GitHubForkEventPayload =
+    { forkee : GitHubRepository
     }
 
 
