@@ -1,4 +1,4 @@
-module GitHub.Model exposing (GitHubApiLimits, GitHubAuthor, GitHubCommit, GitHubError, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubIssue, GitHubIssueLabel, GitHubIssuesEventPayload, GitHubOrganisation, GitHubPullRequest, GitHubPullRequestEventPayload, GitHubPullRequestRef, GitHubPullRequestReview, GitHubPullRequestReviewComment, GitHubPullRequestReviewCommentEventPayload, GitHubPullRequestReviewEventPayload, GitHubPushEventPayload, GitHubReference, GitHubReleaseEventPayload, GitHubReleaseRef, GitHubRepoRef, GitHubRepository, GitHubResponse, GitHubSearchResult, GitHubUser, GitHubUserRef)
+module GitHub.Model exposing (GitHubApiLimits, GitHubAuthor, GitHubCommit, GitHubError, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubIssue, GitHubIssueComment, GitHubIssueCommentEventPayload, GitHubIssueLabel, GitHubIssuesEventPayload, GitHubOrganisation, GitHubPullRequest, GitHubPullRequestEventPayload, GitHubPullRequestRef, GitHubPullRequestReview, GitHubPullRequestReviewComment, GitHubPullRequestReviewCommentEventPayload, GitHubPullRequestReviewEventPayload, GitHubPushEventPayload, GitHubReference, GitHubReleaseEventPayload, GitHubReleaseRef, GitHubRepoRef, GitHubRepository, GitHubResponse, GitHubSearchResult, GitHubUser, GitHubUserRef)
 
 import Dict exposing (Dict)
 import Time exposing (Posix)
@@ -100,6 +100,7 @@ type GitHubEventPayload
     | GitHubReleaseEvent GitHubReleaseEventPayload
     | GitHubPushEvent GitHubPushEventPayload
     | GitHubIssuesEvent GitHubIssuesEventPayload
+    | GitHubIssueCommentEvent GitHubIssueCommentEventPayload
     | GitHubOtherEventPayload
 
 
@@ -193,6 +194,7 @@ type alias GitHubPullRequestReviewComment =
     , created_at : Posix
     , author_association : String
     , url : Url
+    , html_url : Url
     , pull_request_url : Url
     , path : String
     , diff_hunk : String
@@ -218,6 +220,13 @@ type alias GitHubPushEventPayload =
 type alias GitHubIssuesEventPayload =
     { action : String
     , issue : GitHubIssue
+    }
+
+
+type alias GitHubIssueCommentEventPayload =
+    { action : String
+    , issue : GitHubIssue
+    , comment : GitHubIssueComment
     }
 
 
@@ -315,4 +324,15 @@ type alias GitHubIssueLabel =
     , name : String
     , color : String
     , url : Url
+    }
+
+
+type alias GitHubIssueComment =
+    { id : Int
+    , user : GitHubUserRef
+    , body : Maybe String
+    , created_at : Posix
+    , author_association : String
+    , url : Url
+    , html_url : Url
     }

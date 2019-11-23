@@ -53,7 +53,7 @@ initialModel key url =
     , user = Nothing
     , organisations = []
     , preferences =
-        { numberOfEventsOnDisplay = 200
+        { numberOfEventsOnDisplay = 500
         , maxNumberOfEventsInQueue = 1000
         , tickIntervalMilliseconds = 500
         }

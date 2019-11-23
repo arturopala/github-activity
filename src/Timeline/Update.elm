@@ -56,8 +56,11 @@ updateEventsOnDisplay model =
                 model.eventStream.events
                     |> List.drop (List.length model.eventStream.events - model.preferences.numberOfEventsOnDisplay - numberOfEventsToStreamWhenStarted)
 
+            reducedLength =
+                List.length reduced
+
             ( queue, display ) =
-                pullNEvents numberOfEventsToStreamWhenStarted reduced model.timeline.events model.preferences.numberOfEventsOnDisplay
+                pullNEvents (reducedLength - numberOfEventsToStreamWhenStarted) reduced model.timeline.events model.preferences.numberOfEventsOnDisplay
         in
         model
             |> eventStreamEventsLens.set queue

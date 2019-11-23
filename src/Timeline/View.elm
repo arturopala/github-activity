@@ -98,35 +98,47 @@ viewEvent zone event =
             viewPushEvent zone event payload
 
         GitHubIssuesEvent payload ->
-            viewIssueEvent zone event payload
+            viewIssuesEvent zone event payload
+
+        GitHubIssueCommentEvent payload ->
+            viewIssueCommentEvent zone event payload
 
         _ ->
             let
                 label =
                     case event.eventType of
-                        "PullRequestReviewCommentEvent" ->
-                            "Review Comment"
-
-                        "IssueCommentEvent" ->
-                            "Issue Comment"
-
                         "CommitCommentEvent" ->
                             "Commit Comment"
 
                         _ ->
                             String.dropRight 5 event.eventType
 
-                snake =
-                    String.replace " " "-" label |> String.toLower
+                subtype =
+                    ""
             in
-            viewEventTemplate1 zone event [] label snake
+            viewEventTemplate1 zone event [] label subtype
     )
 
 
 viewEventTemplate1 : Zone -> GitHubEvent -> List (Html Msg) -> String -> String -> Html Msg
-viewEventTemplate1 zone event content label snake =
+viewEventTemplate1 zone event content label subtype =
     section
-        [ classList [ ( "card-event mdl-card mdl-shadow--2dp", True ), ( "event-" ++ snake, True ) ] ]
+        [ classList
+            [ ( "card-event mdl-card mdl-shadow--2dp", True )
+            , ( "events-group-" ++ eventGroupName event, True )
+            , ( "events-" ++ eventTypeName event, True )
+            , ( "event-"
+                    ++ eventTypeName event
+                    ++ (if String.isEmpty subtype then
+                            ""
+
+                        else
+                            "-" ++ subtype
+                       )
+              , True
+              )
+            ]
+        ]
         [ div
             [ class "mdl-card__supporting-text mdl-card--expand"
             , style "background-image" ("url('" ++ event.actor.avatar_url ++ "')")
@@ -136,7 +148,7 @@ viewEventTemplate1 zone event content label snake =
             , div [ class "card-event-repo" ] [ text (String.replace "/" " / " event.repo.name) ]
             , div [ class "card-event-content" ] content
             ]
-        , div [ classList [ ( "mdl-card__actions", True ), ( "event-" ++ snake, True ) ] ]
+        , div [ class "mdl-card__actions card-event-label" ]
             [ span [ class "card-event-type" ] [ text (String.toLower label) ]
             ]
         ]
@@ -180,19 +192,17 @@ viewPullRequestEvent zone event payload =
                             payload.action
                    )
 
-        snake =
-            "pull-request-"
-                ++ (case payload.action of
-                        "closed" ->
-                            if payload.pull_request.merged then
-                                "merged"
+        subtype =
+            case payload.action of
+                "closed" ->
+                    if payload.pull_request.merged then
+                        "merged"
 
-                            else
-                                "rejected"
+                    else
+                        "rejected"
 
-                        _ ->
-                            payload.action
-                   )
+                _ ->
+                    payload.action
 
         content =
             [ div [ class "card-event-content-header" ]
@@ -240,20 +250,20 @@ viewPullRequestEvent zone event payload =
                 ]
             ]
     in
-    viewEventTemplate1 zone event content label snake
+    viewEventTemplate1 zone event content label subtype
 
 
 viewPullRequestReviewEvent : Zone -> GitHubEvent -> GitHubPullRequestReviewEventPayload -> Html Msg
 viewPullRequestReviewEvent zone event payload =
     let
         label =
-            "Review of #"
+            "review of #"
                 ++ String.fromInt payload.pull_request.number
                 ++ " "
                 ++ payload.action
 
-        snake =
-            "review-" ++ payload.action
+        subtype =
+            payload.action
 
         content =
             [ div [ class "card-event-content-header" ]
@@ -266,7 +276,7 @@ viewPullRequestReviewEvent zone event payload =
                 ]
             ]
     in
-    viewEventTemplate1 zone event content label snake
+    viewEventTemplate1 zone event content label subtype
 
 
 viewPullRequestReviewCommentEvent : Zone -> GitHubEvent -> GitHubPullRequestReviewCommentEventPayload -> Html Msg
@@ -275,13 +285,13 @@ viewPullRequestReviewCommentEvent zone event payload =
         label =
             case payload.action of
                 "created" ->
-                    "pr #" ++ String.fromInt payload.pull_request.number ++ " commented"
+                    "#" ++ String.fromInt payload.pull_request.number ++ " commented"
 
                 _ ->
-                    "Review Comment " ++ payload.action
+                    "review comment " ++ payload.action
 
-        snake =
-            "review-comment-" ++ payload.action
+        subtype =
+            payload.action
 
         content =
             [ div [ class "card-event-content-header" ]
@@ -304,7 +314,7 @@ viewPullRequestReviewCommentEvent zone event payload =
                 )
             ]
     in
-    viewEventTemplate1 zone event content label snake
+    viewEventTemplate1 zone event content label subtype
 
 
 viewReleaseEvent : Zone -> GitHubEvent -> GitHubReleaseEventPayload -> Html Msg
@@ -313,15 +323,15 @@ viewReleaseEvent zone event payload =
         label =
             "release " ++ payload.action
 
-        snake =
-            "release-" ++ payload.action
+        subtype =
+            payload.action
 
         content =
             [ div [ class "card-event-content-body card-event-content-body__center" ]
                 [ div [ class "cb-big" ] [ text payload.release.tag_name ] ]
             ]
     in
-    viewEventTemplate1 zone event content label snake
+    viewEventTemplate1 zone event content label subtype
 
 
 viewPushEvent : Zone -> GitHubEvent -> GitHubPushEventPayload -> Html Msg
@@ -330,8 +340,8 @@ viewPushEvent zone event payload =
         label =
             "push"
 
-        snake =
-            "push"
+        subtype =
+            ""
 
         content =
             [ div [ class "card-event-content-header" ]
@@ -347,27 +357,42 @@ viewPushEvent zone event payload =
                 )
             ]
     in
-    viewEventTemplate1 zone event content label snake
+    viewEventTemplate1 zone event content label subtype
 
 
-viewIssueEvent : Zone -> GitHubEvent -> GitHubIssuesEventPayload -> Html Msg
-viewIssueEvent zone event payload =
+viewIssuesEvent : Zone -> GitHubEvent -> GitHubIssuesEventPayload -> Html Msg
+viewIssuesEvent zone event payload =
     let
         label =
-            "issue #" ++ String.fromInt payload.issue.number ++ " " ++ payload.action
+            (case payload.action of
+                "opened" ->
+                    "new "
 
-        snake =
-            "issue-" ++ payload.action
+                _ ->
+                    ""
+            )
+                ++ "issue #"
+                ++ String.fromInt payload.issue.number
+                ++ (case payload.action of
+                        "opened" ->
+                            ""
+
+                        _ ->
+                            " " ++ payload.action
+                   )
+
+        subtype =
+            payload.action
 
         content =
             [ div [ class "card-event-content-header" ]
-                ([ span [ class "ch-number" ]
-                    [ text "#"
-                    , text (String.fromInt payload.issue.number)
-                    ]
-                 ]
-                    ++ (payload.issue.labels |> List.map (\l -> span [ class "ch-label spaced", style "color" ("#" ++ l.color) ] [ text (String.replace "itype:" "" l.name) ]))
-                )
+                [ span [ class "ch-number" ]
+                    ([ text "#"
+                     , text (String.fromInt payload.issue.number)
+                     ]
+                        ++ (payload.issue.labels |> List.map (\l -> span [ class "ch-label spaced", style "background-color" ("#" ++ l.color) ] [ text (String.replace "itype:" "" l.name) ]))
+                    )
+                ]
             , div [ class "card-event-content-body" ]
                 [ span [ class "cb-title" ]
                     [ text payload.issue.title
@@ -375,7 +400,48 @@ viewIssueEvent zone event payload =
                 ]
             ]
     in
-    viewEventTemplate1 zone event content label snake
+    viewEventTemplate1 zone event content label subtype
+
+
+viewIssueCommentEvent : Zone -> GitHubEvent -> GitHubIssueCommentEventPayload -> Html Msg
+viewIssueCommentEvent zone event payload =
+    let
+        label =
+            case payload.action of
+                "created" ->
+                    "issue #" ++ String.fromInt payload.issue.number ++ " commented"
+
+                _ ->
+                    "issue comment " ++ payload.action
+
+        subtype =
+            payload.action
+
+        content =
+            [ div [ class "card-event-content-header" ]
+                [ span [ class "ch-number" ]
+                    ([ text "#"
+                     , text (String.fromInt payload.issue.number)
+                     ]
+                        ++ (payload.issue.labels |> List.map (\l -> span [ class "ch-label spaced", style "background-color" ("#" ++ l.color) ] [ text (String.replace "itype:" "" l.name) ]))
+                        ++ [ span [ class "issue-ref" ]
+                                [ text payload.issue.title
+                                ]
+                           ]
+                    )
+                ]
+            , div [ class "card-event-content-body" ]
+                (payload.comment.body
+                    |> Maybe.map
+                        (\msg ->
+                            [ span [ class "cb-msg" ] [ text msg ]
+                            ]
+                        )
+                    |> Maybe.withDefault []
+                )
+            ]
+    in
+    viewEventTemplate1 zone event content label subtype
 
 
 formatDate : Zone -> Posix -> List (Html Msg)
@@ -604,3 +670,59 @@ viewError error =
                     ]
               )
             ]
+
+
+eventTypeName : GitHubEvent -> String
+eventTypeName event =
+    case event.payload of
+        GitHubPullRequestEvent _ ->
+            "pull-request"
+
+        GitHubPullRequestReviewEvent _ ->
+            "pull-request-review"
+
+        GitHubPullRequestReviewCommentEvent _ ->
+            "pull-request-review-comment"
+
+        GitHubReleaseEvent _ ->
+            "release"
+
+        GitHubPushEvent _ ->
+            "push"
+
+        GitHubIssuesEvent _ ->
+            "issues"
+
+        GitHubIssueCommentEvent _ ->
+            "issue-comment"
+
+        _ ->
+            String.replace " " "-" (String.dropRight 5 event.eventType) |> String.toLower
+
+
+eventGroupName : GitHubEvent -> String
+eventGroupName event =
+    case event.payload of
+        GitHubPullRequestEvent _ ->
+            "pull-request"
+
+        GitHubPullRequestReviewEvent _ ->
+            "pull-request"
+
+        GitHubPullRequestReviewCommentEvent _ ->
+            "pull-request"
+
+        GitHubReleaseEvent _ ->
+            "release"
+
+        GitHubPushEvent _ ->
+            "push"
+
+        GitHubIssuesEvent _ ->
+            "issue"
+
+        GitHubIssueCommentEvent _ ->
+            "issue"
+
+        _ ->
+            "other"

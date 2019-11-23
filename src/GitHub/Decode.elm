@@ -1,4 +1,4 @@
-module GitHub.Decode exposing (decodeActor, decodeCommit, decodeCommitAuthor, decodeDateTime, decodeEvent, decodeEventByType, decodeEvents, decodeOrganisation, decodePayload, decodePullRequest, decodePullRequestEventPayload, decodePushEventPayload, decodeReleaseEventPayload, decodeReleaseRef, decodeRepoLink, decodeRepository, decodeUser, decodeUserRef, decodeUserSearchResult)
+module GitHub.Decode exposing (decodeActor, decodeCommit, decodeCommitAuthor, decodeDateTime, decodeEvent, decodeEventByType, decodeEvents, decodeIssue, decodeIssueComment, decodeIssueCommentEventPayload, decodeIssueLabel, decodeIssuesEventPayload, decodeOrganisation, decodePayload, decodePullRequest, decodePullRequestEventPayload, decodePullRequestRef, decodePullRequestReview, decodePullRequestReviewComment, decodePullRequestReviewCommentPayload, decodePullRequestReviewPayload, decodePushEventPayload, decodeReference, decodeReleaseEventPayload, decodeReleaseRef, decodeRepoLink, decodeRepository, decodeUrl, decodeUser, decodeUserRef, decodeUserSearchResult)
 
 import GitHub.Model exposing (..)
 import Iso8601 exposing (toTime)
@@ -96,6 +96,9 @@ decodePayload tag =
 
         "IssuesEvent" ->
             map GitHubIssuesEvent decodeIssuesEventPayload
+
+        "IssueCommentEvent" ->
+            map GitHubIssueCommentEvent decodeIssueCommentEventPayload
 
         _ ->
             Decode.succeed GitHubOtherEventPayload
@@ -204,6 +207,7 @@ decodePullRequestReviewComment =
         |> required "created_at" decodeDateTime
         |> required "author_association" string
         |> required "url" decodeUrl
+        |> required "html_url" decodeUrl
         |> required "pull_request_url" decodeUrl
         |> required "path" string
         |> required "diff_hunk" string
@@ -234,6 +238,14 @@ decodeIssuesEventPayload =
         |> required "issue" decodeIssue
 
 
+decodeIssueCommentEventPayload : Decoder GitHubIssueCommentEventPayload
+decodeIssueCommentEventPayload =
+    Decode.succeed GitHubIssueCommentEventPayload
+        |> required "action" string
+        |> required "issue" decodeIssue
+        |> required "comment" decodeIssueComment
+
+
 decodeIssue : Decoder GitHubIssue
 decodeIssue =
     Decode.succeed GitHubIssue
@@ -254,6 +266,18 @@ decodeIssueLabel =
         |> required "name" string
         |> required "color" string
         |> required "url" decodeUrl
+
+
+decodeIssueComment : Decoder GitHubIssueComment
+decodeIssueComment =
+    Decode.succeed GitHubIssueComment
+        |> required "id" int
+        |> required "user" decodeUserRef
+        |> notrequi "body" string
+        |> required "created_at" decodeDateTime
+        |> required "author_association" string
+        |> required "url" decodeUrl
+        |> required "html_url" decodeUrl
 
 
 decodeCommit : Decoder GitHubCommit

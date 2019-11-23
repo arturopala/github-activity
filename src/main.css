@@ -267,7 +267,7 @@ body {
     align-content: center;
     align-items: stretch;
     background-color: white;
-    color: rgb(63, 81, 181);
+    color: #3F51B5;
     border-top-style: solid;
     border-top-width: 1px;
     text-align: center;
@@ -336,7 +336,7 @@ body {
     align-content: center !important;
 }
 
-.card-event > .event-pull-request-merged {
+.card-event.event-pull-request-merged .card-event-label {
     color: greenyellow;
     border-left: greenyellow 12px solid;
     border-right: greenyellow 12px solid;
@@ -348,7 +348,7 @@ body {
     background-color: greenyellow;
 }
 
-.card-event > .event-pull-request-opened {
+.card-event.event-pull-request-opened .card-event-label {
     color: black;
     border-left: white 12px solid;
     border-right: white 12px solid;
@@ -356,11 +356,23 @@ body {
     border-top-width: 0;
 }
 
-.card-event > .event-pull-request-rejected {
-    color: white;
+.card-event.event-pull-request-rejected {
+    background-color: lightgray;
+}
+
+.card-event.event-pull-request-rejected .card-event-label {
+    color: lightgray;
+    border-left: lightgray 12px solid;
+    border-right: lightgray 12px solid;
+    background-color: black;
+    border-top-width: 0;
+}
+
+.card-event.events-pull-request-review-comment .card-event-label {
+    color: green;
     border-left: white 12px solid;
     border-right: white 12px solid;
-    background-color: black;
+    background-color: aliceblue;
     border-top-width: 0;
 }
 
@@ -368,7 +380,7 @@ body {
     background-color: yellow;
 }
 
-.card-event > .event-release-published {
+.card-event.event-release-published .card-event-label {
     color: yellow;
     border-left: yellow 12px solid;
     border-right: yellow 12px solid;
@@ -382,11 +394,39 @@ body {
     line-height: normal;
 }
 
-.card-event > .event-push {
+.card-event.event-push .card-event-label {
     color: white;
     background: url(
     data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAJ0lEQVQYV2O0D9z6P8DpHwMMMPZP3vwfzmNgYIALbNjHxABSiaECAD8sD1V4nxtEAAAAAElFTkSuQmCC
     ) repeat;
+}
+
+.card-event.events-issue-comment .card-event-label {
+    color: darkorange;
+    border-left: white 12px solid;
+    border-right: white 12px solid;
+    background-color: aliceblue;
+    border-top-width: 0;
+}
+
+.card-event.events-issues.event-issues-closed {
+    color: black;
+    background-color: #ffa033;
+}
+
+.card-event.events-issues.event-issues-closed .card-event-label {
+    color: #ffa033;
+    border-left: #ffa033 12px solid;
+    border-right: #ffa033 12px solid;
+    background-color: black;
+}
+
+.card-event.events-issues .card-event-label {
+    color: black;
+    border-left: white 12px solid;
+    border-right: white 12px solid;
+    background-color: darkorange;
+    border-top-width: 0;
 }
 
 .card-event > .event-create {
@@ -432,6 +472,13 @@ body {
     overflow: hidden;
 }
 
+.ch-label {
+    color: white;
+    border-radius: 5px;
+    padding: 0 5px;
+    margin: 0 5px;
+}
+
 .cb-msg {
     font-style: italic;
 }
@@ -449,6 +496,14 @@ body {
     color: #8f93b3;
     font-size: 0.8rem;
     padding-left: 5px;
+    word-break: break-all;
+}
+
+.issue-ref {
+    color: #8f93b3;
+    font-size: 0.8rem;
+    padding-left: 5px;
+    word-break: break-all;
 }
 
 .commit-sha {
