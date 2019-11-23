@@ -429,12 +429,12 @@ body {
     border-top-width: 0;
 }
 
-.card-event > .event-create {
-    color: darkgreen;
+.card-event.event-create .card-event-label {
+    color: green;
 }
 
-.card-event > .event-delete {
-    color: darkred;
+.card-event.event-delete .card-event-label {
+    color: red;
 }
 
 .left-spaced {
