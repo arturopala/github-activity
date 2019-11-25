@@ -17,6 +17,7 @@ import Message exposing (Msg(..))
 import Mode exposing (Mode(..))
 import Model exposing (..)
 import Monocle.Lens as Lens
+import Ports
 import Routing exposing (Route(..), modifyUrlGivenSource)
 import Task
 import Time
@@ -44,6 +45,7 @@ subscriptions model =
         [ Homepage.Update.subscriptions model
         , Timeline.Update.subscriptions model
             |> Sub.map TimelineMsg
+        , Ports.onFullScreenChange FullScreenSwitchEvent
         ]
 
 
@@ -161,8 +163,8 @@ update m model =
                 ]
             )
 
-        FullScreenSwitchEvent ->
-            ( { model | fullscreen = not model.fullscreen }, Cmd.none )
+        FullScreenSwitchEvent fullscreen ->
+            ( { model | fullscreen = fullscreen }, Cmd.none )
 
         GotTimeZoneEvent zone ->
             ( { model | zone = zone }, Cmd.none )

@@ -49,9 +49,7 @@ viewHeader model =
 viewContent : Model -> Html Msg
 viewContent model =
     main_
-        [ class "mdl-layout__content"
-        , on "fullscreenchange" (Decode.succeed FullScreenSwitchEvent)
-        ]
+        [ class "mdl-layout__content" ]
         [ node "div"
             [ classList [ ( "page-content", True ), ( "waiting-for-content", List.isEmpty model.timeline.events ) ] ]
             (case model.timeline.events of

@@ -26,3 +26,7 @@ app.ports.storeState.subscribe(function(state) {
 app.ports.logError.subscribe(function(log) {
   console.error(log);
 });
+
+document.addEventListener('fullscreenchange',function (event) {
+      app.ports.fullScreenChange.push(document.fullscreenElement!=null);
+});

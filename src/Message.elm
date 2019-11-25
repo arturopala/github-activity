@@ -16,7 +16,7 @@ type Msg
     | ChangeUrlCommand UrlRequest
     | NavigateCommand (Maybe String) (Maybe String)
     | SignOutCommand
-    | FullScreenSwitchEvent
+    | FullScreenSwitchEvent Bool
     | GotTimeZoneEvent Zone
     | GotTokenEvent GitHub.OAuthProxy.Msg
     | ReadUserEvent GitHub.Model.GitHubUser
