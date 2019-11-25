@@ -109,10 +109,10 @@ showSourceOption model source =
     let
         prefix =
             if source == model.eventStream.source then
-                "continue with "
+                "Continue with "
 
             else
-                "stream "
+                "Stream "
 
         removable =
             source
