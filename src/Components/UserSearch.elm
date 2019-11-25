@@ -7,6 +7,7 @@ import GitHub.Model
 import Html exposing (Html, div, i, input, text)
 import Html.Attributes exposing (class, classList, id, pattern, placeholder, type_)
 import Html.Events exposing (onBlur, onFocus, onInput)
+import Http
 import Monocle.Lens exposing (Lens)
 import Time
 import Util exposing (onKeyUp, push)
@@ -19,6 +20,7 @@ type Msg
     | FocusEvent
     | TickEvent
     | UserSearchResultEvent (List GitHub.Model.GitHubUserRef)
+    | UserSearchError Http.Error
     | HttpFetch (Authorization -> Cmd Msg)
     | Clear
     | NoOp
@@ -30,6 +32,7 @@ type alias Model =
     , searching : Bool
     , results : List GitHub.Model.GitHubUserRef
     , lastQuery : String
+    , error : Maybe Http.Error
     }
 
 
@@ -40,6 +43,7 @@ init =
     , searching = False
     , results = []
     , lastQuery = ""
+    , error = Nothing
     }
 
 
@@ -69,7 +73,11 @@ update msg model =
                 ( init, Cmd.none )
 
             else if Util.isEnterKey key then
-                searchUser model
+                if not model.searching then
+                    searchUser model
+
+                else
+                    ( model, Cmd.none )
 
             else
                 ( model, Cmd.none )
@@ -85,6 +93,14 @@ update msg model =
             ( model
                 |> resultsLens.set users
                 |> searchingLens.set False
+                |> errorLens.set Nothing
+            , Cmd.none
+            )
+
+        UserSearchError error ->
+            ( model
+                |> searchingLens.set False
+                |> errorLens.set (Just error)
             , Cmd.none
             )
 
@@ -105,6 +121,7 @@ searchUser model =
             |> lastQueryLens.set model.input
             |> resultsLens.set []
             |> searchingLens.set True
+            |> errorLens.set Nothing
         , push <|
             HttpFetch
                 (\t ->
@@ -117,6 +134,7 @@ searchUser model =
         ( model
             |> resultsLens.set []
             |> lastQueryLens.set ""
+            |> errorLens.set Nothing
         , Cmd.none
         )
 
@@ -126,6 +144,9 @@ gitHubApiResponseAsMsg msg =
     case msg of
         GitHub.Message.GitHubUserSearchMsg (Ok response) ->
             UserSearchResultEvent response.content.items
+
+        GitHub.Message.GitHubUserSearchMsg (Err ( error, limits )) ->
+            UserSearchError error
 
         _ ->
             NoOp
@@ -140,6 +161,7 @@ view model =
                     [ ( "search-icon", True )
                     , ( "material-icons", True )
                     , ( "search-icon-searching", model.searching )
+                    , ( "search-icon-error", Util.isDefined model.error )
                     ]
                 ]
                 [ text "search" ]
@@ -172,3 +194,8 @@ searchingLens =
 lastQueryLens : Lens Model String
 lastQueryLens =
     Lens .lastQuery (\b a -> { a | lastQuery = b })
+
+
+errorLens : Lens Model (Maybe Http.Error)
+errorLens =
+    Lens .error (\b a -> { a | error = b })

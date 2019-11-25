@@ -1,4 +1,4 @@
-module Util exposing (appendDistinctToList, appendIfDistinct, delayMessage, delayMessageUntil, isEnterKey, isEscapeKey, mergeListsDistinct, modifyModel, onKeyUp, push, removeFromList, wrapCmd, wrapModel, wrapMsg)
+module Util exposing (appendDistinctToList, appendIfDistinct, delayMessage, delayMessageUntil, isDefined, isEnterKey, isEscapeKey, mergeListsDistinct, modifyModel, onKeyUp, push, removeFromList, wrapCmd, wrapModel, wrapMsg)
 
 import Html exposing (Html)
 import Html.Events exposing (keyCode, on)
@@ -106,3 +106,13 @@ isEscapeKey key =
 isEnterKey : String -> Bool
 isEnterKey key =
     List.member key [ "Enter", "Accept", "Execute" ]
+
+
+isDefined : Maybe a -> Bool
+isDefined maybe =
+    case maybe of
+        Just _ ->
+            True
+
+        Nothing ->
+            False

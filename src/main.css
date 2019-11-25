@@ -44,6 +44,7 @@ body {
     min-width: 340px;
     min-height: calc(100vh - 100px);
     padding: 8px;
+    background-color: white;
 }
 
 .card-login > .mdl-card__actions {
@@ -153,6 +154,10 @@ body {
     animation-iteration-count: infinite;
     animation-timing-function: linear;
     animation-direction: alternate;
+}
+
+.search-icon-error {
+    color: red;
 }
 
 @keyframes spin {

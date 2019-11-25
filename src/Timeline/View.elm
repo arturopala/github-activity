@@ -654,7 +654,7 @@ navigation model =
                                 [ onClick (NavigateCommand Nothing Nothing)
                                 , class "mdl-button mdl-button--colored mdl-color-text--white"
                                 ]
-                                [ span [ class "button-text" ] [ text "source" ]
+                                [ span [ class "button-text" ] [ text "Source" ]
                                 , i [ class "mdi mdi-power-plug" ] []
                                 ]
                            , button
