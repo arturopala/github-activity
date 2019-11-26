@@ -16,7 +16,7 @@ blockquote {
 }
 
 blockquote::before {
-    font-family: "Material Design Icons";
+    font-family: "Material Design Icons", serif;
     content: "\F27E";
     left: -2rem;
     font-size: 2rem;
