@@ -6,6 +6,8 @@ body {
 
 p {
     line-height: unset;
+    hyphens: auto;
+    word-break: break-word;
 }
 
 blockquote {
@@ -362,6 +364,18 @@ blockquote::after {
     align-content: center !important;
 }
 
+.card-event.event-pull-request-opened .cb-title {
+    font-weight: bold;
+}
+
+.card-event.event-pull-request-opened .card-event-label {
+    color: black;
+    border-left: white 12px solid;
+    border-right: white 12px solid;
+    background-color: greenyellow;
+    border-top-width: 0;
+}
+
 .card-event.event-pull-request-merged .card-event-label {
     color: greenyellow;
     border-left: greenyellow 12px solid;
@@ -372,14 +386,6 @@ blockquote::after {
 
 .card-event.event-pull-request-merged {
     background-color: greenyellow;
-}
-
-.card-event.event-pull-request-opened .card-event-label {
-    color: black;
-    border-left: white 12px solid;
-    border-right: white 12px solid;
-    background-color: greenyellow;
-    border-top-width: 0;
 }
 
 .card-event.event-pull-request-rejected {
@@ -431,6 +437,14 @@ blockquote::after {
     background-color: aliceblue;
 }
 
+.card-event.events-issues .cb-title {
+    color: deeppink;
+}
+
+.card-event.events-issues.event-issues-opened .cb-title {
+    font-weight: bold;
+}
+
 .card-event.events-issues.event-issues-closed {
     color: black;
     background-color: white;
@@ -439,10 +453,6 @@ blockquote::after {
 .card-event.events-issues.event-issues-closed .card-event-label {
     color: deeppink;
     background-color: black;
-}
-
-.card-event.events-issues {
-
 }
 
 .card-event.events-issues .card-event-label {
