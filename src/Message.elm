@@ -3,7 +3,7 @@ module Message exposing (Msg(..))
 import Browser exposing (UrlRequest)
 import EventStream.Message
 import GitHub.Model
-import GitHub.OAuthProxy
+import GitHub.OAuth
 import Homepage.Message
 import Time exposing (Zone)
 import Timeline.Message
@@ -18,7 +18,7 @@ type Msg
     | SignOutCommand
     | FullScreenSwitchEvent Bool
     | GotTimeZoneEvent Zone
-    | GotTokenEvent GitHub.OAuthProxy.Msg
+    | GotTokenEvent GitHub.OAuth.Msg
     | ReadUserEvent GitHub.Model.GitHubUser
     | ReadUserOrganisationsEvent (List GitHub.Model.GitHubOrganisation)
     | UrlChangedEvent Url

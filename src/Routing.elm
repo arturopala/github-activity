@@ -1,4 +1,4 @@
-module Routing exposing (Route(..), matchers, modifyUrlGivenSource, parseLocation, signInUrl)
+module Routing exposing (Route(..), matchers, modifyUrlGivenSource, parseLocation)
 
 import GitHub.Model exposing (GitHubEventSource(..))
 import Url exposing (Url)
@@ -67,8 +67,3 @@ modifyUrlGivenSource url source =
 
         GitHubEventSourceRepository owner repo ->
             { url | fragment = Just ("events/repos/" ++ owner ++ "/" ++ repo), query = Nothing }
-
-
-signInUrl : String
-signInUrl =
-    "https://github.com/login/oauth/authorize?client_id=22030043f4425febdf23&scope=read:org"

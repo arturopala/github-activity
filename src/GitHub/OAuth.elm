@@ -1,4 +1,4 @@
-module GitHub.OAuthProxy exposing (Msg(..), requestAccessToken)
+module GitHub.OAuth exposing (Msg(..), requestAccessToken, signInUrl)
 
 import Http
 import Json.Decode as Decode exposing (Decoder, andThen, bool, decodeString, field, map, string)
@@ -13,6 +13,11 @@ type Msg
 
 type Error
     = String
+
+
+signInUrl : String
+signInUrl =
+    "https://github.com/login/oauth/authorize?client_id=22030043f4425febdf23&scope=read:org"
 
 
 oAuthUrl : String

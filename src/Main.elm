@@ -8,7 +8,7 @@ import GitHub.APIv3 exposing (readCurrentUserInfo, readCurrentUserOrganisations)
 import GitHub.Authorization exposing (Authorization(..))
 import GitHub.Message
 import GitHub.Model
-import GitHub.OAuthProxy exposing (requestAccessToken)
+import GitHub.OAuth exposing (requestAccessToken)
 import Homepage.Model exposing (sourceHistoryLens)
 import Homepage.Update
 import Homepage.View
@@ -114,7 +114,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update m model =
     case m of
         AuthorizeUserCommand cmd ->
-            ( { model | doAfterAuthorized = Just cmd }, Nav.load Routing.signInUrl )
+            ( { model | doAfterAuthorized = Just cmd }, Nav.load GitHub.OAuth.signInUrl )
 
         ChangeEventSourceCommand source ->
             let
@@ -169,7 +169,7 @@ update m model =
         GotTimeZoneEvent zone ->
             ( { model | zone = zone }, Cmd.none )
 
-        GotTokenEvent (GitHub.OAuthProxy.OAuthToken token scope) ->
+        GotTokenEvent (GitHub.OAuth.OAuthToken token scope) ->
             let
                 url =
                     model.url
@@ -189,7 +189,7 @@ update m model =
                 ]
             )
 
-        GotTokenEvent (GitHub.OAuthProxy.OAuthError error) ->
+        GotTokenEvent (GitHub.OAuth.OAuthError error) ->
             ( model, Cmd.none )
 
         ReadUserEvent user ->
