@@ -156,15 +156,26 @@ view : Model -> Html Msg
 view model =
     div [ class "search-box mdl-color-text--primary" ]
         [ div [ class "search-input-box" ]
-            [ i
-                [ classList
-                    [ ( "search-icon", True )
-                    , ( "material-icons", True )
-                    , ( "search-icon-searching", model.searching )
-                    , ( "search-icon-error", Util.isDefined model.error )
+            [ if Util.isDefined model.error then
+                i
+                    [ classList
+                        [ ( "search-icon", True )
+                        , ( "mdi mdi-24px", True )
+                        , ( errorMdiIconCssClass model.error, True )
+                        , ( "search-icon-error", True )
+                        ]
                     ]
-                ]
-                [ text "search" ]
+                    []
+
+              else
+                i
+                    [ classList
+                        [ ( "search-icon", True )
+                        , ( "material-icons", True )
+                        , ( "search-icon-searching", model.searching )
+                        ]
+                    ]
+                    [ text "search" ]
             , input
                 [ class "search-input"
                 , type_ "text"
@@ -179,6 +190,22 @@ view model =
                 []
             ]
         ]
+
+
+errorMdiIconCssClass : Maybe Http.Error -> String
+errorMdiIconCssClass error =
+    case error of
+        Just Http.NetworkError ->
+            "mdi-cloud-off-outline"
+
+        Just Http.Timeout ->
+            "mdi-cloud-alert"
+
+        Just _ ->
+            "mdi-cloud-question"
+
+        Nothing ->
+            ""
 
 
 resultsLens : Lens Model (List GitHub.Model.GitHubUserRef)

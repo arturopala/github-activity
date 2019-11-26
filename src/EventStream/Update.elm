@@ -113,6 +113,20 @@ handleHttpError error model =
             , Cmd.batch [ Ports.logError string, scheduleNextRead model ]
             )
 
+        Http.BadUrl url ->
+            ( model
+                |> eventStreamErrorLens.set (Just error)
+                |> downloadingLens.set False
+            , Cmd.batch [ Ports.logError ("Bad URL: " ++ url), scheduleNextRead model ]
+            )
+
+        Http.NetworkError ->
+            ( model
+                |> eventStreamErrorLens.set (Just error)
+                |> downloadingLens.set False
+            , delayMessage 5 ReadEvents
+            )
+
         _ ->
             ( model
                 |> eventStreamErrorLens.set (Just error)

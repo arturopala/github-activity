@@ -710,7 +710,7 @@ viewSpinner model =
             [ i
                 [ class "animated bounceInDown slower mdi mdi-cloud-download" ]
                 []
-            , span [] [ text "waiting" ]
+            , span [] [ text "loading ..." ]
             ]
       )
     ]
@@ -749,7 +749,11 @@ viewError error =
                     [ i
                         [ class "animated rotateIn slower mdi mdi-cloud-alert" ]
                         []
-                    , span [] [ text "network timeout" ]
+                    , span []
+                        [ text "network timeout"
+                        , button [ class "mdl-button mdl-button--colored mdl-color-text--white" ]
+                            [ span [ class "button-text" ] [ text "Retry" ] ]
+                        ]
                     ]
               )
             ]
