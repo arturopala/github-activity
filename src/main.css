@@ -4,6 +4,27 @@ body {
     ) repeat;
 }
 
+p {
+    line-height: unset;
+}
+
+blockquote {
+    margin: 0 0 0 1rem;
+    color: gray;
+}
+
+blockquote::before {
+    font-family: "Material Design Icons";
+    content: "\F27E";
+    left: -2rem;
+    font-size: 2rem;
+    line-height: 1.5rem;
+}
+
+blockquote::after {
+    content: "";
+}
+
 .material-icons.md-18 {
     font-size: 18px;
 }
@@ -260,7 +281,7 @@ body {
     background-repeat: no-repeat;
     background-clip: padding-box;
     background-position: right 5px top 5px;
-    overflow: scroll;
+    overflow: hidden;
     width: unset;
     padding: 5px 12px 8px 12px;
 }
@@ -374,11 +395,9 @@ body {
 }
 
 .card-event.events-pull-request-review-comment .card-event-label {
-    color: green;
-    border-left: white 12px solid;
-    border-right: white 12px solid;
-    background-color: aliceblue;
-    border-top-width: 0;
+    color: #3F51B5;
+    border-top-color: #3F51B5;
+    background-color: greenyellow;
 }
 
 .card-event.event-release-published {
@@ -407,30 +426,30 @@ body {
 }
 
 .card-event.events-issue-comment .card-event-label {
-    color: darkorange;
-    border-left: white 12px solid;
-    border-right: white 12px solid;
+    color: #3F51B5;
+    border-top-color: #3F51B5;
     background-color: aliceblue;
-    border-top-width: 0;
 }
 
 .card-event.events-issues.event-issues-closed {
     color: black;
-    background-color: #ffa033;
+    background-color: white;
 }
 
 .card-event.events-issues.event-issues-closed .card-event-label {
-    color: #ffa033;
-    border-left: #ffa033 12px solid;
-    border-right: #ffa033 12px solid;
+    color: deeppink;
     background-color: black;
 }
 
+.card-event.events-issues {
+
+}
+
 .card-event.events-issues .card-event-label {
-    color: black;
+    color: white;
     border-left: white 12px solid;
     border-right: white 12px solid;
-    background-color: darkorange;
+    background-color: deeppink;
     border-top-width: 0;
 }
 
@@ -539,6 +558,11 @@ body {
 
 .cb-msg {
     font-style: italic;
+    font-size: 1rem;
+}
+
+.cb-msg p {
+
 }
 
 .cb-title {

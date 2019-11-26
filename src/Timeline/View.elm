@@ -5,10 +5,10 @@ import GitHub.Authorization exposing (Authorization(..))
 import GitHub.Model exposing (..)
 import Html exposing (Html, button, div, header, i, main_, nav, section, span, text)
 import Html.Attributes exposing (..)
-import Html.Events exposing (on, onClick)
+import Html.Events exposing (onClick)
 import Html.Keyed exposing (node)
 import Http
-import Json.Decode as Decode
+import Markdown
 import Message exposing (Msg(..))
 import Model exposing (Model)
 import Time exposing (..)
@@ -348,7 +348,7 @@ viewPullRequestReviewCommentEvent zone event payload =
                 (payload.comment.body
                     |> Maybe.map
                         (\msg ->
-                            [ span [ class "cb-msg" ] [ text msg ]
+                            [ Markdown.toHtmlWith markdownOptions [ class "cb-msg" ] msg
                             ]
                         )
                     |> Maybe.withDefault []
@@ -475,7 +475,7 @@ viewIssueCommentEvent zone event payload =
                 (payload.comment.body
                     |> Maybe.map
                         (\msg ->
-                            [ span [ class "cb-msg" ] [ text msg ]
+                            [ Markdown.toHtmlWith markdownOptions [ class "cb-msg" ] msg
                             ]
                         )
                     |> Maybe.withDefault []
@@ -835,3 +835,12 @@ eventGroupName event =
 
         _ ->
             "other"
+
+
+markdownOptions : Markdown.Options
+markdownOptions =
+    let
+        options =
+            Markdown.defaultOptions
+    in
+    { options | smartypants = True }
