@@ -1,15 +1,15 @@
 {
-  "main.css": "https://arturopala.github.io/github-activity/static/css/main.47c446b6.chunk.css",
-  "main.js": "https://arturopala.github.io/github-activity/static/js/main.946bc87d.chunk.js",
-  "main.js.map": "https://arturopala.github.io/github-activity/static/js/main.946bc87d.chunk.js.map",
+  "main.css": "https://arturopala.github.io/github-activity/static/css/main.10f4a52f.chunk.css",
+  "main.js": "https://arturopala.github.io/github-activity/static/js/main.8fbaaa85.chunk.js",
+  "main.js.map": "https://arturopala.github.io/github-activity/static/js/main.8fbaaa85.chunk.js.map",
   "runtime~main.js": "https://arturopala.github.io/github-activity/static/js/runtime~main.de8c3396.js",
   "runtime~main.js.map": "https://arturopala.github.io/github-activity/static/js/runtime~main.de8c3396.js.map",
-  "vendors~main.js": "https://arturopala.github.io/github-activity/static/js/vendors~main.3ca81432.chunk.js",
-  "vendors~main.js.map": "https://arturopala.github.io/github-activity/static/js/vendors~main.3ca81432.chunk.js.map",
+  "vendors~main.js": "https://arturopala.github.io/github-activity/static/js/vendors~main.aec9f19d.chunk.js",
+  "vendors~main.js.map": "https://arturopala.github.io/github-activity/static/js/vendors~main.aec9f19d.chunk.js.map",
   "./service-worker.js": "https://arturopala.github.io/github-activity/./service-worker.js",
   "favicon.ico": "https://arturopala.github.io/github-activity/favicon.ico",
   "index.html": "https://arturopala.github.io/github-activity/index.html",
   "logo.svg": "https://arturopala.github.io/github-activity/logo.svg",
   "manifest.json": "https://arturopala.github.io/github-activity/manifest.json",
-  "precache-manifest.b2688cc9d7520acd192fd57b6d228e6c.js": "https://arturopala.github.io/github-activity/precache-manifest.b2688cc9d7520acd192fd57b6d228e6c.js"
+  "precache-manifest.152ffd5c0f51ee4244837b30f104c3e8.js": "https://arturopala.github.io/github-activity/precache-manifest.152ffd5c0f51ee4244837b30f104c3e8.js"
 }
