@@ -67,3 +67,6 @@ modifyUrlGivenSource url source =
 
         GitHubEventSourceRepository owner repo ->
             { url | fragment = Just ("events/repos/" ++ owner ++ "/" ++ repo), query = Nothing }
+
+        GitHubEventSourceRepositoryById id ->
+            { url | fragment = Just ("events/repos/" ++ id), query = Nothing }

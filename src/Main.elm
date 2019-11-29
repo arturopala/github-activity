@@ -4,14 +4,15 @@ import Browser exposing (..)
 import Browser.Navigation as Nav
 import EventStream.Message
 import EventStream.Update exposing (resetEventStreamIfSourceChanged)
-import GitHub.APIv3 exposing (readCurrentUserInfo, readCurrentUserOrganisations)
+import GitHub.API3Request exposing (readCurrentUserInfo, readCurrentUserOrganisations)
+import GitHub.API3Response
 import GitHub.Authorization exposing (Authorization(..))
-import GitHub.Message
-import GitHub.Model
+import GitHub.Endpoint
 import GitHub.OAuth exposing (requestAccessToken)
 import Homepage.Model exposing (sourceHistoryLens)
 import Homepage.Update
 import Homepage.View
+import Json.Decode
 import LocalStorage
 import Message exposing (Msg(..))
 import Mode exposing (Mode(..))
@@ -24,7 +25,7 @@ import Time
 import Timeline.Update
 import Timeline.View
 import Url exposing (Url)
-import Util exposing (modifyModel, push, wrapCmd)
+import Util exposing (modifyModel, push)
 
 
 main : Program (Maybe String) Model Msg
@@ -44,8 +45,8 @@ subscriptions model =
     Sub.batch
         [ Homepage.Update.subscriptions model
         , Timeline.Update.subscriptions model
-            |> Sub.map TimelineMsg
         , Ports.onFullScreenChange FullScreenSwitchEvent
+        , Ports.cacheResponse (Json.Decode.decodeValue Message.cacheResponseDecoder >> Result.withDefault NoOp)
         ]
 
 
@@ -68,13 +69,13 @@ init flags url key =
 
         readUserCmd =
             case model.authorization of
-                Token token scope ->
+                Token _ _ ->
                     case model.user of
-                        Just user ->
+                        Just _ ->
                             Cmd.none
 
                         Nothing ->
-                            readCurrentUserInfo model.authorization |> Cmd.map gitHubApiResponseAsMsg
+                            readCurrentUserInfo model.authorization |> Cmd.map Message.GitHubMsg
 
                 Unauthorized ->
                     Cmd.none
@@ -89,7 +90,7 @@ route r model =
             ( { model | mode = Mode.Homepage }, Cmd.none )
 
         OAuthCode code ->
-            ( model, requestAccessToken code |> Cmd.map GotTokenEvent )
+            ( model, push (ExchangeCodeForTokenCommand code) )
 
         EventsRoute source ->
             let
@@ -111,8 +112,8 @@ route r model =
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update m model =
-    case m of
+update msg model =
+    case msg of
         AuthorizeUserCommand cmd ->
             ( { model | doAfterAuthorized = Just cmd }, Nav.load GitHub.OAuth.signInUrl )
 
@@ -139,6 +140,12 @@ update m model =
                     ( model
                     , Nav.load url
                     )
+
+        ExchangeCodeForTokenCommand code ->
+            ( model
+                |> authorizationCodeLens.set (Just code)
+            , requestAccessToken code |> Cmd.map GotTokenEvent
+            )
 
         NavigateCommand maybeFragment maybeQuery ->
             let
@@ -178,26 +185,34 @@ update m model =
                     Token token scope
 
                 model2 =
-                    { model | authorization = authorization }
+                    model
+                        |> authorizationLens.set authorization
+                        |> authorizationCodeLens.set Nothing
             in
             ( model2
             , Cmd.batch
                 [ LocalStorage.saveToLocalStorage model2
                 , pushUrl model { url | query = Nothing }
-                , readCurrentUserInfo authorization |> Cmd.map gitHubApiResponseAsMsg
+                , readCurrentUserInfo authorization |> Cmd.map Message.GitHubMsg
                 , model.doAfterAuthorized |> Maybe.withDefault Cmd.none
                 ]
             )
 
         GotTokenEvent (GitHub.OAuth.OAuthError error) ->
-            ( model, Cmd.none )
+            let
+                cmd =
+                    authorizationCodeLens.get model
+                        |> Maybe.map (\c -> Util.delayMessage 5 (ExchangeCodeForTokenCommand c))
+                        |> Maybe.withDefault Cmd.none
+            in
+            ( model, Cmd.batch [ cmd, Ports.logError error ] )
 
-        ReadUserEvent user ->
+        GotUserEvent user ->
             ( { model | user = Just user }
-            , readCurrentUserOrganisations model.authorization |> Cmd.map gitHubApiResponseAsMsg
+            , readCurrentUserOrganisations model.authorization |> Cmd.map Message.GitHubMsg
             )
 
-        ReadUserOrganisationsEvent organisations ->
+        GotUserOrganisationsEvent organisations ->
             ( { model | organisations = organisations }
             , Cmd.none
             )
@@ -206,16 +221,28 @@ update m model =
             route (Routing.parseLocation url) model
                 |> modifyModel urlLens url
 
-        EventStreamMsg msg ->
+        EventStreamMsg _ ->
             EventStream.Update.update msg model.authorization model
-                |> wrapCmd EventStreamMsg
 
-        TimelineMsg msg ->
+        TimelineMsg _ ->
             Timeline.Update.update msg model
-                |> wrapCmd TimelineMsg
 
         HomepageMsg _ ->
-            Homepage.Update.update m model
+            Homepage.Update.update msg model
+
+        CacheRequest endpoint ->
+            ( model, Ports.cacheRequest (Url.toString (GitHub.Endpoint.toUrl endpoint)) )
+
+        CacheResponse endpoint body metadata ->
+            GitHub.API3Response.onSuccess endpoint body metadata model
+
+        GitHubMsg response ->
+            case response of
+                Ok ( endpoint, httpResponse ) ->
+                    GitHub.API3Response.processResponse endpoint httpResponse model
+
+                Err _ ->
+                    ( model, Cmd.none )
 
         NoOp ->
             ( model, Cmd.none )
@@ -240,16 +267,3 @@ view model =
 pushUrl : Model -> Url -> Cmd Msg
 pushUrl model nextUrl =
     Nav.pushUrl model.key (Url.toString nextUrl)
-
-
-gitHubApiResponseAsMsg : GitHub.Message.Msg -> Msg
-gitHubApiResponseAsMsg msg =
-    case msg of
-        GitHub.Message.GitHubUserMsg (Ok response) ->
-            ReadUserEvent response.content
-
-        GitHub.Message.GitHubUserOrganisationsMsg (Ok response) ->
-            ReadUserOrganisationsEvent response.content
-
-        _ ->
-            NoOp

@@ -1,16 +1,14 @@
 module EventStream.Update exposing (resetEventStreamIfSourceChanged, update)
 
 import Basics as Math
-import Dict
-import EventStream.Message exposing (..)
-import EventStream.Model exposing (chunksLens, errorLens)
-import GitHub.APIv3 exposing (readGitHubEvents, readGitHubEventsNextPage)
+import Dict exposing (Dict)
+import EventStream.Message
+import EventStream.Model exposing (chunksLens)
+import GitHub.API3Request exposing (readGitHubEvents, readGitHubEventsNextPage)
 import GitHub.Authorization exposing (Authorization)
-import GitHub.Message
-import GitHub.Model exposing (GitHubApiLimits, GitHubEvent, GitHubEventSource(..), GitHubEventsChunk, GitHubResponse)
-import Http
-import Model exposing (Model, downloadingLens, eventStreamChunksLens, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamSourceLens, limitsLens, timelineEventsLens)
-import Ports
+import GitHub.Model exposing (GitHubApiLimits, GitHubEvent, GitHubEventSource(..), GitHubSuccess)
+import Message exposing (Msg(..))
+import Model exposing (Model, downloadingLens, eventStreamChunksLens, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamSourceLens, timelineEventsLens)
 import Time exposing (posixToMillis)
 import Url
 import Util exposing (..)
@@ -19,139 +17,102 @@ import Util exposing (..)
 update : Msg -> Authorization -> Model -> ( Model, Cmd Msg )
 update msg auth model =
     case msg of
-        ReadEvents ->
-            let
-                ( model2, cmd ) =
-                    if model.timeline.active then
-                        ( { model | downloading = True }
-                        , readGitHubEvents model.eventStream.source model.eventStream.etag auth
-                            |> Cmd.map GitHubResponseEvents
-                        )
+        EventStreamMsg msg2 ->
+            case msg2 of
+                EventStream.Message.ReadEvents ->
+                    let
+                        ( model2, cmd ) =
+                            if model.timeline.active then
+                                ( model
+                                    |> downloadingLens.set True
+                                , readGitHubEvents model.eventStream.source model.eventStream.etag auth
+                                    |> Cmd.map GitHubMsg
+                                )
 
-                    else
-                        ( model, scheduleNextRead model )
-            in
-            ( model2, Cmd.batch [ cmd, delayMessage 5 ForceFlushChunksAfterTimeout ] )
+                            else
+                                ( model, scheduleNextRead model )
+                    in
+                    ( model2, Cmd.batch [ cmd, delayMessage 5 (EventStreamMsg <| EventStream.Message.ForceFlushChunksAfterTimeout) ] )
 
-        ReadEventsNextPage source url ->
-            ( model
-            , if source == model.eventStream.source then
-                readGitHubEventsNextPage url "" auth
-                    |> Cmd.map GitHubResponseEventsNextPage
+                EventStream.Message.ReadEventsNextPage source url ->
+                    let
+                        shouldRead =
+                            source == model.eventStream.source
+                    in
+                    ( model
+                        |> downloadingLens.set shouldRead
+                    , if shouldRead then
+                        readGitHubEventsNextPage url "" auth
+                            |> Cmd.map GitHubMsg
 
-              else
-                Cmd.none
-            )
+                      else
+                        Cmd.none
+                    )
 
-        GitHubResponseEvents (GitHub.Message.GitHubEventsMsg (Ok response)) ->
-            let
-                model2 =
-                    updateChunks response model
-                        |> eventStreamEtagLens.set response.etag
+                EventStream.Message.GotEvents source etag links events ->
+                    let
+                        model2 =
+                            updateChunks events model
+                                |> eventStreamEtagLens.set etag
+                                |> eventStreamErrorLens.set Nothing
+                    in
+                    maybeReadEventsNextPage model2 links
+
+                EventStream.Message.GotEventsNextPage source _ links page events ->
+                    let
+                        model2 =
+                            updateChunks events model
+                                |> eventStreamErrorLens.set Nothing
+                    in
+                    maybeReadEventsNextPage model2 links
+
+                EventStream.Message.NothingNew ->
+                    ( model
                         |> eventStreamErrorLens.set Nothing
-            in
-            maybeReadEventsNextPage model2 response
+                        |> downloadingLens.set False
+                    , scheduleNextRead model
+                    )
 
-        GitHubResponseEventsNextPage (GitHub.Message.GitHubEventsMsg (Ok response)) ->
-            let
-                model2 =
-                    updateChunks response model
-                        |> eventStreamErrorLens.set Nothing
-            in
-            maybeReadEventsNextPage model2 response
+                EventStream.Message.TemporaryFailure error ->
+                    ( model
+                        |> eventStreamErrorLens.set (Just error)
+                        |> downloadingLens.set False
+                    , scheduleNextRead model
+                    )
 
-        GitHubResponseEvents (GitHub.Message.GitHubEventsMsg (Err ( error, limits ))) ->
-            let
-                model2 =
-                    limits
-                        |> Maybe.map (\l -> limitsLens.set l model)
-                        |> Maybe.withDefault model
-            in
-            handleHttpError error model2
+                EventStream.Message.PermanentFailure error ->
+                    ( model
+                        |> eventStreamErrorLens.set (Just error)
+                        |> downloadingLens.set False
+                    , Cmd.none
+                    )
 
-        GitHubResponseEventsNextPage (GitHub.Message.GitHubEventsMsg (Err ( error, limits ))) ->
-            let
-                model2 =
-                    limits
-                        |> Maybe.map (\l -> limitsLens.set l model)
-                        |> Maybe.withDefault model
-            in
-            handleHttpError error model2
-
-        ForceFlushChunksAfterTimeout ->
-            let
-                model2 =
-                    flushChunksToEvents model
-            in
-            ( model2, Cmd.none )
+                EventStream.Message.ForceFlushChunksAfterTimeout ->
+                    let
+                        model2 =
+                            flushChunksToEvents model
+                    in
+                    ( model2, Cmd.none )
 
         _ ->
-            ( model, scheduleNextRead model )
+            ( model, Cmd.none )
 
 
-handleHttpError : Http.Error -> Model -> ( Model, Cmd Msg )
-handleHttpError error model =
-    case error of
-        Http.BadStatus 304 ->
-            ( model
-                |> downloadingLens.set False
-                |> eventStreamErrorLens.set Nothing
-            , scheduleNextRead model
-            )
-
-        Http.BadStatus 403 ->
-            ( model
-                |> eventStreamErrorLens.set (Just error)
-                |> downloadingLens.set False
-            , scheduleNextRead model
-            )
-
-        Http.BadBody string ->
-            ( model
-                |> eventStreamErrorLens.set (Just error)
-                |> downloadingLens.set False
-            , Cmd.batch [ Ports.logError string, scheduleNextRead model ]
-            )
-
-        Http.BadUrl url ->
-            ( model
-                |> eventStreamErrorLens.set (Just error)
-                |> downloadingLens.set False
-            , Cmd.batch [ Ports.logError ("Bad URL: " ++ url), scheduleNextRead model ]
-            )
-
-        Http.NetworkError ->
-            ( model
-                |> eventStreamErrorLens.set (Just error)
-                |> downloadingLens.set False
-            , delayMessage 5 ReadEvents
-            )
-
-        _ ->
-            ( model
-                |> eventStreamErrorLens.set (Just error)
-                |> downloadingLens.set False
-            , scheduleNextRead model
-            )
-
-
-updateChunks : GitHubEventsChunk -> Model -> Model
-updateChunks response model =
+updateChunks : List GitHubEvent -> Model -> Model
+updateChunks events model =
     let
         chunks =
-            model.eventStream.chunks ++ response.content
+            model.eventStream.chunks ++ events
     in
     { model
         | eventStream =
             model.eventStream
                 |> chunksLens.set chunks
-                |> errorLens.set Nothing
     }
-        |> limitsLens.set response.limits
 
 
-maybeReadEventsNextPage : Model -> GitHubEventsChunk -> ( Model, Cmd Msg )
-maybeReadEventsNextPage model response =
+maybeReadEventsNextPage : Model -> Dict String String -> ( Model, Cmd Msg )
+maybeReadEventsNextPage model links =
     let
         readEventsAfterDelay _ =
             let
@@ -165,9 +126,9 @@ maybeReadEventsNextPage model response =
         readEventsAfterDelay ()
 
     else
-        Dict.get "next" response.links
+        Dict.get "next" links
             |> Maybe.andThen Url.fromString
-            |> Maybe.map (ReadEventsNextPage model.eventStream.source)
+            |> Maybe.map (EventStreamMsg << EventStream.Message.ReadEventsNextPage model.eventStream.source)
             |> Maybe.map (\url -> ( model, delayMessageBasedOnApiLimits model.limits 0 url ))
             |> Maybe.withDefault (readEventsAfterDelay ())
 
@@ -212,4 +173,4 @@ resetEventStreamIfSourceChanged source model =
 
 scheduleNextRead : Model -> Cmd Msg
 scheduleNextRead model =
-    delayMessageBasedOnApiLimits model.limits model.limits.xPollInterval ReadEvents
+    delayMessageBasedOnApiLimits model.limits model.limits.xPollInterval (EventStreamMsg <| EventStream.Message.ReadEvents)

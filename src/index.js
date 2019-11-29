@@ -30,3 +30,10 @@ app.ports.logError.subscribe(function(log) {
 document.addEventListener('fullscreenchange',function (event) {
       app.ports.fullScreenChange.push(document.fullscreenElement!=null);
 });
+
+app.ports.cacheRequest.subscribe(function(url){
+  let item = localStorage.getItem('cache')[url];
+  if(item!==null){
+    app.ports.cacheResponse.push({url:url, body: item.body, metadata: item.metadata})
+  }
+});

@@ -1,12 +1,14 @@
-module Util exposing (appendDistinctToList, appendIfDistinct, delayMessage, delayMessageUntil, isDefined, isEnterKey, isEscapeKey, mergeListsDistinct, modifyModel, onKeyUp, push, removeFromList, wrapCmd, wrapModel, wrapMsg)
+module Util exposing (appendDistinctToList, appendIfDistinct, decodeUrl, delayMessage, delayMessageUntil, isDefined, isEnterKey, isEscapeKey, mergeListsDistinct, modifyModel, onKeyUp, push, removeFromList, wrapCmd, wrapModel, wrapMsg)
 
 import Html exposing (Html)
-import Html.Events exposing (keyCode, on)
-import Json.Decode
+import Html.Events exposing (on)
+import Json.Decode as Decode exposing (..)
 import Monocle.Lens exposing (Lens)
 import Process
+import Regex exposing (Regex)
 import Task
 import Time exposing (Posix)
+import Url
 
 
 wrapCmd : (a -> b) -> ( m, Cmd a ) -> ( m, Cmd b )
@@ -90,12 +92,12 @@ removeFromList a lens b =
 
 onKeyUp : (String -> msg) -> Html.Attribute msg
 onKeyUp tagger =
-    on "keyup" (Json.Decode.map tagger keyDecoder)
+    on "keyup" (Decode.map tagger keyDecoder)
 
 
-keyDecoder : Json.Decode.Decoder String
+keyDecoder : Decoder String
 keyDecoder =
-    Json.Decode.field "key" Json.Decode.string
+    Decode.field "key" Decode.string
 
 
 isEscapeKey : String -> Bool
@@ -116,3 +118,23 @@ isDefined maybe =
 
         Nothing ->
             False
+
+
+dummyUrl : Url.Url
+dummyUrl =
+    Url.Url Url.Http "dummy" Nothing "" Nothing Nothing
+
+
+decodeUrl : Decoder Url.Url
+decodeUrl =
+    string |> Decode.map removeUrlPathTemplates |> Decode.map Url.fromString |> Decode.map (Maybe.withDefault dummyUrl)
+
+
+urlPathTemplateRegex : Regex
+urlPathTemplateRegex =
+    Regex.fromString "\\{/\\w+?\\}" |> Maybe.withDefault Regex.never
+
+
+removeUrlPathTemplates : String -> String
+removeUrlPathTemplates url =
+    Regex.replace urlPathTemplateRegex (\_ -> "") url

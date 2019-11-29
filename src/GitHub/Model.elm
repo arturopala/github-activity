@@ -1,15 +1,26 @@
-module GitHub.Model exposing (GitHubApiLimits, GitHubAuthor, GitHubCommit, GitHubCreateEventPayload, GitHubDeleteEventPayload, GitHubError, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubEventsChunk, GitHubForkEventPayload, GitHubIssue, GitHubIssueComment, GitHubIssueCommentEventPayload, GitHubIssueLabel, GitHubIssuesEventPayload, GitHubOrganisation, GitHubPullRequest, GitHubPullRequestEventPayload, GitHubPullRequestRef, GitHubPullRequestReview, GitHubPullRequestReviewComment, GitHubPullRequestReviewCommentEventPayload, GitHubPullRequestReviewEventPayload, GitHubPushEventPayload, GitHubReference, GitHubReleaseEventPayload, GitHubReleaseRef, GitHubRepoRef, GitHubRepository, GitHubResponse, GitHubSearchResult, GitHubUser, GitHubUserRef)
+module GitHub.Model exposing (GitHubApiLimits, GitHubAuthor, GitHubCommit, GitHubCreateEventPayload, GitHubDeleteEventPayload, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubFailure, GitHubForkEventPayload, GitHubIssue, GitHubIssueComment, GitHubIssueCommentEventPayload, GitHubIssueLabel, GitHubIssuesEventPayload, GitHubOrganisation, GitHubPullRequest, GitHubPullRequestEventPayload, GitHubPullRequestRef, GitHubPullRequestReview, GitHubPullRequestReviewComment, GitHubPullRequestReviewCommentEventPayload, GitHubPullRequestReviewEventPayload, GitHubPushEventPayload, GitHubReference, GitHubReleaseEventPayload, GitHubReleaseRef, GitHubRepoRef, GitHubRepository, GitHubResult, GitHubSearchResult, GitHubSuccess, GitHubUser, GitHubUserRef)
 
-import Dict exposing (Dict)
+import Http
 import Time exposing (Posix)
 import Url exposing (Url)
 
 
-type alias GitHubResponse a =
-    { content : a
-    , etag : String
-    , links : Dict String String
+type alias GitHubResult =
+    Result GitHubFailure GitHubSuccess
+
+
+type alias GitHubSuccess =
+    { url : Url
     , limits : GitHubApiLimits
+    , source : String
+    , metadata : Http.Metadata
+    }
+
+
+type alias GitHubFailure =
+    { url : Url
+    , cause : Http.Error
+    , limits : Maybe GitHubApiLimits
     }
 
 
@@ -21,20 +32,12 @@ type alias GitHubApiLimits =
     }
 
 
-type alias GitHubError =
-    { status : Int
-    }
-
-
-type alias GitHubEventsChunk =
-    GitHubResponse (List GitHubEvent)
-
-
 type GitHubEventSource
     = GitHubEventSourceDefault
     | GitHubEventSourceUser String
     | GitHubEventSourceOrganisation String
     | GitHubEventSourceRepository String String
+    | GitHubEventSourceRepositoryById String
 
 
 type alias GitHubEvent =

@@ -1,13 +1,17 @@
 module EventStream.Message exposing (Msg(..))
 
-import GitHub.Message
-import GitHub.Model exposing (GitHubEventSource)
+import Dict exposing (Dict)
+import GitHub.Model exposing (GitHubEvent, GitHubEventSource)
+import Http
 import Url exposing (Url)
 
 
 type Msg
     = ReadEvents
     | ReadEventsNextPage GitHubEventSource Url
-    | GitHubResponseEvents GitHub.Message.Msg
-    | GitHubResponseEventsNextPage GitHub.Message.Msg
+    | GotEvents GitHubEventSource String (Dict String String) (List GitHubEvent)
+    | GotEventsNextPage GitHubEventSource String (Dict String String) (Maybe Int) (List GitHubEvent)
+    | NothingNew
+    | TemporaryFailure Http.Error
+    | PermanentFailure Http.Error
     | ForceFlushChunksAfterTimeout

@@ -3,10 +3,11 @@ module Timeline.Update exposing (subscriptions, update)
 import EventStream.Model
 import GitHub.Model
 import List exposing ((::))
+import Message exposing (Msg(..))
 import Mode
 import Model exposing (Model, eventStreamEventsLens, timelineActiveLens, timelineEventsLens)
 import Time exposing (posixToMillis)
-import Timeline.Message exposing (Msg(..))
+import Timeline.Message
 import Timeline.Model
 
 
@@ -18,7 +19,7 @@ subscriptions model =
                 Sub.none
 
             else
-                Time.every model.preferences.tickIntervalMilliseconds (\_ -> TickEvent)
+                Time.every model.preferences.tickIntervalMilliseconds (\_ -> TimelineMsg <| Timeline.Message.TickEvent)
 
         _ ->
             Sub.none
@@ -27,20 +28,25 @@ subscriptions model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        TickEvent ->
-            ( updateEventsOnDisplay model
-            , Cmd.none
-            )
+        TimelineMsg msg2 ->
+            case msg2 of
+                Timeline.Message.TickEvent ->
+                    ( updateEventsOnDisplay model
+                    , Cmd.none
+                    )
 
-        PlayCommand ->
-            ( model |> timelineActiveLens.set True
-            , Cmd.none
-            )
+                Timeline.Message.PlayCommand ->
+                    ( model |> timelineActiveLens.set True
+                    , Cmd.none
+                    )
 
-        PauseCommand ->
-            ( model |> timelineActiveLens.set False
-            , Cmd.none
-            )
+                Timeline.Message.PauseCommand ->
+                    ( model |> timelineActiveLens.set False
+                    , Cmd.none
+                    )
+
+        _ ->
+            ( model, Cmd.none )
 
 
 numberOfEventsToStreamWhenStarted : Int

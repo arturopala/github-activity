@@ -17,3 +17,6 @@ sourceName source =
 
         GitHub.Model.GitHubEventSourceRepository owner repo ->
             owner ++ "/" ++ repo
+
+        GitHub.Model.GitHubEventSourceRepositoryById id ->
+            "repo: " ++ id

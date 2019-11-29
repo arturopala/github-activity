@@ -1,4 +1,4 @@
-module Model exposing (Model, authorizationLens, downloadingLens, eventStreamChunksLens, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamLens, eventStreamSourceLens, homepageLens, homepageSourceHistoryLens, initialModel, limitsLens, modeLens, routeLens, timelineActiveLens, timelineEventsLens, timelineLens, urlLens)
+module Model exposing (Model, authorizationCodeLens, authorizationLens, downloadingLens, eventStreamChunksLens, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamLens, eventStreamSourceLens, homepageLens, homepageSourceHistoryLens, initialModel, limitsLens, modeLens, routeLens, timelineActiveLens, timelineEventsLens, timelineLens, urlLens)
 
 import Browser.Navigation exposing (Key)
 import EventStream.Model as EventStream exposing (Model, etagLens, sourceLens)
@@ -33,6 +33,7 @@ type alias Model =
     , doAfterAuthorized : Maybe (Cmd Msg)
     , downloading : Bool
     , fullscreen : Bool
+    , authorizationCode : Maybe String
     }
 
 
@@ -64,6 +65,7 @@ initialModel key url =
     , doAfterAuthorized = Nothing
     , downloading = False
     , fullscreen = False
+    , authorizationCode = Nothing
     }
 
 
@@ -117,6 +119,11 @@ downloadingLens =
 authorizationLens : Lens Model Authorization
 authorizationLens =
     Lens .authorization (\b a -> { a | authorization = b })
+
+
+authorizationCodeLens : Lens Model (Maybe String)
+authorizationCodeLens =
+    Lens .authorizationCode (\b a -> { a | authorizationCode = b })
 
 
 homepageSourceHistoryLens : Lens Model (List GitHub.Model.GitHubEventSource)

@@ -28,7 +28,7 @@ update msg model =
                     ( model
                     , model.authorization
                         |> cmd
-                        |> Cmd.map (Message.HomepageMsg << Homepage.Message.UserSearchMsg)
+                        |> Cmd.map Message.GitHubMsg
                     )
 
                 Homepage.Message.UserSearchMsg msg3 ->
@@ -39,9 +39,6 @@ update msg model =
                                 |> wrapModel homepageSearchLens model
                     in
                     ( model2, cmd )
-
-                Homepage.Message.NoOp ->
-                    ( model, Cmd.none )
 
                 Homepage.Message.SourceSelectedEvent source ->
                     let

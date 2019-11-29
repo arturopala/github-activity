@@ -1,4 +1,4 @@
-module GitHub.Decode exposing (decodeActor, decodeCommit, decodeCommitAuthor, decodeDateTime, decodeEvent, decodeEventByType, decodeEvents, decodeIssue, decodeIssueComment, decodeIssueCommentEventPayload, decodeIssueLabel, decodeIssuesEventPayload, decodeOrganisation, decodePayload, decodePullRequest, decodePullRequestEventPayload, decodePullRequestRef, decodePullRequestReview, decodePullRequestReviewComment, decodePullRequestReviewCommentPayload, decodePullRequestReviewPayload, decodePushEventPayload, decodeReference, decodeReleaseEventPayload, decodeReleaseRef, decodeRepoLink, decodeRepository, decodeUrl, decodeUser, decodeUserRef, decodeUserSearchResult)
+module GitHub.Decode exposing (decodeActor, decodeCommit, decodeCommitAuthor, decodeDateTime, decodeEvent, decodeEventByType, decodeEvents, decodeIssue, decodeIssueComment, decodeIssueCommentEventPayload, decodeIssueLabel, decodeIssuesEventPayload, decodeOrganisation, decodePayload, decodePullRequest, decodePullRequestEventPayload, decodePullRequestRef, decodePullRequestReview, decodePullRequestReviewComment, decodePullRequestReviewCommentPayload, decodePullRequestReviewPayload, decodePushEventPayload, decodeReference, decodeReleaseEventPayload, decodeReleaseRef, decodeRepoLink, decodeRepository, decodeUser, decodeUserRef, decodeUserSearchResult)
 
 import GitHub.Model exposing (..)
 import Iso8601 exposing (toTime)
@@ -7,6 +7,7 @@ import Json.Decode.Pipeline exposing (optional, required)
 import Regex exposing (Regex)
 import Time exposing (Posix)
 import Url
+import Util exposing (decodeUrl)
 
 
 notrequi : String -> Decoder a -> Decoder (Maybe a -> b) -> Decoder b
@@ -400,26 +401,6 @@ decodeForkEventPayload : Decoder GitHubForkEventPayload
 decodeForkEventPayload =
     Decode.succeed GitHubForkEventPayload
         |> required "forkee" decodeRepository
-
-
-dummyUrl : Url.Url
-dummyUrl =
-    Url.Url Url.Http "dummy" Nothing "" Nothing Nothing
-
-
-decodeUrl : Decoder Url.Url
-decodeUrl =
-    string |> Decode.map removeUrlPathTemplates |> Decode.map Url.fromString |> Decode.map (Maybe.withDefault dummyUrl)
-
-
-urlPathTemplateRegex : Regex
-urlPathTemplateRegex =
-    Regex.fromString "\\{/\\w+?\\}" |> Maybe.withDefault Regex.never
-
-
-removeUrlPathTemplates : String -> String
-removeUrlPathTemplates url =
-    Regex.replace urlPathTemplateRegex (\_ -> "") url
 
 
 decodeUserSearchResult : Decoder (GitHubSearchResult GitHubUserRef)

@@ -1,13 +1,11 @@
 module Components.UserSearch exposing (Model, Msg(..), init, lastQueryLens, resultsLens, searchingLens, subscriptions, update, view)
 
-import GitHub.APIv3
+import GitHub.API3Request
 import GitHub.Authorization exposing (Authorization)
-import GitHub.Message
 import GitHub.Model
 import Html exposing (Html, div, i, input, text)
 import Html.Attributes exposing (class, classList, id, pattern, placeholder, type_)
 import Html.Events exposing (onBlur, onFocus, onInput)
-import Http
 import Monocle.Lens exposing (Lens)
 import Time
 import Util exposing (onKeyUp, push)
@@ -19,11 +17,21 @@ type Msg
     | KeyEvent String
     | FocusEvent
     | TickEvent
-    | UserSearchResultEvent (List GitHub.Model.GitHubUserRef)
-    | UserSearchError Http.Error
-    | HttpFetch (Authorization -> Cmd Msg)
+    | GotUserSearchResult (GitHub.Model.GitHubSearchResult GitHub.Model.GitHubUserRef)
+    | ConnectionErrorEvent
+    | UsersNotFoundEvent
+    | ResultParsingErrorEvent
+    | OtherErrorEvent
+    | HttpFetch (Authorization -> Cmd GitHub.API3Request.GitHubResponse)
     | Clear
     | NoOp
+
+
+type Error
+    = NoConnection
+    | NotFound
+    | ParsingError
+    | OtherError
 
 
 type alias Model =
@@ -32,7 +40,7 @@ type alias Model =
     , searching : Bool
     , results : List GitHub.Model.GitHubUserRef
     , lastQuery : String
-    , error : Maybe Http.Error
+    , error : Maybe Error
     }
 
 
@@ -89,18 +97,53 @@ update msg model =
             else
                 ( model, Cmd.none )
 
-        UserSearchResultEvent users ->
-            ( model
-                |> resultsLens.set users
-                |> searchingLens.set False
-                |> errorLens.set Nothing
+        GotUserSearchResult result ->
+            ( if model.searching then
+                model
+                    |> resultsLens.set result.items
+                    |> searchingLens.set False
+                    |> errorLens.set Nothing
+
+              else
+                model
             , Cmd.none
             )
 
-        UserSearchError error ->
+        ConnectionErrorEvent ->
+            if model.active && String.length model.input > 2 then
+                ( model
+                    |> searchingLens.set False
+                    |> errorLens.set (Just NoConnection)
+                , Util.delayMessage 5 (HttpFetch (GitHub.API3Request.searchUsersByLogin model.input))
+                )
+
+            else
+                ( model
+                    |> searchingLens.set False
+                , Cmd.none
+                )
+
+        UsersNotFoundEvent ->
             ( model
+                |> resultsLens.set []
                 |> searchingLens.set False
-                |> errorLens.set (Just error)
+                |> errorLens.set (Just NotFound)
+            , Cmd.none
+            )
+
+        ResultParsingErrorEvent ->
+            ( model
+                |> resultsLens.set []
+                |> searchingLens.set False
+                |> errorLens.set (Just ParsingError)
+            , Cmd.none
+            )
+
+        OtherErrorEvent ->
+            ( model
+                |> resultsLens.set []
+                |> searchingLens.set False
+                |> errorLens.set (Just OtherError)
             , Cmd.none
             )
 
@@ -123,33 +166,17 @@ searchUser model =
             |> searchingLens.set True
             |> errorLens.set Nothing
         , push <|
-            HttpFetch
-                (\t ->
-                    GitHub.APIv3.searchUsersByLogin model.input t
-                        |> Cmd.map gitHubApiResponseAsMsg
-                )
+            HttpFetch (GitHub.API3Request.searchUsersByLogin model.input)
         )
 
     else
         ( model
             |> resultsLens.set []
             |> lastQueryLens.set ""
+            |> searchingLens.set False
             |> errorLens.set Nothing
         , Cmd.none
         )
-
-
-gitHubApiResponseAsMsg : GitHub.Message.Msg -> Msg
-gitHubApiResponseAsMsg msg =
-    case msg of
-        GitHub.Message.GitHubUserSearchMsg (Ok response) ->
-            UserSearchResultEvent response.content.items
-
-        GitHub.Message.GitHubUserSearchMsg (Err ( error, limits )) ->
-            UserSearchError error
-
-        _ ->
-            NoOp
 
 
 view : Model -> Html Msg
@@ -192,17 +219,20 @@ view model =
         ]
 
 
-errorMdiIconCssClass : Maybe Http.Error -> String
+errorMdiIconCssClass : Maybe Error -> String
 errorMdiIconCssClass error =
     case error of
-        Just Http.NetworkError ->
+        Just NoConnection ->
             "mdi-cloud-off-outline"
 
-        Just Http.Timeout ->
-            "mdi-cloud-alert"
+        Just NotFound ->
+            "mdi-emoticon-sad-outline"
 
-        Just _ ->
+        Just ParsingError ->
             "mdi-cloud-question"
+
+        Just OtherError ->
+            "mdi-cloud-alert"
 
         Nothing ->
             ""
@@ -223,6 +253,6 @@ lastQueryLens =
     Lens .lastQuery (\b a -> { a | lastQuery = b })
 
 
-errorLens : Lens Model (Maybe Http.Error)
+errorLens : Lens Model (Maybe Error)
 errorLens =
     Lens .error (\b a -> { a | error = b })
