@@ -1,10 +1,10 @@
-module View exposing (sourceName)
+module View exposing (sourceLabel)
 
 import GitHub.Model exposing (GitHubEventSource)
 
 
-sourceName : GitHubEventSource -> String
-sourceName source =
+sourceLabel : GitHubEventSource -> String
+sourceLabel source =
     case source of
         GitHub.Model.GitHubEventSourceDefault ->
             "all public github"
@@ -17,6 +17,3 @@ sourceName source =
 
         GitHub.Model.GitHubEventSourceRepository owner repo ->
             owner ++ "/" ++ repo
-
-        GitHub.Model.GitHubEventSourceRepositoryById id ->
-            "repo: " ++ id

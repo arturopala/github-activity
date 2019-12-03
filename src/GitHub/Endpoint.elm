@@ -1,9 +1,13 @@
-module GitHub.Endpoint exposing (Endpoint(..), githubApiUrl, matchers, parse, toUrl)
+module GitHub.Endpoint exposing (Endpoint(..), fromJson, githubApiUrl, parsePageNumber, toJson, toUrl)
 
 import GitHub.Model exposing (GitHubEventSource)
+import Json.Decode as Decode
+import Json.Decode.Pipeline exposing (required)
+import Json.Encode as Encode
 import Url exposing (Url)
-import Url.Parser exposing ((</>), (<?>), Parser, map, oneOf, s, string)
+import Url.Parser
 import Url.Parser.Query as Query
+import Util
 
 
 githubApiUrl : Url
@@ -13,34 +17,10 @@ githubApiUrl =
 
 type Endpoint
     = EventsEndpoint GitHubEventSource
-    | EventsNextPageEndpoint GitHubEventSource (Maybe Int)
-    | UserSearchEndpoint (Maybe String)
+    | EventsNextPageEndpoint GitHubEventSource Int Url
+    | UserSearchEndpoint String
     | CurrentUserEndpoint
     | CurrentUserOrganisationsEndpoint
-    | Unresolved Url
-
-
-matchers : Parser (Endpoint -> a) a
-matchers =
-    oneOf
-        [ s "user" </> string </> s "events" <?> Query.int "page" |> map (\u p -> EventsNextPageEndpoint (GitHub.Model.GitHubEventSourceUser u) p)
-        , s "users" </> string </> s "events" |> map (EventsEndpoint << GitHub.Model.GitHubEventSourceUser)
-        , s "organizations" </> string </> s "events" <?> Query.int "page" |> map (\u p -> EventsNextPageEndpoint (GitHub.Model.GitHubEventSourceOrganisation u) p)
-        , s "orgs" </> string </> s "events" |> map (EventsEndpoint << GitHub.Model.GitHubEventSourceOrganisation)
-        , s "repositories" </> string </> s "events" <?> Query.int "page" |> map (\i p -> EventsNextPageEndpoint (GitHub.Model.GitHubEventSourceRepositoryById i) p)
-        , s "repos" </> string </> string </> s "events" |> map (\o r -> EventsEndpoint <| GitHub.Model.GitHubEventSourceRepository o r)
-        , s "events" <?> Query.int "page" |> map (\p -> EventsNextPageEndpoint GitHub.Model.GitHubEventSourceDefault p)
-        , s "events" |> map (EventsEndpoint GitHub.Model.GitHubEventSourceDefault)
-        , s "search" </> s "users" <?> Query.string "q" |> map UserSearchEndpoint
-        , s "user" |> map CurrentUserEndpoint
-        , s "user" </> s "orgs" |> map CurrentUserOrganisationsEndpoint
-        ]
-
-
-parse : Url -> Endpoint
-parse url =
-    Url.Parser.parse matchers url
-        |> Maybe.withDefault (Unresolved url)
 
 
 toUrl : Endpoint -> Url
@@ -60,34 +40,11 @@ toUrl endpoint =
                 GitHub.Model.GitHubEventSourceRepository owner repo ->
                     { githubApiUrl | path = "/repos/" ++ owner ++ "/" ++ repo ++ "/events" }
 
-                GitHub.Model.GitHubEventSourceRepositoryById id ->
-                    { githubApiUrl | path = "/repositories/" ++ id ++ "/events" }
-
-        EventsNextPageEndpoint source page ->
-            let
-                query =
-                    page
-                        |> Maybe.map String.fromInt
-                        |> Maybe.map (\p -> "page=" ++ p)
-            in
-            case source of
-                GitHub.Model.GitHubEventSourceDefault ->
-                    { githubApiUrl | path = "/events", query = query }
-
-                GitHub.Model.GitHubEventSourceUser user ->
-                    { githubApiUrl | path = "/user/" ++ user ++ "/events", query = query }
-
-                GitHub.Model.GitHubEventSourceOrganisation org ->
-                    { githubApiUrl | path = "/organizations/" ++ org ++ "/events", query = query }
-
-                GitHub.Model.GitHubEventSourceRepository owner repo ->
-                    { githubApiUrl | path = "/repository/" ++ owner ++ "/" ++ repo ++ "/events", query = query }
-
-                GitHub.Model.GitHubEventSourceRepositoryById id ->
-                    { githubApiUrl | path = "/repositories/" ++ id ++ "/events", query = query }
+        EventsNextPageEndpoint source page url ->
+            url
 
         UserSearchEndpoint query ->
-            { githubApiUrl | path = "/search/users", query = query |> Maybe.map (\q -> "q=" ++ q) }
+            { githubApiUrl | path = "/search/users", query = Just ("q=" ++ query) }
 
         CurrentUserEndpoint ->
             { githubApiUrl | path = "/user" }
@@ -95,5 +52,91 @@ toUrl endpoint =
         CurrentUserOrganisationsEndpoint ->
             { githubApiUrl | path = "/user/orgs" }
 
-        Unresolved url ->
-            url
+
+toJson : Endpoint -> Encode.Value
+toJson endpoint =
+    case endpoint of
+        EventsEndpoint source ->
+            Encode.object
+                [ ( "events"
+                  , Encode.object [ ( "source", GitHub.Model.toJson source ) ]
+                  )
+                ]
+
+        EventsNextPageEndpoint source page url ->
+            Encode.object
+                [ ( "eventsNextPage"
+                  , Encode.object
+                        [ ( "source", GitHub.Model.toJson source )
+                        , ( "page", Encode.int page )
+                        , ( "url", Encode.string (Url.toString url) )
+                        ]
+                  )
+                ]
+
+        UserSearchEndpoint query ->
+            Encode.object
+                [ ( "userSearch", Encode.object [ ( "query", Encode.string query ) ] ) ]
+
+        CurrentUserEndpoint ->
+            Encode.object
+                [ ( "currentUser"
+                  , Encode.null
+                  )
+                ]
+
+        CurrentUserOrganisationsEndpoint ->
+            Encode.object
+                [ ( "currentUserOrganisations"
+                  , Encode.null
+                  )
+                ]
+
+
+fromJson : Decode.Decoder Endpoint
+fromJson =
+    Decode.oneOf
+        [ decodeEventsEndpoint
+        , decodeEventsNextPageEndpoint
+        , decodeUserSearchEndpoint
+        , decodeCurrentUserEndpoint
+        , decodeCurrentUserOrganisationsEndpoint
+        ]
+
+
+decodeEventsEndpoint =
+    Decode.field "events"
+        (Decode.succeed EventsEndpoint
+            |> required "source" GitHub.Model.fromJson
+        )
+
+
+decodeEventsNextPageEndpoint =
+    Decode.field "events"
+        (Decode.succeed EventsNextPageEndpoint
+            |> required "source" GitHub.Model.fromJson
+            |> required "page" Decode.int
+            |> required "url" Util.decodeUrl
+        )
+
+
+decodeUserSearchEndpoint =
+    Decode.field "userSearch"
+        (Decode.succeed UserSearchEndpoint
+            |> required "query" Decode.string
+        )
+
+
+decodeCurrentUserEndpoint =
+    Decode.field "currentUser" (Decode.succeed CurrentUserEndpoint)
+
+
+decodeCurrentUserOrganisationsEndpoint =
+    Decode.field "currentUserOrganisations" (Decode.succeed CurrentUserOrganisationsEndpoint)
+
+
+parsePageNumber : Url -> Int
+parsePageNumber url =
+    Url.Parser.parse (Url.Parser.query (Query.int "page")) url
+        |> Maybe.map (\p -> Maybe.withDefault 1 p)
+        |> Maybe.withDefault 1

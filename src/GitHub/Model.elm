@@ -1,6 +1,9 @@
-module GitHub.Model exposing (GitHubApiLimits, GitHubAuthor, GitHubCommit, GitHubCreateEventPayload, GitHubDeleteEventPayload, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubFailure, GitHubForkEventPayload, GitHubIssue, GitHubIssueComment, GitHubIssueCommentEventPayload, GitHubIssueLabel, GitHubIssuesEventPayload, GitHubOrganisation, GitHubPullRequest, GitHubPullRequestEventPayload, GitHubPullRequestRef, GitHubPullRequestReview, GitHubPullRequestReviewComment, GitHubPullRequestReviewCommentEventPayload, GitHubPullRequestReviewEventPayload, GitHubPushEventPayload, GitHubReference, GitHubReleaseEventPayload, GitHubReleaseRef, GitHubRepoRef, GitHubRepository, GitHubResult, GitHubSearchResult, GitHubSuccess, GitHubUser, GitHubUserRef)
+module GitHub.Model exposing (GitHubApiLimits, GitHubAuthor, GitHubCommit, GitHubCreateEventPayload, GitHubDeleteEventPayload, GitHubEvent, GitHubEventActor, GitHubEventPayload(..), GitHubEventSource(..), GitHubFailure, GitHubForkEventPayload, GitHubIssue, GitHubIssueComment, GitHubIssueCommentEventPayload, GitHubIssueLabel, GitHubIssuesEventPayload, GitHubOrganisation, GitHubPullRequest, GitHubPullRequestEventPayload, GitHubPullRequestRef, GitHubPullRequestReview, GitHubPullRequestReviewComment, GitHubPullRequestReviewCommentEventPayload, GitHubPullRequestReviewEventPayload, GitHubPushEventPayload, GitHubReference, GitHubReleaseEventPayload, GitHubReleaseRef, GitHubRepoRef, GitHubRepository, GitHubResult, GitHubSearchResult, GitHubSuccess, GitHubUser, GitHubUserRef, fromJson, sourceToString, toJson)
 
 import Http
+import Json.Decode as Decode
+import Json.Decode.Pipeline exposing (required)
+import Json.Encode as Encode
 import Time exposing (Posix)
 import Url exposing (Url)
 
@@ -12,7 +15,7 @@ type alias GitHubResult =
 type alias GitHubSuccess =
     { url : Url
     , limits : GitHubApiLimits
-    , source : String
+    , body : String
     , metadata : Http.Metadata
     }
 
@@ -37,7 +40,6 @@ type GitHubEventSource
     | GitHubEventSourceUser String
     | GitHubEventSourceOrganisation String
     | GitHubEventSourceRepository String String
-    | GitHubEventSourceRepositoryById String
 
 
 type alias GitHubEvent =
@@ -364,3 +366,60 @@ type alias GitHubIssueComment =
     , url : Url
     , html_url : Url
     }
+
+
+sourceToString : GitHubEventSource -> String
+sourceToString source =
+    case source of
+        GitHubEventSourceDefault ->
+            "default"
+
+        GitHubEventSourceUser user ->
+            "user:" ++ user
+
+        GitHubEventSourceOrganisation org ->
+            "organization:" ++ org
+
+        GitHubEventSourceRepository owner repo ->
+            "repository:" ++ owner ++ ":" ++ repo
+
+
+toJson : GitHubEventSource -> Encode.Value
+toJson source =
+    case source of
+        GitHubEventSourceDefault ->
+            Encode.string "default"
+
+        GitHubEventSourceUser user ->
+            Encode.object [ ( "user", Encode.string user ) ]
+
+        GitHubEventSourceOrganisation org ->
+            Encode.object [ ( "organization", Encode.string org ) ]
+
+        GitHubEventSourceRepository owner name ->
+            Encode.object [ ( "repository", Encode.object [ ( "owner", Encode.string owner ), ( "name", Encode.string name ) ] ) ]
+
+
+fromJson : Decode.Decoder GitHubEventSource
+fromJson =
+    Decode.oneOf
+        [ Decode.string
+            |> Decode.andThen
+                (\s ->
+                    case s of
+                        "default" ->
+                            Decode.succeed GitHubEventSourceDefault
+
+                        _ ->
+                            Decode.fail ("unknown case: " ++ s)
+                )
+        , Decode.succeed GitHubEventSourceUser
+            |> required "user" Decode.string
+        , Decode.succeed GitHubEventSourceOrganisation
+            |> required "organization" Decode.string
+        , Decode.field "repository"
+            (Decode.succeed GitHubEventSourceRepository
+                |> required "owner" Decode.string
+                |> required "name" Decode.string
+            )
+        ]

@@ -10,7 +10,7 @@ import Homepage.Message
 import Http
 import Json.Decode
 import Message exposing (Msg)
-import Model exposing (Model, limitsLens)
+import Model exposing (Model, etagsLens, limitsLens)
 import Ports
 import Time exposing (Posix)
 import Util exposing (push)
@@ -55,17 +55,15 @@ onSuccess endpoint body metadata model =
         links =
             getLinks metadata.headers
 
-        response =
-            onGoodStatus endpoint body etag links
-
         model2 =
             model
                 |> limitsLens.set limits
+                |> Util.putToDict etagsLens (GitHub.Model.sourceToString model.eventStream.source) etag
     in
-    case response of
+    case decodeMessage endpoint body etag links of
         Ok msg ->
             ( model2
-            , push msg
+            , Cmd.batch [ push msg, push (Message.PutToCacheCommand endpoint body metadata) ]
             )
 
         Err error ->
@@ -76,7 +74,7 @@ onSuccess endpoint body metadata model =
                     EventsEndpoint source ->
                         push (Message.EventStreamMsg <| EventStream.Message.GotEvents source etag links [])
 
-                    EventsNextPageEndpoint source page ->
+                    EventsNextPageEndpoint source page url ->
                         push (Message.EventStreamMsg <| EventStream.Message.GotEventsNextPage source etag links page [])
 
                     UserSearchEndpoint query ->
@@ -88,8 +86,8 @@ onSuccess endpoint body metadata model =
             )
 
 
-onGoodStatus : Endpoint -> String -> String -> Dict String String -> Result Json.Decode.Error Msg
-onGoodStatus endpoint body etag links =
+decodeMessage : Endpoint -> String -> String -> Dict String String -> Result Json.Decode.Error Msg
+decodeMessage endpoint body etag links =
     let
         with decoder wrapper =
             Json.Decode.decodeString decoder body |> Result.map wrapper
@@ -98,7 +96,7 @@ onGoodStatus endpoint body etag links =
         EventsEndpoint source ->
             with decodeEvents (Message.EventStreamMsg << EventStream.Message.GotEvents source etag links)
 
-        EventsNextPageEndpoint source page ->
+        EventsNextPageEndpoint source page url ->
             with decodeEvents (Message.EventStreamMsg << EventStream.Message.GotEventsNextPage source etag links page)
 
         UserSearchEndpoint query ->
@@ -110,9 +108,6 @@ onGoodStatus endpoint body etag links =
         CurrentUserOrganisationsEndpoint ->
             with (Json.Decode.list decodeOrganisation) Message.GotUserOrganisationsEvent
 
-        Unresolved url ->
-            Ok Message.NoOp
-
 
 onBadStatus : Endpoint -> Http.Error -> String -> Http.Metadata -> Cmd Msg
 onBadStatus endpoint error body metadata =
@@ -122,7 +117,7 @@ onBadStatus endpoint error body metadata =
                 EventsEndpoint source ->
                     push (Message.EventStreamMsg <| EventStream.Message.NothingNew)
 
-                EventsNextPageEndpoint source page ->
+                EventsNextPageEndpoint source page url ->
                     push (Message.EventStreamMsg <| EventStream.Message.NothingNew)
 
                 _ ->
@@ -133,7 +128,7 @@ onBadStatus endpoint error body metadata =
                 EventsEndpoint source ->
                     push (Message.EventStreamMsg <| EventStream.Message.TemporaryFailure error)
 
-                EventsNextPageEndpoint source page ->
+                EventsNextPageEndpoint source page url ->
                     push (Message.EventStreamMsg <| EventStream.Message.TemporaryFailure error)
 
                 _ ->
@@ -144,7 +139,7 @@ onBadStatus endpoint error body metadata =
                 EventsEndpoint source ->
                     push (Message.EventStreamMsg <| EventStream.Message.PermanentFailure error)
 
-                EventsNextPageEndpoint source page ->
+                EventsNextPageEndpoint source page url ->
                     push (Message.EventStreamMsg <| EventStream.Message.PermanentFailure error)
 
                 UserSearchEndpoint query ->
@@ -161,7 +156,7 @@ onBadStatus endpoint error body metadata =
                         , push (Message.EventStreamMsg <| EventStream.Message.PermanentFailure error)
                         ]
 
-                EventsNextPageEndpoint source page ->
+                EventsNextPageEndpoint source page url ->
                     Cmd.batch
                         [ Ports.logError ("Bad status: " ++ String.fromInt status)
                         , push (Message.EventStreamMsg <| EventStream.Message.PermanentFailure error)
@@ -182,7 +177,7 @@ onBadUrl endpoint error url =
             EventsEndpoint source ->
                 push (Message.EventStreamMsg <| EventStream.Message.PermanentFailure error)
 
-            EventsNextPageEndpoint source page ->
+            EventsNextPageEndpoint source page url2 ->
                 push (Message.EventStreamMsg <| EventStream.Message.PermanentFailure error)
 
             UserSearchEndpoint query ->
@@ -199,7 +194,7 @@ onTimeout endpoint error =
         EventsEndpoint source ->
             push (Message.EventStreamMsg <| EventStream.Message.TemporaryFailure error)
 
-        EventsNextPageEndpoint source page ->
+        EventsNextPageEndpoint source page url ->
             push (Message.EventStreamMsg <| EventStream.Message.TemporaryFailure error)
 
         UserSearchEndpoint query ->
@@ -211,18 +206,21 @@ onTimeout endpoint error =
 
 onNetworkError : Endpoint -> Http.Error -> Cmd Msg
 onNetworkError endpoint error =
-    case endpoint of
-        EventsEndpoint source ->
-            push (Message.EventStreamMsg <| EventStream.Message.TemporaryFailure error)
+    Cmd.batch
+        [ push (Message.OrderFromCacheCommand endpoint)
+        , case endpoint of
+            EventsEndpoint source ->
+                push (Message.EventStreamMsg <| EventStream.Message.TemporaryFailure error)
 
-        EventsNextPageEndpoint source page ->
-            push (Message.EventStreamMsg <| EventStream.Message.TemporaryFailure error)
+            EventsNextPageEndpoint source page url ->
+                push (Message.EventStreamMsg <| EventStream.Message.TemporaryFailure error)
 
-        UserSearchEndpoint query ->
-            push (Message.HomepageMsg <| Homepage.Message.UserSearchMsg <| Components.UserSearch.ConnectionErrorEvent)
+            UserSearchEndpoint query ->
+                push (Message.HomepageMsg <| Homepage.Message.UserSearchMsg <| Components.UserSearch.ConnectionErrorEvent)
 
-        _ ->
-            Cmd.none
+            _ ->
+                Cmd.none
+        ]
 
 
 parseLimits : Http.Metadata -> GitHubApiLimits

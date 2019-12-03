@@ -1,6 +1,7 @@
 import './main.css';
 import { Elm } from './Main.elm';
 import * as serviceWorker from './serviceWorker';
+import hash from 'object-hash';
 
 const state = localStorage.getItem('state');
 
@@ -28,12 +29,29 @@ app.ports.logError.subscribe(function(log) {
 });
 
 document.addEventListener('fullscreenchange',function (event) {
-      app.ports.fullScreenChange.push(document.fullscreenElement!=null);
+  app.ports.fullScreenChange.push(document.fullscreenElement!=null);
 });
 
-app.ports.cacheRequest.subscribe(function(url){
-  let item = localStorage.getItem('cache')[url];
-  if(item!==null){
-    app.ports.cacheResponse.push({url:url, body: item.body, metadata: item.metadata})
+app.ports.orderFromCache.subscribe(function(endpoint){
+  console.log(endpoint);
+  let key = hash(endpoint);
+  console.log(key);
+  let item = JSON.parse(localStorage.getItem(key) || "{}");
+  console.log(item);
+  if(item && item.endpoint && item.body && item.metadata){
+    app.ports.listenToCache.send(item);
+  } else {
+    console.error("item " + key + " not found in cache");
+  }
+});
+
+app.ports.putToCache.subscribe(function(item){
+  console.log(item.endpoint);
+  if(item && item.endpoint && item.body && item.metadata){
+    let key = hash(item.endpoint);
+    console.log(key);
+    localStorage.setItem(key,JSON.stringify(item));
+  } else {
+    console.error("empty item");
   }
 });

@@ -102,9 +102,6 @@ encodeSource source =
         GitHub.Model.GitHubEventSourceRepository owner repo ->
             Encode.object [ ( "repository", Encode.object [ ( "owner", Encode.string owner ), ( "repo", Encode.string repo ) ] ) ]
 
-        GitHub.Model.GitHubEventSourceRepositoryById id ->
-            Encode.object [ ( "repository", Encode.object [ ( "id", Encode.string id ) ] ) ]
-
 
 decodeSource : Decode.Decoder GitHub.Model.GitHubEventSource
 decodeSource =
@@ -116,7 +113,5 @@ decodeSource =
         , Decode.succeed GitHub.Model.GitHubEventSourceRepository
             |> required "owner" Decode.string
             |> required "repo" Decode.string
-        , Decode.succeed GitHub.Model.GitHubEventSourceRepositoryById
-            |> required "id" Decode.string
         , Decode.null GitHub.Model.GitHubEventSourceDefault
         ]

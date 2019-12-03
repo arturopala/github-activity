@@ -7,12 +7,7 @@ import Json.Decode.Pipeline exposing (optional, required)
 import Regex exposing (Regex)
 import Time exposing (Posix)
 import Url
-import Util exposing (decodeUrl)
-
-
-notrequi : String -> Decoder a -> Decoder (Maybe a -> b) -> Decoder b
-notrequi key valDecoder decoder =
-    optional key (maybe valDecoder) Nothing decoder
+import Util exposing (decodeUrl, notrequi)
 
 
 decodeEvents : Decoder (List GitHubEvent)

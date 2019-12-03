@@ -2,6 +2,7 @@ module Main exposing (main)
 
 import Browser exposing (..)
 import Browser.Navigation as Nav
+import Cache
 import EventStream.Message
 import EventStream.Update exposing (resetEventStreamIfSourceChanged)
 import GitHub.API3Request exposing (readCurrentUserInfo, readCurrentUserOrganisations)
@@ -46,7 +47,7 @@ subscriptions model =
         [ Homepage.Update.subscriptions model
         , Timeline.Update.subscriptions model
         , Ports.onFullScreenChange FullScreenSwitchEvent
-        , Ports.cacheResponse (Json.Decode.decodeValue Message.cacheResponseDecoder >> Result.withDefault NoOp)
+        , Ports.listenToCache (Json.Decode.decodeValue Cache.cacheItemDecoder >> Result.withDefault NoOp)
         ]
 
 
@@ -221,19 +222,13 @@ update msg model =
             route (Routing.parseLocation url) model
                 |> modifyModel urlLens url
 
-        EventStreamMsg _ ->
-            EventStream.Update.update msg model.authorization model
+        PutToCacheCommand endpoint body metadata ->
+            ( model, Ports.putToCache (Cache.encodeCacheItem endpoint body metadata) )
 
-        TimelineMsg _ ->
-            Timeline.Update.update msg model
+        OrderFromCacheCommand endpoint ->
+            ( model, Ports.orderFromCache (GitHub.Endpoint.toJson endpoint) )
 
-        HomepageMsg _ ->
-            Homepage.Update.update msg model
-
-        CacheRequest endpoint ->
-            ( model, Ports.cacheRequest (Url.toString (GitHub.Endpoint.toUrl endpoint)) )
-
-        CacheResponse endpoint body metadata ->
+        CacheResponseEvent endpoint body metadata ->
             GitHub.API3Response.onSuccess endpoint body metadata model
 
         GitHubMsg response ->
@@ -243,6 +238,15 @@ update msg model =
 
                 Err _ ->
                     ( model, Cmd.none )
+
+        EventStreamMsg _ ->
+            EventStream.Update.update msg model.authorization model
+
+        TimelineMsg _ ->
+            Timeline.Update.update msg model
+
+        HomepageMsg _ ->
+            Homepage.Update.update msg model
 
         NoOp ->
             ( model, Cmd.none )

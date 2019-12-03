@@ -10,7 +10,7 @@ type Msg
     = ReadEvents
     | ReadEventsNextPage GitHubEventSource Url
     | GotEvents GitHubEventSource String (Dict String String) (List GitHubEvent)
-    | GotEventsNextPage GitHubEventSource String (Dict String String) (Maybe Int) (List GitHubEvent)
+    | GotEventsNextPage GitHubEventSource String (Dict String String) Int (List GitHubEvent)
     | NothingNew
     | TemporaryFailure Http.Error
     | PermanentFailure Http.Error

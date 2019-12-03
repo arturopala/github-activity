@@ -1,8 +1,10 @@
-module Model exposing (Model, authorizationCodeLens, authorizationLens, downloadingLens, eventStreamChunksLens, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamLens, eventStreamSourceLens, homepageLens, homepageSourceHistoryLens, initialModel, limitsLens, modeLens, routeLens, timelineActiveLens, timelineEventsLens, timelineLens, urlLens)
+module Model exposing (Model, authorizationCodeLens, authorizationLens, downloadingLens, etagsLens, eventStreamChunksLens, eventStreamErrorLens, eventStreamEventsLens, eventStreamLens, eventStreamSourceLens, homepageLens, homepageSourceHistoryLens, initialModel, limitsLens, modeLens, routeLens, timelineActiveLens, timelineEventsLens, timelineLens, urlLens)
 
 import Browser.Navigation exposing (Key)
-import EventStream.Model as EventStream exposing (Model, etagLens, sourceLens)
+import Dict exposing (Dict)
+import EventStream.Model as EventStream exposing (Model, sourceLens)
 import GitHub.Authorization exposing (Authorization)
+import GitHub.Endpoint exposing (Endpoint)
 import GitHub.Model exposing (GitHubApiLimits, GitHubEvent)
 import Homepage.Model as Homepage
 import Http
@@ -29,6 +31,7 @@ type alias Model =
     , preferences : Preferences
     , url : Url
     , limits : GitHubApiLimits
+    , etags : Dict String String
     , zone : Zone
     , doAfterAuthorized : Maybe (Cmd Msg)
     , downloading : Bool
@@ -61,6 +64,7 @@ initialModel key url =
     , key = key
     , url = url
     , limits = GitHubApiLimits 60 60 Nothing 120
+    , etags = Dict.empty
     , zone = Time.utc
     , doAfterAuthorized = Nothing
     , downloading = False
@@ -73,6 +77,13 @@ type alias Preferences =
     { numberOfEventsOnDisplay : Int
     , maxNumberOfEventsInQueue : Int
     , tickIntervalMilliseconds : Float
+    }
+
+
+type alias CacheResponse =
+    { endpoint : Endpoint
+    , body : String
+    , metadata : Http.Metadata
     }
 
 
@@ -111,6 +122,11 @@ limitsLens =
     Lens .limits (\b a -> { a | limits = b })
 
 
+etagsLens : Lens Model (Dict String String)
+etagsLens =
+    Lens .etags (\b a -> { a | etags = b })
+
+
 downloadingLens : Lens Model Bool
 downloadingLens =
     Lens .downloading (\b a -> { a | downloading = b })
@@ -134,11 +150,6 @@ homepageSourceHistoryLens =
 eventStreamSourceLens : Lens Model GitHub.Model.GitHubEventSource
 eventStreamSourceLens =
     compose eventStreamLens sourceLens
-
-
-eventStreamEtagLens : Lens Model String
-eventStreamEtagLens =
-    compose eventStreamLens etagLens
 
 
 eventStreamEventsLens : Lens Model (List GitHubEvent)

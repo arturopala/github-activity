@@ -1,8 +1,10 @@
-module Util exposing (appendDistinctToList, appendIfDistinct, decodeUrl, delayMessage, delayMessageUntil, isDefined, isEnterKey, isEscapeKey, mergeListsDistinct, modifyModel, onKeyUp, push, removeFromList, wrapCmd, wrapModel, wrapMsg)
+module Util exposing (appendDistinctToList, appendIfDistinct, decodeUrl, delayMessage, delayMessageUntil, getFromDict, isDefined, isEnterKey, isEscapeKey, mergeListsDistinct, modifyModel, notrequi, onKeyUp, push, putToDict, removeFromList, wrapCmd, wrapModel, wrapMsg)
 
+import Dict exposing (Dict)
 import Html exposing (Html)
 import Html.Events exposing (on)
 import Json.Decode as Decode exposing (..)
+import Json.Decode.Pipeline exposing (optional)
 import Monocle.Lens exposing (Lens)
 import Process
 import Regex exposing (Regex)
@@ -90,6 +92,16 @@ removeFromList a lens b =
     lens.get b |> List.filter ((/=) a) |> (\l -> lens.set l b)
 
 
+putToDict : Lens b (Dict comparable v) -> comparable -> v -> b -> b
+putToDict lens key value b =
+    lens.get b |> Dict.insert key value |> (\d -> lens.set d b)
+
+
+getFromDict : Lens b (Dict comparable v) -> comparable -> b -> Maybe v
+getFromDict lens key b =
+    lens.get b |> Dict.get key
+
+
 onKeyUp : (String -> msg) -> Html.Attribute msg
 onKeyUp tagger =
     on "keyup" (Decode.map tagger keyDecoder)
@@ -138,3 +150,8 @@ urlPathTemplateRegex =
 removeUrlPathTemplates : String -> String
 removeUrlPathTemplates url =
     Regex.replace urlPathTemplateRegex (\_ -> "") url
+
+
+notrequi : String -> Decoder a -> Decoder (Maybe a -> b) -> Decoder b
+notrequi key valDecoder decoder =
+    optional key (maybe valDecoder) Nothing decoder

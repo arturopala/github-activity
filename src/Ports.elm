@@ -1,4 +1,4 @@
-port module Ports exposing (cacheRequest, cacheResponse, logError, onFullScreenChange, storeState)
+port module Ports exposing (listenToCache, logError, onFullScreenChange, orderFromCache, putToCache, storeState)
 
 import Json.Encode as Encode
 
@@ -12,7 +12,10 @@ port logError : String -> Cmd msg
 port onFullScreenChange : (Bool -> msg) -> Sub msg
 
 
-port cacheRequest : String -> Cmd msg
+port putToCache : Encode.Value -> Cmd msg
 
 
-port cacheResponse : (Encode.Value -> msg) -> Sub msg
+port orderFromCache : Encode.Value -> Cmd msg
+
+
+port listenToCache : (Encode.Value -> msg) -> Sub msg

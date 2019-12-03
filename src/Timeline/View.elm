@@ -37,7 +37,7 @@ viewHeader model =
             , div [ class "mdl-layout__header-row" ]
                 ([ span [ class "mdl-layout__title" ]
                     [ text "GitHub Activity"
-                    , span [ class "title-source" ] [ text (" of " ++ View.sourceName model.eventStream.source) ]
+                    , span [ class "title-source" ] [ text (" of " ++ View.sourceLabel model.eventStream.source) ]
                     ]
                  , div [ class "mdl-layout-spacer" ] []
                  ]

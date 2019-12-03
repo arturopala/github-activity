@@ -1,7 +1,7 @@
 module GitHub.API3Request exposing (GitHubResponse, readCurrentUserInfo, readCurrentUserOrganisations, readGitHubEvents, readGitHubEventsNextPage, searchUsers, searchUsersByLogin)
 
 import GitHub.Authorization exposing (Authorization(..))
-import GitHub.Endpoint as Endpoint exposing (Endpoint(..), githubApiUrl)
+import GitHub.Endpoint as Endpoint exposing (Endpoint(..), parsePageNumber)
 import GitHub.Model exposing (..)
 import Http
 import Url exposing (Url)
@@ -16,9 +16,9 @@ readGitHubEvents source etag auth =
     httpGet (EventsEndpoint source) etag auth
 
 
-readGitHubEventsNextPage : Url -> String -> Authorization -> Cmd GitHubResponse
-readGitHubEventsNextPage url etag auth =
-    httpGet (Endpoint.parse url) etag auth
+readGitHubEventsNextPage : GitHubEventSource -> Url -> String -> Authorization -> Cmd GitHubResponse
+readGitHubEventsNextPage source url etag auth =
+    httpGet (EventsNextPageEndpoint source (parsePageNumber url) url) etag auth
 
 
 readCurrentUserInfo : Authorization -> Cmd GitHubResponse
@@ -38,7 +38,7 @@ searchUsersByLogin login auth =
 
 searchUsers : String -> Authorization -> Cmd GitHubResponse
 searchUsers query auth =
-    httpGet (UserSearchEndpoint (Just query)) "" auth
+    httpGet (UserSearchEndpoint query) "" auth
 
 
 httpGet : Endpoint -> String -> Authorization -> Cmd GitHubResponse

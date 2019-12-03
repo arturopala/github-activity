@@ -28,7 +28,7 @@ showWelcome : Model -> () -> Html Msg
 showWelcome model _ =
     section [ class "mdl-layout homepage" ]
         [ section [ class "mdl-layout__content" ]
-            [ div [ class "card-login mdl-card mdl-shadow--2dp" ]
+            [ div [ class "card-login mdl-card mdl-shadow--2dp unauthenticated" ]
                 [ div [ class "mdl-card__title mdl-typography--text-center mdl-color--white" ]
                     [ h1 [ class "mdl-color-text--primary" ]
                         [ span [ class "mdl-color-text--black" ] [ text "GitHub" ]
@@ -71,7 +71,7 @@ showSelectSource model maybeUser =
     in
     section [ class "mdl-layout homepage" ]
         [ main_ [ class "mdl-layout__content" ]
-            [ div [ class "card-login mdl-card mdl-shadow--2dp" ]
+            [ div [ class "card-login mdl-card mdl-shadow--2dp authenticated" ]
                 ([ div [ class "mdl-card__title mdl-typography--text-center mdl-color--white" ]
                     [ h1 [ class "mdl-color-text--primary" ]
                         [ span [ class "mdl-color-text--black" ] [ text "GitHub" ]
@@ -141,7 +141,7 @@ showSourceOption model source =
                 , ( "is-current-source", model.eventStream.source == source )
                 ]
             ]
-            [ text (prefix ++ View.sourceName source)
+            [ text (prefix ++ View.sourceLabel source)
             ]
         , removeButton
         ]

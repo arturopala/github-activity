@@ -1,4 +1,4 @@
-module EventStream.Model exposing (Model, chunksLens, errorLens, etagLens, eventsLens, initialEventStream, sourceLens)
+module EventStream.Model exposing (Model, chunksLens, errorLens, eventsLens, initialEventStream, sourceLens)
 
 import GitHub.Model exposing (..)
 import Http exposing (Error)
@@ -9,7 +9,6 @@ type alias Model =
     { source : GitHubEventSource
     , events : List GitHubEvent
     , chunks : List GitHubEvent
-    , etag : String
     , error : Maybe Http.Error
     }
 
@@ -19,7 +18,6 @@ initialEventStream =
     { source = GitHubEventSourceDefault
     , events = []
     , chunks = []
-    , etag = ""
     , error = Nothing
     }
 
@@ -37,11 +35,6 @@ eventsLens =
 chunksLens : Lens Model (List GitHubEvent)
 chunksLens =
     Lens .chunks (\b a -> { a | chunks = b })
-
-
-etagLens : Lens Model String
-etagLens =
-    Lens .etag (\b a -> { a | etag = b })
 
 
 errorLens : Lens Model (Maybe Http.Error)

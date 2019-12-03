@@ -8,7 +8,7 @@ import GitHub.API3Request exposing (readGitHubEvents, readGitHubEventsNextPage)
 import GitHub.Authorization exposing (Authorization)
 import GitHub.Model exposing (GitHubApiLimits, GitHubEvent, GitHubEventSource(..), GitHubSuccess)
 import Message exposing (Msg(..))
-import Model exposing (Model, downloadingLens, eventStreamChunksLens, eventStreamErrorLens, eventStreamEtagLens, eventStreamEventsLens, eventStreamSourceLens, timelineEventsLens)
+import Model exposing (Model, downloadingLens, eventStreamChunksLens, eventStreamErrorLens, eventStreamEventsLens, eventStreamSourceLens, timelineEventsLens)
 import Time exposing (posixToMillis)
 import Url
 import Util exposing (..)
@@ -21,11 +21,16 @@ update msg auth model =
             case msg2 of
                 EventStream.Message.ReadEvents ->
                     let
+                        etag =
+                            model
+                                |> Util.getFromDict Model.etagsLens (GitHub.Model.sourceToString model.eventStream.source)
+                                |> Maybe.withDefault ""
+
                         ( model2, cmd ) =
                             if model.timeline.active then
                                 ( model
                                     |> downloadingLens.set True
-                                , readGitHubEvents model.eventStream.source model.eventStream.etag auth
+                                , readGitHubEvents model.eventStream.source etag auth
                                     |> Cmd.map GitHubMsg
                                 )
 
@@ -42,7 +47,7 @@ update msg auth model =
                     ( model
                         |> downloadingLens.set shouldRead
                     , if shouldRead then
-                        readGitHubEventsNextPage url "" auth
+                        readGitHubEventsNextPage source url "" auth
                             |> Cmd.map GitHubMsg
 
                       else
@@ -53,7 +58,6 @@ update msg auth model =
                     let
                         model2 =
                             updateChunks events model
-                                |> eventStreamEtagLens.set etag
                                 |> eventStreamErrorLens.set Nothing
                     in
                     maybeReadEventsNextPage model2 links
@@ -164,7 +168,6 @@ resetEventStreamIfSourceChanged source model =
         model
             |> eventStreamSourceLens.set source
             |> eventStreamEventsLens.set []
-            |> eventStreamEtagLens.set ""
             |> timelineEventsLens.set []
 
     else

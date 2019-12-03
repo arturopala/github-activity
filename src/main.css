@@ -65,9 +65,17 @@ blockquote::after {
 
 .card-login.mdl-card {
     min-width: 340px;
-    min-height: calc(100vh - 100px);
     padding: 8px;
     background-color: white;
+}
+
+.card-login.mdl-card.authenticated {
+    min-height: calc(100vh - 100px);
+}
+
+.card-login.mdl-card.unauthenticated > .mdl-card__title {
+    flex: auto;
+    min-height: 316px;
 }
 
 .card-login > .mdl-card__actions {
