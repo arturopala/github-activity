@@ -4,11 +4,13 @@ import GitHub.Authorization exposing (Authorization(..))
 import GitHub.Endpoint as Endpoint exposing (Endpoint(..), parsePageNumber)
 import GitHub.Model exposing (..)
 import Http
+import Task
+import Time
 import Url exposing (Url)
 
 
 type alias GitHubResponse =
-    Result Never ( Endpoint, Http.Response String )
+    Result Never ( Endpoint, Http.Response String, Time.Posix )
 
 
 readGitHubEvents : GitHubEventSource -> String -> Authorization -> Cmd GitHubResponse
@@ -54,12 +56,18 @@ httpGet endpoint etag auth =
                             []
                    )
     in
-    Http.request
+    Http.task
         { method = "GET"
         , headers = headers
         , url = Url.toString <| Endpoint.toUrl endpoint
         , body = Http.emptyBody
-        , expect = Http.expectStringResponse identity (\r -> Ok ( endpoint, r ))
+        , resolver = Http.stringResolver (\r -> Ok ( endpoint, r ))
         , timeout = Just 15000
-        , tracker = Nothing
         }
+        |> Task.andThen (\c -> Time.now |> Task.map (\t -> ( c, t )))
+        |> Task.perform
+            (\x ->
+                case x of
+                    ( ( e, r ), t ) ->
+                        Ok ( e, r, t )
+            )

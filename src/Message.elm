@@ -26,9 +26,10 @@ type Msg
     | GotUserEvent GitHub.Model.GitHubUser
     | GotUserOrganisationsEvent (List GitHub.Model.GitHubOrganisation)
     | UrlChangedEvent Url
-    | PutToCacheCommand Endpoint String Http.Metadata
+    | PutToCacheCommand Endpoint String Http.Metadata Time.Posix
     | OrderFromCacheCommand Endpoint
-    | CacheResponseEvent Endpoint String Http.Metadata
+    | GotCacheResponse Endpoint String Http.Metadata Time.Posix
+    | GotCacheItemNotFound Endpoint
     | EventStreamMsg EventStream.Message.Msg
     | HomepageMsg Homepage.Message.Msg
     | TimelineMsg Timeline.Message.Msg

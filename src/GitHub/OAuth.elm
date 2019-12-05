@@ -17,7 +17,7 @@ type Error
 
 signInUrl : String
 signInUrl =
-    "https://github.com/login/oauth/authorize?client_id=22030043f4425febdf23&scope=read:org"
+    "https://github.com/login/oauth/authorize?client_id=22030043f4425febdf23&scope=read:org%20read:user"
 
 
 oAuthUrl : String

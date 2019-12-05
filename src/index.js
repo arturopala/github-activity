@@ -41,7 +41,7 @@ app.ports.orderFromCache.subscribe(function(endpoint){
   if(item && item.endpoint && item.body && item.metadata){
     app.ports.listenToCache.send(item);
   } else {
-    console.error("item " + key + " not found in cache");
+    app.ports.listenToCache.send({"endpoint":endpoint});
   }
 });
 

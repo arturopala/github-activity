@@ -16,11 +16,11 @@ import Time exposing (Posix)
 import Util exposing (push)
 
 
-processResponse : Endpoint -> Http.Response String -> Model -> ( Model, Cmd Msg )
-processResponse endpoint response model =
+processResponse : Endpoint -> Http.Response String -> Posix -> Model -> ( Model, Cmd Msg )
+processResponse endpoint response timestamp model =
     case response of
         Http.GoodStatus_ metadata body ->
-            onSuccess endpoint body metadata model
+            onSuccess endpoint body metadata timestamp True model
 
         Http.BadUrl_ url2 ->
             ( model, onBadUrl endpoint (Http.BadUrl url2) url2 )
@@ -43,8 +43,8 @@ processResponse endpoint response model =
             ( model2, onBadStatus endpoint (Http.BadStatus metadata.statusCode) body metadata )
 
 
-onSuccess : Endpoint -> String -> Http.Metadata -> Model -> ( Model, Cmd Msg )
-onSuccess endpoint body metadata model =
+onSuccess : Endpoint -> String -> Http.Metadata -> Posix -> Bool -> Model -> ( Model, Cmd Msg )
+onSuccess endpoint body metadata timestamp isNew model =
     let
         etag =
             getEtag metadata.headers
@@ -60,10 +60,17 @@ onSuccess endpoint body metadata model =
                 |> limitsLens.set limits
                 |> Util.putToDict etagsLens (GitHub.Model.sourceToString model.eventStream.source) etag
     in
-    case decodeMessage endpoint body etag links of
+    case decodeMessage endpoint body etag links timestamp isNew of
         Ok msg ->
             ( model2
-            , Cmd.batch [ push msg, push (Message.PutToCacheCommand endpoint body metadata) ]
+            , Cmd.batch
+                [ push msg
+                , if isNew then
+                    push (Message.PutToCacheCommand endpoint body metadata timestamp)
+
+                  else
+                    Cmd.none
+                ]
             )
 
         Err error ->
@@ -86,8 +93,8 @@ onSuccess endpoint body metadata model =
             )
 
 
-decodeMessage : Endpoint -> String -> String -> Dict String String -> Result Json.Decode.Error Msg
-decodeMessage endpoint body etag links =
+decodeMessage : Endpoint -> String -> String -> Dict String String -> Time.Posix -> Bool -> Result Json.Decode.Error Msg
+decodeMessage endpoint body etag links timestamp isNew =
     let
         with decoder wrapper =
             Json.Decode.decodeString decoder body |> Result.map wrapper

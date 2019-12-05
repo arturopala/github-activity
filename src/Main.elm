@@ -222,19 +222,22 @@ update msg model =
             route (Routing.parseLocation url) model
                 |> modifyModel urlLens url
 
-        PutToCacheCommand endpoint body metadata ->
-            ( model, Ports.putToCache (Cache.encodeCacheItem endpoint body metadata) )
+        PutToCacheCommand endpoint body metadata timestamp ->
+            ( model, Ports.putToCache (Cache.encodeCacheItem endpoint body metadata timestamp) )
 
         OrderFromCacheCommand endpoint ->
             ( model, Ports.orderFromCache (GitHub.Endpoint.toJson endpoint) )
 
-        CacheResponseEvent endpoint body metadata ->
-            GitHub.API3Response.onSuccess endpoint body metadata model
+        GotCacheResponse endpoint body metadata timestamp ->
+            GitHub.API3Response.onSuccess endpoint body metadata timestamp False model
+
+        GotCacheItemNotFound endpoint ->
+            ( model, Cmd.none )
 
         GitHubMsg response ->
             case response of
-                Ok ( endpoint, httpResponse ) ->
-                    GitHub.API3Response.processResponse endpoint httpResponse model
+                Ok ( endpoint, httpResponse, timestamp ) ->
+                    GitHub.API3Response.processResponse endpoint httpResponse timestamp model
 
                 Err _ ->
                     ( model, Cmd.none )

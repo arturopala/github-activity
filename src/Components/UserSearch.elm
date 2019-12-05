@@ -1,7 +1,9 @@
 module Components.UserSearch exposing (Model, Msg(..), init, lastQueryLens, resultsLens, searchingLens, subscriptions, update, view)
 
+import GitHub.API
 import GitHub.API3Request
 import GitHub.Authorization exposing (Authorization)
+import GitHub.Handlers as Handlers exposing (Handlers)
 import GitHub.Model
 import Html exposing (Html, div, i, input, text)
 import Html.Attributes exposing (class, classList, id, pattern, placeholder, type_)
@@ -155,6 +157,11 @@ update msg model =
 
         NoOp ->
             ( model, Cmd.none )
+
+
+handlers : Handlers GitHub.API.Endpoint String (GitHub.Model.GitHubSearchResult GitHub.Model.GitHubUserRef) Msg
+handlers =
+    Handlers.emptyHandlers NoOp
 
 
 searchUser : Model -> ( Model, Cmd Msg )
